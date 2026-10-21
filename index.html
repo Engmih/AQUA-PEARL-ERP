@@ -449,6 +449,38 @@ table.uvFinTbl td.md{font-weight:800;color:var(--aqua2,#0FA3A3);width:24%}
   .tbl th.rp-sortable::after{content:'' !important}
 }
 
+
+/* ===== v61.06: حاسبة الأقساط داخل عرض الوحدة — أداة مساعدة لا تُطبع
+   ولا تمسّ أى بيانات. بنفس معادلة استمارة الحجز حرفيًا. ===== */
+#calcOverlay{position:fixed;inset:0;background:rgba(6,30,48,.5);z-index:10000;display:none;
+  align-items:flex-start;justify-content:center;padding:22px 14px;overflow:auto;direction:rtl}
+#calcOverlay.show{display:flex}
+.calcBox{background:#fff;border-radius:14px;width:min(440px,100%);overflow:hidden;
+  box-shadow:0 20px 56px rgba(0,0,0,.38)}
+.calcHead{background:linear-gradient(180deg,var(--aqua),var(--navy2));color:#fff;
+  padding:11px 15px;display:flex;align-items:center;gap:10px}
+.calcHead h3{margin:0;font-size:15.5px;font-weight:900;flex:1 1 auto;color:#fff}
+.calcHead .x{background:var(--red);color:#fff;border:0;border-radius:8px;width:30px;height:30px;
+  font-size:15px;font-weight:900;cursor:pointer;line-height:1}
+.calcBody{padding:13px 15px 16px}
+.calcRow{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.calcRow label{flex:0 0 112px;font-size:13px;font-weight:800;color:var(--navy)}
+.calcRow input{flex:1 1 auto;width:100%;padding:7px 10px;border:1.4px solid var(--line);border-radius:8px;
+  font-family:inherit;font-size:14.5px;font-weight:800;text-align:center;direction:ltr;color:var(--navy);background:#fff}
+.calcRow input:focus{outline:0;border-color:var(--aqua);box-shadow:0 0 0 3px rgba(17,149,178,.16)}
+.calcHint{font-size:11.5px;color:var(--muted);font-weight:700;margin:-4px 0 10px;text-align:center;min-height:15px}
+.calcOut{border:1.5px solid #cfe3f1;border-radius:11px;overflow:hidden;margin-top:11px}
+.calcOut .ln{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:7px 12px;border-bottom:1px dashed #dceaf4;font-size:13.2px;font-weight:800;color:var(--navy)}
+.calcOut .ln:last-child{border-bottom:0}
+.calcOut .ln .v{direction:ltr;font-weight:900;color:var(--navy2)}
+.calcOut .ln.big{background:#eaf4fb;font-size:14.6px;padding:9px 12px}
+.calcOut .ln.big .v{color:var(--green);font-size:16px}
+.calcErr{color:var(--red);font-weight:800;font-size:12.8px;text-align:center;padding:8px 0}
+.calcNote{font-size:11.2px;color:var(--muted);font-weight:700;text-align:center;margin-top:9px;line-height:1.6}
+.calcActs{display:flex;gap:8px;margin-top:11px}
+.calcActs .btn{flex:1 1 0;justify-content:center;font-size:13px}
+@media print{#calcOverlay{display:none!important}}
 </style>
 <style id="pgDyn"></style>
 <link rel="manifest" href="manifest.webmanifest">
@@ -473,7 +505,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 <header class="app-header">
   <img class="logo" src="data:image/jpeg;base64,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Vo8W9vpHuVmcLgtBVN2xRd6trs/bOVgTpbnWnwnopHJG5j3Me0te04LXDBB7iF1lgxzKt9qbRti1G3N0t0ck2MCZvmSD/iHFRZf9h8zS6SwXMPb2Q1bcH0B4+cLX3MKun5ebs8PerFvxEXo4J9YQi6M96+XROPIhbfd9AaotRPlNnqHsH4cA61v/AC8fctalikhduzRvjd3PaWn3rGqoqp6w39rIx78a264n6SxDC7vCCn73D1LIHEJg9xUdV/BS6WwMHPJ9K7Axo4AAepc5HeF3UtNPVyCOlhlneeTYmFx9yc5eTNFHOZ0dK5W5WXZnqq6kFtsdSxn+8q3CMezn7lJGm9iVFAWS6grn1bu2GAGNnrPM+5XUY1yvpDVZe38HF616z4RzQjarZW3arbS22llqqh3Jkbc+3sAUyaJ2MhpZVaqkDzzFFC7h/wAbhz9A9ql2zWS22alFNa6OGlhA+DG3GfSeZ9a9HdCz7WHTRzq5y4/aO9GRkxNFiOCn9/6Y9BRwUNLFTUsMcMEY3WRxtw1o7gFk4HcmEWZHJy8zM85EREBERAREQEREBERAREQEREBERAREQEREBERAREQFxhcog43VjVVvpKtu7VU0Eze6SMO/aspE6vYmY6Ndn0Tpmoz1tjtx9EDR+xY38neks5+wFBn/AOn/AOa2tFHgp8F0ZV+OUVz6y16DRem6fHU2S3Nxy+4NP7V7VPRwU7QIIY4m90bA0e5d6L2KYjpCFd25X89Uz5uN0JurlF6rEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREH/9k=" alt="Trust Group">
   <div class="titles">
-    <h1>Aqua Pearl ERP <span id="hdrVer" style="font-size:12px;font-weight:400;opacity:.8">v61.05</span></h1>
+    <h1>Aqua Pearl ERP <span id="hdrVer" style="font-size:12px;font-weight:400;opacity:.8">v61.06</span></h1>
     <div class="sub" id="hdrCompany">Trust Group — Aqua Pearl City</div>
   </div>
   <div class="userbox no-print" id="userBox" style="display:none"><span>👤 <b id="curUserName"></b></span><button onclick="logout()">خروج</button></div>
@@ -3397,7 +3429,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.05';
+const APP_VER  = 'v61.06';
 const APP_BUILD= '2026-10-21';
 window.APP_VER = APP_VER;
 const LS_KEY='aquaPearlERP_v1';
@@ -4037,12 +4069,10 @@ function renderSettings(){
       <div class="form-row"><label>🏦 احتساب الوديعة والنادي ضمن نصيب الشركاء</label><select id="stDepClub"><option value="1" ${s.depositClubToPartners!==false?'selected':''}>نعم — تدخل في نصيبهم (الوضع الحالي)</option><option value="0" ${s.depositClubToPartners===false?'selected':''}>لا — مفصولة عن الشركاء</option></select></div>
       <div class="form-row"><label>🔢 تسلسل الإيصالات — السنة الحالية: <b>${DB.seq.year}</b> / آخر رقم: <b>${String(DB.seq.counter).padStart(6,'0')}</b></label><input type="number" id="stSeq" value="${DB.seq.counter}" min="0"></div>
     </div></div>
-  <div class="card"><h3>📐 ملفات المخططات (PDF)</h3>
-    <div class="grid g2">
-      <div class="form-row"><label>📘 مسار ملف Fully Finished</label><input id="stFF" value="${esc(s.ffPdfPath)}"></div>
-      <div class="form-row"><label>📗 مسار ملف Semi Finished</label><input id="stSF" value="${esc(s.sfPdfPath)}"></div>
-    </div>
-    <div class="gray-note">المخططات معروضة داخل النظام كصور مدمجة. زر «فتح ملف PDF الكامل» يفتح الملف الأصلي من المسار أعلاه (نسبةً لمكان ملف النظام).</div></div>
+  <!-- v61.06: كارت مسارات المخططات أُزيل — المساران ثابتان داخل مجلد CRM
+       بجوار النظام على GitHub، فلم يعودا بحاجة لإعداد. -->
+  <input type="hidden" id="stFF" value="${esc(s.ffPdfPath)}">
+  <input type="hidden" id="stSF" value="${esc(s.sfPdfPath)}">
   <div class="card"><h3>🔄 مزامنة Google Sheets (اختياري)</h3>
     <div class="grid g2">
       <div class="form-row"><label>🔗 رابط Apps Script Web App</label><input id="stGs" value="${esc(s.gsUrl)}" placeholder="https://script.google.com/..."></div>
@@ -4062,12 +4092,18 @@ function renderSettings(){
     ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':'<span class="badge av">مستخدم</span>'}</td>
       <td style="white-space:nowrap;direction:ltr">${u.email?esc(u.email):'<span class="gray-note">—</span>'}
         <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="setUserMail('${u.id}')" title="تعديل البريد">✉️</button></td>
-      <td style="white-space:nowrap">${u.pPlain
-          ? `<span class="pwCell" id="pw_${u.id}" data-p="${esc(u.pPlain)}" data-on="0">••••••••</span>
-             <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="togglePw('${u.id}')" title="إظهار / إخفاء">👁</button>`
-          : '<span class="gray-note">— غير متاحة (قديمة)</span>'}
-        <button class="btn sm gold no-print" style="padding:1px 7px" onclick="setUserPass('${u.id}')" title="تغيير كلمة السر المحلية">🔑</button>
-        ${(u.email&&!u.admin)?`<button class="btn sm ghost no-print" style="padding:1px 7px" onclick="cloudResetUser('${u.id}')" title="إرسال رابط تغيير كلمة السر السحابية">📨</button>`:''}</td>
+      <!-- v61.06: مستخدم السحابة كلمة سره فى Firebase لا هنا — فلا نعرض
+           كلمة محلية لم تعد تفتح شيئًا، ولا مفتاحًا يوهم بأنه يغيّرها. -->
+      <td style="white-space:nowrap">${u.email
+          ? `<span class="gray-note">عبر السحابة</span>
+             ${u.admin
+               ? '<span class="gray-note"> — من «تغيير كلمة سر المدير» بالأسفل</span>'
+               : `<button class="btn sm ghost no-print" style="padding:1px 7px;margin-inline-start:6px" onclick="cloudResetUser('${u.id}')" title="إرسال رابط تغيير كلمة السر">📨 إرسال رابط</button>`}`
+          : `${u.pPlain
+              ? `<span class="pwCell" id="pw_${u.id}" data-p="${esc(u.pPlain)}" data-on="0">••••••••</span>
+                 <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="togglePw('${u.id}')" title="إظهار / إخفاء">👁</button>`
+              : '<span class="gray-note">— غير متاحة (قديمة)</span>'}
+             <button class="btn sm gold no-print" style="padding:1px 7px" onclick="setUserPass('${u.id}')" title="تغيير كلمة السر">🔑</button>`}</td>
       <td style="white-space:normal">${u.admin?'كل البوابات':(u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—'}</td>
       <td class="no-print">${u.admin?'':`<button class="btn sm red" onclick="deleteUser('${u.id}')">🗑️ حذف</button>`}</td></tr>`).join('')}
     </tbody></table>
@@ -4101,15 +4137,38 @@ function renderSettings(){
       <button class="btn aqua" onclick="exportPortable()">🧷 حفظ نسخة محمولة (البيانات داخل الملف)</button>
       <button class="btn ghost" onclick="pickBackupDir()">📁 مجلد حفظ النسخ${s.backupDirName?': '+esc(s.backupDirName):''}</button>
     </div>
-    ${storageHealth()}
-    <div class="gray-note" style="margin:-6px 0 10px">💡 نصيحة أمان: اجعل «مجلد حفظ النسخ» داخل مجلد Google Drive أو OneDrive على جهازك — فترتفع كل نسخة للسحابة تلقائيًا وتُحمى من تلف أو فقدان الجهاز نفسه. ومع تفعيل المجلد، يأخذ البرنامج نسخة يومية تلقائية باسم مؤرَّخ عند أول استخدام كل يوم.</div>
-    <p class="gray-note">النسخة المحمولة = ملف النظام والبيانات مدمجة بداخله — تصلح للنقل لجهاز آخر أو الإرسال أو الفتح من متصفح مختلف. عند فتحها يُحمَّل الأحدث تلقائيًا بين بيانات الملف وبيانات المتصفح. (المرفقات لا تُدمج داخلها — موجودة على Google Drive إذا فعّلت المزامنة)</p></div>
+    ${backupStateHTML()}
+    <details style="margin-top:8px"><summary class="gray-note" style="cursor:pointer">🔧 أدوات تشخيص المخزن</summary>
+      <div style="margin-top:8px">${storageHealth()}</div>
+    </details></div>
   <div class="toolbar"><button class="btn" onclick="saveSettings()">💾 حفظ الإعدادات</button></div>`;
   $('#stRestore').addEventListener('change',importBackup);
   $('#stLogo').addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;const r=new FileReader();
     r.onload=()=>{S().logoAqua=r.result;save();toast('تم حفظ الشعار','ok');};r.readAsDataURL(f);
   });
+}
+/* v61.06: ملخص حالة النسخ — ثلاثة سطور تقول أين بياناتك فعلًا */
+function backupStateHTML(){
+  const live=(typeof window.apCloudOn==='function')&&window.apCloudOn();
+  const adm=(typeof window.apIsCloudAdmin==='function')&&window.apIsCloudAdmin();
+  const d=DB.lastDriveInfo||null;
+  const fmt=t=>{ try{ return new Date(t).toLocaleString('ar-EG'); }catch(e){ return '—'; } };
+  const row=(ok,txt)=>`<div style="display:flex;gap:7px;align-items:flex-start;margin:3px 0;font-size:13px">
+    <span>${ok?'✔':'⚠️'}</span><span style="color:${ok?'var(--navy2)':'#b3261e'}">${txt}</span></div>`;
+  let h='<div style="background:#f6fafc;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0">';
+  h+=row(live, live
+    ? ('البيانات على السحابة — '+(adm?'لك صلاحية التعديل':'قراءة فقط'))
+    : 'غير متصل بالسحابة — التعديلات محفوظة على هذا الجهاز فقط');
+  h+=row(!!d, d
+    ? ('أرشيف Drive: '+(d.backups||0)+' نسخة و'+(d.attachments||0)+' مرفق · آخر نسخة '+fmt(d.at))
+    : 'لم تُرفع نسخة إلى Drive بعد');
+  h+=row(!!DB.lastBackupAt, DB.lastBackupAt
+    ? ('آخر نسخة على جهازك: '+fmt(DB.lastBackupAt))
+    : 'لم تُحفظ نسخة على جهازك بعد');
+  h+='<div class="gray-note" style="margin-top:7px">نسخة يومية تلقائية على Drive (آخر ٣٠ نسخة محفوظة) وأخرى فى مجلد النسخ على جهازك.</div>';
+  h+='</div>';
+  return h;
 }
 function saveSettings(){
   const s=S();
@@ -4598,7 +4657,8 @@ function renderUnitView(unitId){
       </select>
       <input id="uvSearchText" placeholder="اكتب للبحث...">
       <select id="uvFilterStatus">
-        <option value="">كل الحالات</option><option value="available">متاحة</option><option value="sold">مباعة</option><option value="reserved">محجوزة</option>
+        <!-- v61.06: الافتراضى «متاحة» لأنه الاستعمال الغالب للبوابة -->
+        <option value="available" selected>متاحة</option><option value="">كل الحالات</option><option value="sold">مباعة</option><option value="reserved">محجوزة</option>
       </select>
       <select id="uvSelect" style="min-width:260px"></select>
       <button class="btn aqua" onclick="uvOpenSelected()">👁️ عرض الوحدة</button>
@@ -4609,6 +4669,13 @@ function renderUnitView(unitId){
   $('#uvSearchType').addEventListener('change',uvApplyList);
   $('#uvFilterStatus').addEventListener('change',uvApplyList);
   $('#uvSelect').addEventListener('change',()=>{uvUnitId=$('#uvSelect').value;uvRenderUnit();});
+  /* لو فُتحت البوابة على وحدة بعينها (من ملف عميل مثلًا) ولم تكن متاحة،
+     نفتح الفلتر على «كل الحالات» حتى تظهر الوحدة فى القائمة */
+  if(unitId){
+    const _u=unitById(unitId);
+    const _taken=!!(DB.sales||[]).find(x=>x.unitId===unitId)||(_u&&(_u.status==='sold'||_u.status==='reserved'));
+    if(_taken)$('#uvFilterStatus').value='';
+  }
   uvApplyList();
   if(unitId){uvUnitId=unitId;$('#uvSelect').value=unitId;}
   uvRenderUnit();
@@ -4660,6 +4727,7 @@ function uvRenderUnit(){
   <div class="toolbar no-print">
     <button class="btn ghost" onclick="printScreen()">🖨️ طباعة عرض الوحدة (صفحتان: البيانات + المخطط)</button>
     <button class="btn green" onclick="uvWhatsApp()" title="تجهيز ملف PDF للوحدة وإرساله على واتساب">📲 إرسال واتساب</button>
+    <button class="btn aqua" onclick="apCalcOpen()" title="حاسبة أقساط — أداة مساعدة لا تغيّر أى بيانات">🧮 حاسبة الأقساط</button>
   </div>
   <div class="card">
     <h3>🏢 بيانات الوحدة <span style="margin-inline-start:auto">${statusBadge(u.status)}</span></h3>
@@ -8860,7 +8928,10 @@ function uvFinCardHTML(u){
       +(uvFinMode==='super'?'checked':'')+' style="width:auto" onchange="uvFinSet(\'super\')"> تشطيب بنسبة إشراف 15%</label>'
     +'<label class="opt'+(uvFinMode==='pkg'?' on':'')+'"><input type="radio" name="uvFin" value="pkg" '
       +(uvFinMode==='pkg'?'checked':'')+' style="width:auto" onchange="uvFinSet(\'pkg\')"> تشطيب باقة</label>'
-    +'<select onchange="uvFinPick(this.value)" '+(uvFinMode==='pkg'?'':'disabled')+'>'+opts+'</select>'
+    /* v61.06: قائمة الباقات تختفى تمامًا مع «تشطيب بنسبة إشراف» وتظهر مع «باقة» */
+    +(uvFinMode==='pkg'
+       ? ('<select onchange="uvFinPick(this.value)">'+opts+'</select>')
+       : '')
     +'</div>'
     +'<div class="print-only" style="display:none;font-weight:800;margin-bottom:7px">'
     +(p?('نظام التشطيب: باقة '+esc(p.name)+' — '+fmtN(p.pm)+' ج/م²'):'نظام التشطيب: نسبة إشراف 15%')+'</div>'
@@ -9417,5 +9488,135 @@ function apSetAttUrl(key,url){
 })();
 
 </script>
+
+<div id="calcOverlay">
+ <div class="calcBox">
+  <div class="calcHead"><h3>🧮 حاسبة الأقساط</h3>
+   <button type="button" class="x" id="calcClose" title="إغلاق">✕</button></div>
+  <div class="calcBody">
+   <div class="calcRow"><label>إجمالي الوحدة</label><input type="text" inputmode="numeric" id="calcTotal" placeholder="0"></div>
+   <div class="calcHint" id="calcSrc"></div>
+   <div class="calcRow"><label>المقدم</label><input type="text" inputmode="numeric" id="calcDown" placeholder="0"></div>
+   <div class="calcRow"><label>عدد السنوات</label><input type="text" inputmode="decimal" id="calcYears" placeholder="مثال: 10"></div>
+   <div id="calcOutBox"></div>
+   <div class="calcActs">
+     <button type="button" class="btn green" id="calcWA">📲 إرسال واتساب</button>
+     <button type="button" class="btn ghost" id="calcCopy">📋 نسخ</button>
+   </div>
+   <div class="calcNote">الفائدة 15% بسيطة عن كل سنة — المتبقي × (1 + 0.15 × عدد السنوات)<br>
+    أداة مساعدة للحساب فقط — لا تغيّر أي بيانات ولا تظهر في الطباعة.</div>
+  </div>
+ </div>
+</div>
+<script>
+/* ===== v61.06: حاسبة الأقساط — مستقلة تمامًا، لا تكتب أى بيانات ===== */
+(function(){
+  const g=id=>document.getElementById(id);
+  const nf=n=>(Math.round(Number(n)||0)).toLocaleString('en-US');
+  const toNum=v=>{const x=Number(String(v==null?'':v).replace(/[^\d.]/g,''));return isFinite(x)?x:0;};
+  let LAST=null;
+
+  function uvSource(){
+    try{
+      if(typeof uvUnitId==='undefined'||!uvUnitId) return null;
+      const u=unitById(uvUnitId); if(!u) return null;
+      const total=uvTotal(u); if(!total) return null;
+      const fin=uvFinAmount(u);
+      return {total:total,fin:fin,unit:total-fin,
+        label:(u.building||'')+' - '+(u.unitNo||u.unit||'')};
+    }catch(e){ return null; }
+  }
+  function fill(){
+    const f=uvSource(), t=g('calcTotal'), src=g('calcSrc');
+    if(f){
+      t.value=nf(f.total);
+      src.textContent = f.fin>0
+        ? ('من الوحدة '+f.label+': '+nf(f.unit)+' + تشطيب '+nf(f.fin))
+        : ('من الوحدة '+f.label);
+      const d=g('calcDown'); if(d&&!toNum(d.value)) d.value=nf(Math.round(f.total*0.5));
+    }else{ t.value=''; src.textContent='لم تُفتح وحدة — اكتب الإجمالي يدويًا'; }
+    calc();
+  }
+  function calc(){
+    const box=g('calcOutBox'); if(!box) return;
+    const total=toNum(g('calcTotal').value), down=toNum(g('calcDown').value), yrs=toNum(g('calcYears').value);
+    LAST=null;
+    if(!total){ box.innerHTML='<div class="calcErr">اكتب إجمالي قيمة الوحدة</div>'; return; }
+    if(down>total){ box.innerHTML='<div class="calcErr">المقدم أكبر من إجمالي قيمة الوحدة</div>'; return; }
+    const rem=total-down;
+    if(!yrs||yrs<=0){
+      box.innerHTML='<div class="calcOut"><div class="ln"><span>المتبقي بعد المقدم</span><span class="v">'+nf(rem)+' ج</span></div></div>'
+        +'<div class="calcErr">اكتب عدد السنوات</div>';
+      return;
+    }
+    const factor=1+0.15*yrs, withInt=rem*factor, months=yrs*12,
+          monthly=withInt/months, quarterly=monthly*3;
+    const f=uvSource();
+    LAST={total:total,down:down,yrs:yrs,rem:rem,withInt:withInt,
+          months:months,monthly:monthly,quarterly:quarterly,label:f?f.label:''};
+    box.innerHTML='<div class="calcOut">'
+      +'<div class="ln"><span>المتبقي بعد المقدم</span><span class="v">'+nf(rem)+' ج</span></div>'
+      +'<div class="ln"><span>معامل الفائدة ('+(Math.round(yrs*100)/100)+' سنة × 15%)</span><span class="v">× '+(Math.round(factor*100)/100)+'</span></div>'
+      +'<div class="ln"><span>المتبقي بعد الفائدة</span><span class="v">'+nf(withInt)+' ج</span></div>'
+      +'<div class="ln"><span>عدد الأقساط الشهرية</span><span class="v">'+nf(months)+' شهر</span></div>'
+      +'<div class="ln big"><span>القسط الشهري</span><span class="v">'+nf(monthly)+' ج</span></div>'
+      +'<div class="ln big"><span>القسط الربع سنوي</span><span class="v">'+nf(quarterly)+' ج</span></div>'
+      +'<div class="ln"><span>إجمالي ما يدفعه العميل</span><span class="v">'+nf(down+withInt)+' ج</span></div>'
+      +'</div>';
+  }
+  function asText(){
+    if(!LAST) return '';
+    const S0=(typeof S==='function')?S():{};
+    const L=[];
+    L.push('*'+((S0.companyName)||'Trust Group')+' — '+((S0.projectName)||'Aqua Pearl City')+'*');
+    if(LAST.label) L.push('الوحدة: '+LAST.label);
+    L.push('إجمالي الوحدة: '+nf(LAST.total)+' ج');
+    L.push('المقدم: '+nf(LAST.down)+' ج');
+    L.push('المتبقي: '+nf(LAST.rem)+' ج');
+    L.push('مدة التقسيط: '+(Math.round(LAST.yrs*100)/100)+' سنة');
+    L.push('المتبقي بعد الفائدة: '+nf(LAST.withInt)+' ج');
+    L.push('*القسط الشهري: '+nf(LAST.monthly)+' ج*');
+    L.push('*القسط الربع سنوي: '+nf(LAST.quarterly)+' ج*');
+    L.push('إجمالي ما يُدفع: '+nf(LAST.down+LAST.withInt)+' ج');
+    L.push('');
+    L.push('_تقديري وغير ملزم — يُراجع عند التعاقد._');
+    return L.join('\n');
+  }
+  function sendWA(){
+    const t=asText();
+    if(!t){ if(window.toast)toast('أكمل البيانات أولًا','err'); return; }
+    window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+  }
+  function copyTxt(){
+    const t=asText();
+    if(!t){ if(window.toast)toast('أكمل البيانات أولًا','err'); return; }
+    const done=()=>{ if(window.toast)toast('تم نسخ التفاصيل ✔','ok'); };
+    const fb=()=>{ const a=document.createElement('textarea'); a.value=t;
+      a.style.cssText='position:fixed;left:-9999px'; document.body.appendChild(a); a.select();
+      try{ document.execCommand('copy'); done(); }catch(e){} a.remove(); };
+    if(navigator.clipboard&&navigator.clipboard.writeText)
+      navigator.clipboard.writeText(t).then(done).catch(fb);
+    else fb();
+  }
+  function open(){ const o=g('calcOverlay'); if(!o) return; fill(); o.classList.add('show');
+    setTimeout(()=>{ const y=g('calcYears'); if(y) y.focus(); },60); }
+  function close(){ const o=g('calcOverlay'); if(o) o.classList.remove('show'); }
+  function wire(){
+    const c=g('calcClose'); if(c) c.addEventListener('click',close);
+    const o=g('calcOverlay'); if(o) o.addEventListener('click',e=>{ if(e.target===o) close(); });
+    ['calcTotal','calcDown'].forEach(id=>{ const el=g(id); if(!el) return;
+      el.addEventListener('input',calc);
+      el.addEventListener('blur',()=>{ const v=toNum(el.value); el.value=v?nf(v):''; calc(); }); });
+    const y=g('calcYears'); if(y) y.addEventListener('input',calc);
+    const w=g('calcWA'); if(w) w.addEventListener('click',sendWA);
+    const cp=g('calcCopy'); if(cp) cp.addEventListener('click',copyTxt);
+    document.addEventListener('keydown',e=>{ const ov=g('calcOverlay');
+      if(e.key==='Escape'&&ov&&ov.classList.contains('show')) close(); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire); else wire();
+  window.apCalcOpen=open;
+})();
+</script>
+
 </body>
 </html>
