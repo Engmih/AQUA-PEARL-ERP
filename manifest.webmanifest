@@ -1,17 +1,12 @@
 {
-  "id": "/AQUA-PEARL-ERP/",
   "name": "Aqua Pearl ERP — Trust Group",
   "short_name": "Aqua Pearl",
   "description": "نظام إدارة مبيعات ومالية مشروع Aqua Pearl City — Trust Group",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "/AQUA-PEARL-ERP/index.html",
-  "scope": "/AQUA-PEARL-ERP/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui"
-  ],
   "orientation": "any",
   "background_color": "#122B45",
   "theme_color": "#122B45",
