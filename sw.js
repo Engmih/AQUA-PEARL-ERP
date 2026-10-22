@@ -4,7 +4,7 @@
    استراتيجية: الشبكة أولًا للملف الرئيسى (ليصل التحديث فورًا) مع الرجوع
    للنسخة المخزّنة عند انقطاع الشبكة، والمخزّن أولًا للأيقونات.
    ===================================================================== */
-const CACHE = 'aqua-pearl-erp-v61.19';
+const CACHE = 'aqua-pearl-erp-v61.20';
 const CORE = [
   './',
   './index.html',
@@ -69,4 +69,44 @@ self.addEventListener('fetch', e => {
       return res;
     }).catch(() => hit))
   );
+});
+
+/* =====================================================================
+   v61.20 — الإشعارات التى تصل والتطبيق مقفول
+   الرسالة تأتى من Firebase Cloud Messaging عبر Apps Script، فيعرضها
+   المتصفح حتى لو النظام مغلق تمامًا. الضغط عليها يفتح النظام.
+   ===================================================================== */
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) {
+    try { d = { notification: { title: 'Aqua Pearl', body: e.data.text() } }; } catch (e2) { d = {}; }
+  }
+  const n = d.notification || d.data || {};
+  const title = n.title || 'Aqua Pearl ERP';
+  const body  = n.body  || '';
+  const url   = (d.data && d.data.url) || n.url || './index.html';
+  const tag   = (d.data && d.data.tag) || n.tag || 'aqua-pearl';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: body,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    dir: 'rtl',
+    lang: 'ar',
+    tag: tag,
+    renotify: true,
+    data: { url: url },
+    vibrate: [80, 40, 80]
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || './index.html';
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) {
+      if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) return c.focus();
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(target);
+  })());
 });

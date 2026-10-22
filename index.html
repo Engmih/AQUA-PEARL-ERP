@@ -529,6 +529,11 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
 #apBell i{position:absolute;top:-3px;inset-inline-end:-3px;background:#e53935;color:#fff;
   font-style:normal;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;
   display:grid;place-items:center;padding:0 3px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.pushRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f6fbfd;
+  border:1px dashed #cfe3f1;border-radius:11px;padding:9px 12px;margin-bottom:10px;font-size:12.5px}
+.pushRow.ok{background:#eefaf3;border-color:#bfe6d2;border-style:solid;color:#0f8f57;font-weight:700}
+.pushRow.no{background:#fdeeee;border-color:#f0c2c2;border-style:solid;color:#b3261e}
+.pushRow .btn{margin-inline-start:auto}
 .alGrp{border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin-bottom:9px;background:#fbfdfe}
 .alGrp>b{display:block;margin-bottom:6px;font-size:13px}
 .alGrp.bad{background:#fdeeee;border-color:#f0c2c2} .alGrp.bad>b{color:#b3261e}
@@ -831,6 +836,20 @@ table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2
   table.tbl.apCliTbl .btn{padding:5px 8px!important;font-size:14px!important}
   /* الجرس يأخذ مكانه بلا تزاحم مع العنوان */
   body.ap-client #cloudBadge{display:none!important}
+
+  /* v61.20: كشف الشريك المفصّل — العمارة داخل اسم الوحدة والنسبة ثابتة،
+     فنُخفيهما على الموبايل ويبقى أربعة أعمدة واضحة. */
+  table.tbl.apStmtTbl thead th:nth-child(1),
+  table.tbl.apStmtTbl thead th:nth-child(5),
+  table.tbl.apStmtTbl tbody tr td:nth-child(1),
+  table.tbl.apStmtTbl tbody tr td:nth-child(5),
+  table.tbl.apStmtTbl tbody tr[data-exp] td:nth-child(1),
+  table.tbl.apStmtTbl tbody tr[data-exp] td:nth-child(5){display:none!important}
+  table.tbl.apStmtTbl tr>:nth-child(2){width:24%}
+  table.tbl.apStmtTbl tr>:nth-child(3){width:34%}
+  table.tbl.apStmtTbl tr>:nth-child(4){width:21%}
+  table.tbl.apStmtTbl tr>:nth-child(6){width:21%}
+  table.tbl.apStmtTbl td[colspan]{display:table-cell!important}
 
   /* ===== v61.19: جدول المصروفات يفضل جدولًا على الموبايل =====
      أعمدة الشهور لا تصلح ككروت — نتركه جدولًا ونسحبه بالإصبع،
@@ -3933,7 +3952,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.19';
+const APP_VER  = 'v61.20';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4119,6 +4138,8 @@ function save(){
   DB.savedAt=new Date().toISOString();
   let str;
   try{str=JSON.stringify(DB);}catch(e){toast('تعذر تجهيز البيانات للحفظ: '+e.message,'err');return;}
+  /* v61.20: جلسة شريك — لا تكتب أى شىء محليًا، أرقامه كلها من السحابة */
+  if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER) return;
   /* v61.16: جلسة عميل — تُحفظ فى مفتاح مستقل ولا تلمس بيانات النظام إطلاقًا */
   if(AP_CLIENT){
     try{ localStorage.setItem(LS_KEY_CLIENT,str); }catch(e){}
@@ -4212,6 +4233,8 @@ function allowed(id){
   if(!CURRENT_USER)return false;
   /* v61.16: العميل لا يرى إلا ملفه */
   if(AP_CLIENT) return id==='customerFile';
+  /* v61.20: الشريك لا يمر عبر nav أصلًا — شاشاته تُرسم مباشرة */
+  if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER) return false;
   if(CURRENT_USER.admin)return true;
   if(id==='settings')return false;               // الإعدادات للمدير فقط
   if(id==='dashboard')return true;
@@ -4221,6 +4244,7 @@ function allowed(id){
 function buildTabs(){
   const tabs=$('nav.tabs');
   /* v61.16: العميل — زر واحد لملفه */
+  if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER){ apPartnerTabs(); return; }
   if(AP_CLIENT){
     const T=[['file','📄 ملفى'],['sched','📅 الأقساط المستحقة'],['pays','💰 الدفعات الفعلية']];
     tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_CTAB===k?' class="active"':''} onclick="apClientGo('${k}')">${lb}</button>`).join('');
@@ -4428,7 +4452,7 @@ async function doLogin(){
         for(let i=0;i<25&&!window.apClientProbe;i++) await new Promise(r=>setTimeout(r,120));
         if(window.apClientProbe) await window.apClientProbe;
       }catch(e){}
-      if(AP_CLIENT){ $('#loginErr').textContent=''; return; }
+      if(AP_CLIENT||AP_PARTNER){ $('#loginErr').textContent=''; return; }
       $('#loginErr').textContent='';
       CURRENT_USER=u0; sessionStorage.setItem(SESSION_KEY,u0.id);
       $('#loginOverlay').classList.remove('open');
@@ -4494,7 +4518,7 @@ async function doLoginEmail(){
     for(let i=0;i<25&&!window.apClientProbe;i++) await new Promise(r=>setTimeout(r,120));
     if(window.apClientProbe) await window.apClientProbe;
   }catch(e){}
-  if(AP_CLIENT){ err.textContent=''; return; }
+  if(AP_CLIENT||AP_PARTNER){ err.textContent=''; return; }
   try{ if(typeof window.apCloudPull==='function') await window.apCloudPull(); }catch(e){}
   const low=em.toLowerCase();
   let u=(DB.users||[]).find(x=>String(x.email||'').toLowerCase()===low);
@@ -4513,7 +4537,9 @@ function logout(){
   try{ if(typeof window.apCloudLogout==='function') window.apCloudLogout(); }catch(e){}
   /* v61.16: الخروج من جلسة عميل يُعيد تحميل الصفحة حتى تعود بيانات النظام
      الأصلية للجهاز كما هى — نسخة العميل كانت فى الذاكرة ومفتاح مستقل */
-  if(AP_CLIENT){ AP_CLIENT=false; try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){} location.reload(); return; }
+  if(AP_CLIENT||(typeof AP_PARTNER!=='undefined'&&AP_PARTNER)){
+    AP_CLIENT=false; AP_PARTNER=null;
+    try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){} location.reload(); return; }
   showLogin();}
 let currentScreen='dashboard';
 function nav(id,arg){
@@ -4877,10 +4903,11 @@ function renderSettings(){
     <p class="gray-note">أرشيف خارجى مستقل عن Firebase: ملف JSON كامل للبيانات + المرفقات الجديدة، مرة كل يوم تلقائيًا على مساحتك فى Drive.</p></div>
   ${cloudCardHTML()}
   ${qrCardHTML()}
+  ${pushCardHTML()}
   ${bioCardHTML()}
   <div class="card"><h3>👥 المستخدمون والصلاحيات</h3>
     <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th class="no-print"></th></tr></thead><tbody>
-    ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':'<span class="badge av">مستخدم</span>')}</td>
+    ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':(u.partner?'<span class="badge ret">شريك</span>':'<span class="badge av">مستخدم</span>'))}</td>
       <td style="white-space:nowrap;direction:ltr">${u.email?esc(u.email):'<span class="gray-note">—</span>'}
         <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="setUserMail('${u.id}')" title="تعديل البريد">✉️</button></td>
       <!-- v61.06: مستخدم السحابة كلمة سره فى Firebase لا هنا — فلا نعرض
@@ -4895,21 +4922,32 @@ function renderSettings(){
                  <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="togglePw('${u.id}')" title="إظهار / إخفاء">👁</button>`
               : '<span class="gray-note">— غير متاحة (قديمة)</span>'}
              <button class="btn sm gold no-print" style="padding:1px 7px" onclick="setUserPass('${u.id}')" title="تغيير كلمة السر">🔑</button>`}</td>
-      <td style="white-space:normal">${u.admin?'كل البوابات':(u.client?(function(){const un=unitById(u.unitId);return '📄 ملفه فقط'+(un?(' — وحدة '+esc(un.unitNo||'')+' '+esc(un.building||'')):'');})():((u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—'))}</td>
+      <td style="white-space:normal">${u.admin?'كل البوابات'
+        :(u.client?(function(){const un=unitById(u.unitId);return '📄 ملفه فقط'+(un?(' — وحدة '+esc(un.unitNo||'')+' '+esc(un.building||'')):'');})()
+        :(u.partner?(function(){const pr=partnerById(u.partnerId);return '🤝 حسابه فقط'+(pr?(' — '+esc(pr.name||'')):'');})()
+        :((u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—')))}</td>
       <td class="no-print">${u.admin?'':`<button class="btn sm ghost" onclick="editUser('${u.id}')" title="تعديل الصلاحيات والبيانات">✏️ تعديل</button>
         <button class="btn sm red" onclick="deleteUser('${u.id}')">🗑️ حذف</button>`}</td></tr>`).join('')}
     </tbody></table>
     <p class="gray-note">كلمات السر القديمة مُشفّرة ولا يمكن استرجاعها — غيّرها مرة واحدة من 🔑 لتظهر هنا. تظهر لحساب المدير فقط وتُحفظ ضمن النسخة الاحتياطية.</p></div>
     <h3 style="margin-top:6px">➕ إضافة مستخدم جديد</h3>
-    <!-- v61.16: حساب عميل — يرى ملفه فقط -->
+    <!-- v61.20: نوع الحساب — موظف أو عميل أو شريك -->
     <div style="background:#f6fafc;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:10px">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700">
-        <input type="checkbox" id="nuClient" style="width:auto" onchange="nuClientToggle()"> 👤 هذا المستخدم <b>عميل</b> — يرى ملفه فقط
-      </label>
+      <div class="form-row"><label>🎭 نوع الحساب</label>
+        <select id="nuRole" onchange="nuRoleToggle()">
+          <option value="staff">👤 موظف — تختار بواباته</option>
+          <option value="client">🧍 عميل — يرى ملفه فقط</option>
+          <option value="partner">🤝 شريك — يرى حسابه فقط</option>
+        </select></div>
       <div id="nuUnitWrap" style="display:none;margin-top:8px">
         <div class="form-row"><label>🏢 وحدة العميل</label>
           <select id="nuUnit"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML('')}</select></div>
         <span class="gray-note">يُنشأ حسابه على السحابة تلقائيًا وتُرفع له نسخة ملفه فى مساحة منفصلة — لا يرى أى بيانات أخرى ولا يقدر يعدّل.</span>
+      </div>
+      <div id="nuPartnerWrap" style="display:none;margin-top:8px">
+        <div class="form-row"><label>🤝 الشريك</label>
+          <select id="nuPartner"><option value="">— اختر الشريك —</option>${apPartnerOptionsHTML('')}</select></div>
+        <span class="gray-note">تُحسب أرقامه هنا وتُرفع له جاهزة فى مساحة منفصلة — لا تصل لجهازه أى بيانات شريك آخر ولا عملاء ولا مصروفات.</span>
       </div>
     </div>
     <div class="grid g3" style="margin-bottom:8px">
@@ -4992,6 +5030,30 @@ function qrCardHTML(){
           الرمز يُحفظ مع الإعدادات، فعلّقه فى المكتب أو ضعه على الكارت.</p>
       </div>
     </div></div>`;
+}
+/* v61.20: بطاقة الإشعارات فى الإعدادات */
+function pushCardHTML(){
+  const st=S();
+  const ready=!!(st.gsUrl&&st.vapidKey);
+  return `<div class="card"><h3>🔔 إشعارات العملاء والشركاء <span class="gray-note">(تصل للموبايل والتطبيق مقفول)</span></h3>
+    <div class="grid g2">
+      <div class="form-row"><label>🔑 مفتاح Web Push (VAPID)</label>
+        <input id="stVapid" style="direction:ltr" value="${esc(st.vapidKey||'')}"
+          placeholder="من Firebase ← Cloud Messaging ← Web Push certificates"></div>
+      <div class="form-row"><label>🟢 تفعيل الإشعارات</label>
+        <select id="stPushOn">
+          <option value="1" ${st.pushOn?'selected':''}>مُفعّل</option>
+          <option value="0" ${st.pushOn?'':'selected'}>مُطفأ</option>
+        </select></div>
+    </div>
+    <div class="toolbar" style="margin-top:8px">
+      <button class="btn" onclick="saveSettings()">💾 حفظ</button>
+      <button class="btn aqua" ${ready?'':'disabled'} onclick="apPushTest()">📨 إرسال رسالة تجريبية</button>
+      <span class="gray-note">${ready?'جاهز — الإرسال يتم عبر Apps Script':'ينقص: '+(!st.gsUrl?'رابط Apps Script':'')+(!st.gsUrl&&!st.vapidKey?' و':'')+(!st.vapidKey?'مفتاح VAPID':'')}</span>
+    </div>
+    <p class="gray-note" style="margin-top:7px">العميل أو الشريك بيسجّل موبايله مرة واحدة من زرار «تفعيل الإشعارات» عنده.
+      الآيفون لازم يكون مثبّت التطبيق على الشاشة الرئيسية — ده شرط Apple مش شرط النظام.</p>
+  </div>`;
 }
 /* v61.19: بطاقة الدخول بالبصمة فى الإعدادات */
 function bioCardHTML(){
@@ -5103,14 +5165,23 @@ function saveSettings(){
   /* v61.17: رابط التطبيق المستعمل فى رمز QR */
   const au=(($('#stAppUrl')&&$('#stAppUrl').value)||'').trim();
   if(au&&/^https?:\/\//i.test(au)) s.appUrl=au;
+  /* v61.20: إعدادات الإشعارات */
+  const vk=$('#stVapid'); if(vk) s.vapidKey=(vk.value||'').trim();
+  const po=$('#stPushOn'); if(po) s.pushOn=(po.value==='1');
   const seq=Math.max(0,Math.floor(Number($('#stSeq').value)||0));DB.seq.counter=seq;
   save();toast('تم حفظ الإعدادات','ok');
 }
-/* v61.16: إظهار/إخفاء اختيار الوحدة عند تعليم «عميل» */
-function nuClientToggle(){
-  const on=$('#nuClient')&&$('#nuClient').checked;
-  const w=$('#nuUnitWrap'); if(w) w.style.display=on?'block':'none';
-  const p=$('#nuPermsWrap'); if(p) p.style.display=on?'none':'block';
+/* v61.20: إظهار الحقل المناسب حسب نوع الحساب */
+function nuRoleToggle(){
+  const r=($('#nuRole')&&$('#nuRole').value)||'staff';
+  const u=$('#nuUnitWrap'); if(u) u.style.display=(r==='client')?'block':'none';
+  const pw=$('#nuPartnerWrap'); if(pw) pw.style.display=(r==='partner')?'block':'none';
+  const pm=$('#nuPermsWrap'); if(pm) pm.style.display=(r==='staff')?'block':'none';
+}
+function nuClientToggle(){ nuRoleToggle(); }   /* توافق مع النداء القديم */
+function apPartnerOptionsHTML(sel){
+  return (DB.partners||[]).map(p=>
+    '<option value="'+p.id+'"'+(p.id===sel?' selected':'')+'>'+esc(p.name||'')+'</option>').join('');
 }
 async function addUser(){
   const name=$('#nuName').value.trim(), pass=$('#nuPass').value;
@@ -5118,15 +5189,23 @@ async function addUser(){
   if((DB.users||[]).some(u=>u.name.toLowerCase()===name.toLowerCase())){toast('اسم المستخدم موجود بالفعل','err');return;}
   let perms=$$('#nuPerms input:checked').map(c=>c.value);
   const mail=(($('#nuMail')&&$('#nuMail').value)||'').trim();
-  /* v61.16: حساب عميل */
-  const isClient=!!($('#nuClient')&&$('#nuClient').checked);
-  let cUnit='';
+  /* v61.20: نوع الحساب */
+  const role=(($('#nuRole')&&$('#nuRole').value)||'staff');
+  const isClient=(role==='client'), isPartner=(role==='partner');
+  let cUnit='', cPartner='';
   if(isClient){
     cUnit=(($('#nuUnit')&&$('#nuUnit').value)||'').trim();
     if(!cUnit){toast('اختر وحدة العميل','err');return;}
     if(!mail){toast('حساب العميل لازم بريد — العميل بيدخل ببريده','err');return;}
     if((DB.users||[]).some(u=>u.client&&u.unitId===cUnit)){toast('الوحدة دى لها حساب عميل بالفعل','err');return;}
     perms=['customerFile'];
+  }
+  if(isPartner){
+    cPartner=(($('#nuPartner')&&$('#nuPartner').value)||'').trim();
+    if(!cPartner){toast('اختر الشريك','err');return;}
+    if(!mail){toast('حساب الشريك لازم بريد — بيدخل ببريده','err');return;}
+    if((DB.users||[]).some(u=>u.partner&&u.partnerId===cPartner)){toast('الشريك ده له حساب بالفعل','err');return;}
+    perms=[];
   }
   /* v64: لو فيه بريد والمدير متصل بالسحابة — يُنشأ حساب Firebase تلقائيًا */
   const canCloud=mail&&(typeof window.apIsCloudAdmin==='function')&&window.apIsCloudAdmin();
@@ -5145,9 +5224,12 @@ async function addUser(){
   }
   const rec={id:uid(),name,pass:pHash(pass),pPlain:pass,email:mail,admin:false,perms};
   if(isClient){ rec.client=true; rec.unitId=cUnit; }
+  if(isPartner){ rec.partner=true; rec.partnerId=cPartner; }
   DB.users.push(rec);
   save();
-  toast(isClient?('تم إنشاء حساب العميل '+name+' — يدخل ببريده ويرى ملفه فقط ✔'):('تمت إضافة المستخدم '+name),'ok');
+  toast(isClient?('تم إنشاء حساب العميل '+name+' — يدخل ببريده ويرى ملفه فقط ✔')
+       :isPartner?('تم إنشاء حساب الشريك '+name+' — يدخل ببريده ويرى حسابه فقط ✔')
+       :('تمت إضافة المستخدم '+name),'ok');
   apPushAccess();
   renderSettings();
 }
@@ -5208,15 +5290,22 @@ function editUser(id){
       <div class="form-row"><label>📧 البريد (الدخول السحابى)</label><input id="euMail" type="email" style="direction:ltr" value="${esc(u.email||'')}"></div>
     </div>
     <div style="background:#f6fafc;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:10px">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700">
-        <input type="checkbox" id="euClient" style="width:auto" ${u.client?'checked':''} onchange="euClientToggle()"> 👤 هذا المستخدم <b>عميل</b> — يرى ملفه فقط
-      </label>
+      <div class="form-row"><label>🎭 نوع الحساب</label>
+        <select id="euRole" onchange="euRoleToggle()">
+          <option value="staff" ${(!u.client&&!u.partner)?'selected':''}>👤 موظف — تختار بواباته</option>
+          <option value="client" ${u.client?'selected':''}>🧍 عميل — يرى ملفه فقط</option>
+          <option value="partner" ${u.partner?'selected':''}>🤝 شريك — يرى حسابه فقط</option>
+        </select></div>
       <div id="euUnitWrap" style="display:${u.client?'block':'none'};margin-top:8px">
         <div class="form-row"><label>🏢 وحدة العميل</label>
           <select id="euUnit"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML(u.unitId||'')}</select></div>
       </div>
+      <div id="euPartnerWrap" style="display:${u.partner?'block':'none'};margin-top:8px">
+        <div class="form-row"><label>🤝 الشريك</label>
+          <select id="euPartner"><option value="">— اختر الشريك —</option>${apPartnerOptionsHTML(u.partnerId||'')}</select></div>
+      </div>
     </div>
-    <div id="euPermsWrap" style="display:${u.client?'none':'block'}">
+    <div id="euPermsWrap" style="display:${(u.client||u.partner)?'none':'block'}">
     <label class="gray-note" style="display:block;margin-bottom:6px">البوابات المسموحة:</label>
     <div class="perm-list" id="euPerms">${opts}</div></div>`;
   openBox('✏️ تعديل المستخدم — '+esc(u.name), html, 'حفظ', ()=>{
@@ -5224,27 +5313,38 @@ function editUser(id){
     if(!nm){toast('اكتب اسم المستخدم','err');return false;}
     if((DB.users||[]).some(x=>x.id!==u.id&&x.name.toLowerCase()===nm.toLowerCase())){
       toast('الاسم مستخدم بالفعل','err');return false;}
-    const isC=!!($('#euClient')&&$('#euClient').checked);
+    const role=(($('#euRole')&&$('#euRole').value)||'staff');
+    const isC=(role==='client'), isP=(role==='partner');
     const cu=(($('#euUnit')&&$('#euUnit').value)||'').trim();
+    const cp=(($('#euPartner')&&$('#euPartner').value)||'').trim();
     if(isC){
       if(!cu){toast('اختر وحدة العميل','err');return false;}
       if(!($('#euMail').value||'').trim()){toast('حساب العميل لازم بريد','err');return false;}
       if((DB.users||[]).some(x=>x.id!==u.id&&x.client&&x.unitId===cu)){toast('الوحدة دى لها حساب عميل بالفعل','err');return false;}
     }
+    if(isP){
+      if(!cp){toast('اختر الشريك','err');return false;}
+      if(!($('#euMail').value||'').trim()){toast('حساب الشريك لازم بريد','err');return false;}
+      if((DB.users||[]).some(x=>x.id!==u.id&&x.partner&&x.partnerId===cp)){toast('الشريك ده له حساب بالفعل','err');return false;}
+    }
     u.name=nm;
     u.email=($('#euMail').value||'').trim();
+    delete u.client; delete u.unitId; delete u.partner; delete u.partnerId;
     if(isC){ u.client=true; u.unitId=cu; u.perms=['customerFile']; }
-    else{ delete u.client; delete u.unitId; u.perms=$$('#euPerms input:checked').map(c=>c.value); }
+    else if(isP){ u.partner=true; u.partnerId=cp; u.perms=[]; }
+    else{ u.perms=$$('#euPerms input:checked').map(c=>c.value); }
     save(); apPushAccess(); renderSettings();
     toast('تم حفظ تعديلات '+u.name+' ✔','ok');
     return true;
   });
 }
-function euClientToggle(){
-  const on=$('#euClient')&&$('#euClient').checked;
-  const w=$('#euUnitWrap'); if(w) w.style.display=on?'block':'none';
-  const p=$('#euPermsWrap'); if(p) p.style.display=on?'none':'block';
+function euRoleToggle(){
+  const r=($('#euRole')&&$('#euRole').value)||'staff';
+  const w=$('#euUnitWrap'); if(w) w.style.display=(r==='client')?'block':'none';
+  const pw=$('#euPartnerWrap'); if(pw) pw.style.display=(r==='partner')?'block':'none';
+  const p=$('#euPermsWrap'); if(p) p.style.display=(r==='staff')?'block':'none';
 }
+function euClientToggle(){ euRoleToggle(); }
 /* نافذة عامة بسيطة للنماذج */
 function openBox(title,bodyHTML,okLabel,onOk){
   let m=document.getElementById('apBox');
@@ -7161,6 +7261,21 @@ function apMarkPaysSeen(s){
   try{ localStorage.setItem('apSeenPays_'+s.id,
     JSON.stringify(paymentsOf(s.id).map(p=>p.id))); }catch(e){}
 }
+/* v61.20: العدّاد على «الجديد اللى مشوفتوش» فقط.
+   كان بيعدّ المتأخرات وأقرب قسط كمان، وهى حاجات قائمة فعلًا فما بتختفيش،
+   فكان الرقم يفضل زى ما هو مهما دست «تمام». دلوقتى نحفظ بصمة ما رآه،
+   فيختفى الرقم بعد الاطلاع ويعود وحده لو جدّ جديد. */
+function apAlertSig(a){
+  return [a.late.map(i=>i.no+':'+i.due).join(','),
+          a.next?(a.next.no+':'+a.next.due):'-',
+          a.newPays.map(p=>p.id).join(',')].join('|');
+}
+function apSeenSig(){
+  try{ return localStorage.getItem('apAlertSig_'+(cfSaleId||''))||''; }catch(e){ return ''; }
+}
+function apMarkAlertsSeen(s,a){
+  try{ localStorage.setItem('apAlertSig_'+s.id, apAlertSig(a||apClientAlerts(s))); }catch(e){}
+}
 function apBellRender(s){
   let el=document.getElementById('apBell');
   if(!el){
@@ -7171,10 +7286,12 @@ function apBellRender(s){
     host.insertBefore(el,host.firstChild);
   }
   const a=apClientAlerts(s);
-  const n=a.late.length+(a.next?1:0)+a.newPays.length;
+  const total=a.late.length+(a.next?1:0)+a.newPays.length;
+  const fresh=(apAlertSig(a)!==apSeenSig());      /* فيه جديد؟ */
+  const n=fresh?total:0;
   el.innerHTML='🔔'+(n?'<i>'+n+'</i>':'');
-  el.title=n?('عندك '+n+' تنبيه'):'لا توجد تنبيهات';
-  el.classList.toggle('hot',a.late.length>0);
+  el.title=total?('عندك '+total+' تنبيه'):'لا توجد تنبيهات';
+  el.classList.toggle('hot',fresh&&a.late.length>0);
 }
 function apBellOpen(){
   const s=saleById(cfSaleId); if(!s) return;
@@ -7196,7 +7313,10 @@ function apBellOpen(){
          <b>${fmtM(a.next.amount)}</b></div></div>`;
   }
   if(!h) h='<p class="gray-note" style="text-align:center;margin:10px 0">مفيش تنبيهات — كل حاجة تمام 👌</p>';
-  openBox('🔔 التنبيهات',h,'تمام',()=>{ apMarkPaysSeen(s); apBellRender(s); return true; });
+  openBox('🔔 التنبيهات',h,'تمام',()=>{
+    apMarkPaysSeen(s);                 /* الدفعات بقت مقروءة */
+    apMarkAlertsSeen(s);               /* ثم نحفظ بصمة الحالة بعد ذلك */
+    apBellRender(s); return true; });
 }
 
 /* --- كارت واحد: بونص وغرامات --- */
@@ -7234,10 +7354,39 @@ function apBpToggle(){
   d.style.display = d.style.display==='none' ? 'block' : 'none';
 }
 
+/* v61.20: زرار تفعيل الإشعارات — يظهر للعميل والشريك */
+function apPushBtnHTML(){
+  try{
+    const st=S();
+    if(!st||!st.vapidKey) return '';
+    if(!('Notification' in window)) return '';
+    if(Notification.permission==='granted'&&localStorage.getItem('apPushOk')==='1')
+      return `<div class="pushRow ok no-print">🔔 الإشعارات مفعّلة على هذا الجهاز ✔</div>`;
+    if(Notification.permission==='denied')
+      return `<div class="pushRow no no-print">🔕 الإشعارات مرفوضة من إعدادات المتصفح — فعّلها من إعدادات الموقع</div>`;
+    return `<div class="pushRow no-print">
+      <span>🔔 عايز يوصلك إشعار أول ما يتسجّل لك قسط؟</span>
+      <button class="btn sm aqua" onclick="apPushEnable()">فعّل الإشعارات</button></div>`;
+  }catch(e){ return ''; }
+}
+async function apPushEnable(){
+  try{
+    if(typeof window.apPushRegister!=='function'){toast('الإشعارات غير مهيأة','err');return;}
+    toast('⏳ جارٍ التفعيل...');
+    const tok=await window.apPushRegister();
+    await window.apPushSaveToken(tok);
+    try{ localStorage.setItem('apPushOk','1'); }catch(e){}
+    toast('تم تفعيل الإشعارات على هذا الجهاز ✔','ok');
+    if(window.apPartnerMode&&window.apPartnerMode()) apPartnerRender();
+    else if(cfSaleId) renderCustomerFile(cfSaleId);
+  }catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); }
+}
+
 /* --- تبّ «ملفى» --- */
 function apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
   return `
   <h2 class="screen-title">ملفى — ${esc(s.customer.name)}</h2>
+  ${apPushBtnHTML()}
   ${apClientBpCard(s)}
   <div class="card"><h3>👤 بياناتى</h3><div class="grid g3">
     ${fld('👤','الاسم',esc(s.customer.name))}
@@ -7307,6 +7456,132 @@ function apClientPaysHTML(s){
         onclick="printReceipt('${p.id}')">🖨️</button></td>
   </tr>`).join('')}
   </tbody></table></div>`:'<p class="gray-note">لا توجد دفعات محصلة بعد.</p>'}</div>`;
+}
+
+/* ===================================================================
+   v61.20 — بوابة الشريك
+   تعمل على «أرقام جاهزة» وصلت من المدير — لا تقرأ قاعدة بيانات.
+   أربع تبّات للقراءة فقط.
+   =================================================================== */
+let AP_PARTNER=null, AP_PTAB='sum';
+function apPartnerMode(){ return !!AP_PARTNER; }
+window.apPartnerMode=apPartnerMode;
+
+window.apAdoptPartner=function(obj,info){
+  try{
+    AP_PARTNER=obj;
+    AP_CLIENT=false;
+    AP_PTAB='sum';
+    try{ document.body.classList.add('ap-client'); }catch(e){}
+    CURRENT_USER={id:'partner',name:(info&&info.name)||obj.name||'شريك',
+                  admin:false,partner:true,perms:[]};
+    const n=$('#curUserName'); if(n) n.textContent=CURRENT_USER.name;
+    const ub=$('#userBox'); if(ub) ub.style.display='flex';
+    const ov=$('#loginOverlay'); if(ov) ov.classList.remove('open');
+    ['#btnBackup','#btnPortable'].forEach(sel=>{ const e2=$(sel); if(e2) e2.style.display='none'; });
+    const hc=$('#hdrCompany');
+    if(hc) hc.textContent=(obj.company||'')+(obj.project?(' — '+obj.project):'');
+    apPartnerTabs();
+    apPartnerRender();
+    return true;
+  }catch(e){ console.error('adoptPartner',e); return false; }
+};
+function apPartnerTabs(){
+  const tabs=$('nav.tabs'); if(!tabs) return;
+  const T=[['sum','📊 ملخصى'],['blds','🏢 نصيبى بالعمارات'],
+           ['stmt','📄 كشف مفصّل'],['cap','💼 رأس المال والأرباح']];
+  tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_PTAB===k?' class="active"':''} onclick="apPartnerGo('${k}')">${lb}</button>`).join('');
+}
+function apPartnerGo(tab){
+  AP_PTAB=tab;
+  $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===tab));
+  apPartnerRender();
+  window.scrollTo({top:0});
+}
+function apPartnerRender(){
+  const P=AP_PARTNER; if(!P) return;
+  $$('.screen').forEach(x=>x.classList.toggle('active',x.id==='scr-customerFile'));
+  currentScreen='customerFile';
+  const el=$('#scr-customerFile'); if(!el) return;
+  el.innerHTML = AP_PTAB==='blds' ? apPartnerBldsHTML(P)
+               : AP_PTAB==='stmt' ? apPartnerStmtHTML(P)
+               : AP_PTAB==='cap'  ? apPartnerCapHTML(P)
+               :                    apPartnerSumHTML(P);
+  const fab=$('#shareFab'); if(fab) fab.style.display='flex';
+}
+function apPartnerSumHTML(P){
+  const t=P.totals||{};
+  const bal=Number(t.balance)||0;
+  return `<h2 class="screen-title">ملخص حسابى — ${esc(P.name)}</h2>
+  ${apPushBtnHTML()}
+  <div class="card"><h3>⚖️ الرصيد</h3>
+    <div class="bpBig" style="border:1.8px solid ${bal>=0?'var(--green)':'var(--red)'};border-radius:14px;
+      padding:14px 12px;text-align:center;background:${bal>=0?'#eefaf3':'#fdeeee'}">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${bal>=0?'دائن لك':'مدين عليك'}</div>
+      <div style="font-size:25px;font-weight:900;color:${bal>=0?'var(--green)':'var(--red)'}">
+        ${bal>=0?'⬆️':'⬇️'} ${fmtM(Math.abs(bal))}</div>
+    </div></div>
+  <div class="card"><h3>📊 تفاصيل الحساب</h3><div class="grid g3">
+    ${fld('💰','نصيبى من كل المحصل',fmtM(t.share),'money')}
+    ${fld('🧾','خصم عمولات بيع '+(t.commPct||0)+'٪',fmtM(t.commission),'money')}
+    ${fld('💸','المصروف لى من الأرباح',fmtM(t.payouts),'money')}
+    ${fld('🧾','مصروفات عامة محمّلة علىّ',fmtM(t.expShare||0),'money')}
+    ${fld('💼','رأس المال الحالى',fmtM(t.capital),'money')}
+    ${fld('🏦','التزام الودائع والنادى',fmtM(t.obligation),'money')}
+    ${fld('↩️','المردود من الودائع',fmtM(t.depReturned),'money')}
+    ${fld('📌','متبقى التزام الودائع',fmtM(t.obligationLeft),'money')}
+  </div></div>
+  <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
+    <span class="gray-note" style="margin-inline-start:auto">آخر تحديث: ${P.at?new Date(P.at).toLocaleString('ar-EG'):'—'}</span></div>`;
+}
+function apPartnerBldsHTML(P){
+  const rows=P.rows||[];
+  return `<h2 class="screen-title">نصيبى بالعمارات</h2>
+  <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button></div>
+  <div class="card"><div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
+    <th>العمارة</th><th>نسبتى</th><th>إجمالي المحصل</th><th>نصيبى</th>
+  </tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><b>${esc(r.b)}</b></td><td>${r.pc}٪</td>
+    <td>${fmtM(r.collected)}</td><td><b>${fmtM(r.sh)}</b></td></tr>`).join('')
+    ||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">لا نسب مسجلة</td></tr>'}
+  ${rows.length?`<tr style="background:#FBF3D9"><td colspan="3"><b>الإجمالي</b></td>
+    <td><b>${fmtM((P.totals||{}).share)}</b></td></tr>`:''}
+  </tbody></table></div></div>`;
+}
+function apPartnerStmtHTML(P){
+  const u=P.units||[];
+  return `<h2 class="screen-title">كشف حساب مفصّل</h2>
+  <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
+    <span class="gray-note" style="margin-inline-start:auto">عدد البنود: ${fmtN(u.length)}</span></div>
+  <div class="card"><div class="tbl-wrap"><table class="tbl apCliTbl apStmtTbl"><thead><tr>
+    <th>العمارة</th><th>الوحدة</th><th>العميل</th><th>المحصل</th><th>نسبتى</th><th>نصيبى</th>
+  </tr></thead><tbody>
+  ${u.map(r=>`<tr><td>${esc(r.b)}</td><td>${esc(r.unit)}</td><td>${esc(r.customer)}</td>
+    <td>${fmtM(r.col)}</td><td>${r.pc}٪</td><td><b>${fmtM(r.sh)}</b></td></tr>`).join('')
+    ||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">لا بيانات</td></tr>'}
+  ${u.length?`<tr style="background:#FBF3D9"><td colspan="5"><b>إجمالي نصيبى من المحصل</b></td>
+    <td><b>${fmtM((P.totals||{}).share)}</b></td></tr>`:''}
+  </tbody></table></div></div>`;
+}
+function apPartnerCapHTML(P){
+  const cap=(P.capital||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
+  const po=(P.payoutsList||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
+  const dr=(P.depositReturns||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
+  const tbl=(title,rows,cols,body)=>`<div class="card"><h3>${title}</h3>
+    <div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>${cols.map(c=>'<th>'+c+'</th>').join('')}</tr></thead>
+    <tbody>${body||'<tr><td colspan="'+cols.length+'" style="text-align:center;color:var(--muted)">لا حركات</td></tr>'}</tbody></table></div></div>`;
+  return `<h2 class="screen-title">رأس المال والأرباح</h2>
+  <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button></div>
+  ${tbl('💼 حركات رأس المال',cap,['التاريخ','المبلغ','ملاحظات'],
+    cap.map(m=>`<tr><td>${fmtD(m.date)}</td>
+      <td class="${Number(m.amount)>=0?'pos':'warn-red'}"><b>${fmtM(m.amount)}</b></td>
+      <td>${esc(m.notes||'')}</td></tr>`).join(''))}
+  ${tbl('💸 دفعات الأرباح المصروفة لى',po,['التاريخ','المبلغ','الطريقة','ملاحظات'],
+    po.map(m=>`<tr><td>${fmtD(m.date)}</td><td><b>${fmtM(m.amount)}</b></td>
+      <td>${esc(m.method||'')}</td><td>${esc(m.notes||'')}</td></tr>`).join(''))}
+  ${tbl('↩️ المردود من الودائع',dr,['التاريخ','المبلغ','ملاحظات'],
+    dr.map(m=>`<tr><td>${fmtD(m.date)}</td><td><b>${fmtM(m.amount)}</b></td>
+      <td>${esc(m.notes||'')}</td></tr>`).join(''))}`;
 }
 
 /* ===================================================================
@@ -7426,6 +7701,37 @@ function apClientSlice(unitId){
     savedAt:new Date().toISOString()
   };
 }
+/* ===================================================================
+   v61.20 — شريحة الشريك
+   تُحسب أرقامه هنا عند المدير وتُرفع «جاهزة» لمساحته المستقلة.
+   لا تحتوى أى بيانات شريك آخر ولا مصروفات ولا بنوك ولا تدفقات —
+   فجهازه لا يملك ما يُكسر أصلًا. */
+function apPartnerSlice(partnerId){
+  const p=partnerById(partnerId); if(!p) return null;
+  let c,units;
+  try{ c=partnerCalc(p); }catch(e){ return null; }
+  try{ units=partnerUnitRows(p); }catch(e){ units=[]; }
+  const st=S();
+  return {
+    kind:'partner',
+    name:p.name||'',
+    company:st.companyName||'', project:st.projectName||'',
+    at:new Date().toISOString(),
+    pct:Object.assign({},p.pct||{}),
+    totals:{
+      share:c.share, commPct:c.commPct, commBase:c.commBase, commission:c.commission,
+      payouts:c.payouts, expShare:c.expShare||0, balance:c.balance, capital:c.capital,
+      obligation:c.obligation, depReturned:c.depReturned, obligationLeft:c.obligationLeft
+    },
+    rows:(c.rows||[]).map(r=>({b:r.b,pc:r.pc,down:r.down,inst:r.inst,dep:r.dep,
+      club:r.club,penalty:r.penalty,collected:r.collected,sh:r.sh})),
+    units:units.map(r=>({b:r.b,pc:r.pc,unit:r.unit,customer:r.customer,col:r.col,sh:r.sh,kind:r.kind})),
+    capital:(p.capital||[]).map(m=>({date:m.date,amount:m.amount,notes:m.notes||''})),
+    payoutsList:(p.payouts||[]).map(m=>({date:m.date,amount:m.amount,method:m.method||'',notes:m.notes||''})),
+    depositReturns:(p.depositReturns||[]).map(m=>({date:m.date,amount:m.amount,notes:m.notes||''}))
+  };
+}
+
 /* بصمة سريعة — حتى لا نُعيد الرفع إلا عند تغيّر فعلى */
 function apHash(str){
   let h=5381; for(let i=0;i<str.length;i++){ h=((h<<5)+h+str.charCodeAt(i))|0; }
@@ -7433,12 +7739,15 @@ function apHash(str){
 }
 /* ---- تجهيز خرائط الصلاحيات التى يرفعها المدير ---- */
 function apAccessMaps(){
-  const staff={}, clients={};
+  const staff={}, clients={}, partners={};
   (DB.users||[]).forEach(u=>{
     const em=String(u.email||'').trim(); if(!em) return;
     if(u.client){
       const sl=apClientSlice(u.unitId); if(!sl) return;
       clients[apMailKey(em)]={name:u.name,unitId:u.unitId,slice:sl};
+    }else if(u.partner){
+      const sl=apPartnerSlice(u.partnerId); if(!sl) return;
+      partners[apMailKey(em)]={name:u.name,partnerId:u.partnerId,slice:sl};
     }else{
       staff[apMailKey(em)]=true;
     }
@@ -7447,7 +7756,7 @@ function apAccessMaps(){
     const c=(typeof window.apCloudCfg==='function')?window.apCloudCfg():null;
     if(c&&c.adminEmail) staff[apMailKey(c.adminEmail)]=true;
   }catch(e){}
-  return {staff,clients};
+  return {staff,clients,partners};
 }
 /* ---- تحميل نسخة العميل فى المتصفح ---- */
 window.apAdoptClientDB=function(obj,info){
@@ -7674,6 +7983,8 @@ function savePayment(andPrint){
   save();
   closeModal('payModal');attClear('pay');
   toast('تم حفظ '+kindAr(p.kind)+' — إيصال رقم '+p.receiptNo,'ok');
+  /* v61.20: إشعار للعميل على موبايله لو كان مسجّلًا */
+  try{ apNotifyPayment(s,p); }catch(e){}
   if(currentScreen==='customerFile')renderCustomerFile(s.id);
   if(currentScreen==='collected')renderCollected();
   if(currentScreen==='due')renderDue();
@@ -8713,6 +9024,50 @@ function driveDue(){
   const last=DB.lastDriveBackupAt?new Date(DB.lastDriveBackupAt).getTime():0;
   return (Date.now()-last) > DRIVE_EVERY_H*3600*1000;
 }
+/* ===================================================================
+   v61.20 — إرسال الإشعارات (جانب المدير)
+   النظام يجمّع رموز أجهزة صاحب الحساب ويطلب من Apps Script إرسالها.
+   مفتاح خدمة FCM يعيش فى Apps Script وحده ولا يلمس المتصفح أبدًا.
+   =================================================================== */
+async function apNotify(space,mail,title,body,url){
+  try{
+    const st=S();
+    if(!st.gsUrl||!st.pushOn) return false;
+    if(typeof window.apPushTokensOf!=='function') return false;
+    const toks=await window.apPushTokensOf(space,mail);
+    if(!toks.length) return false;
+    await drivePost({type:'push',tokens:toks,title:title,body:body,
+      url:url||apAppUrl(),ts:new Date().toISOString()});
+    return true;
+  }catch(e){ console.warn('notify',e); return false; }
+}
+/* إشعار العميل بدفعة اتسجّلت له */
+async function apNotifyPayment(sale,pay){
+  try{
+    const u=(DB.users||[]).find(x=>x.client&&x.unitId===sale.unitId&&x.email);
+    if(!u) return;
+    await apNotify('clients',u.email,'تم تسجيل دفعة جديدة ✅',
+      'إيصال '+pay.receiptNo+' بمبلغ '+fmtN(pay.amount)+' ج.م بتاريخ '+fmtD(pay.date),
+      apAppUrl());
+  }catch(e){}
+}
+/* اختبار من الإعدادات */
+async function apPushTest(){
+  const st=S();
+  if(!st.gsUrl){toast('اضبط رابط Apps Script أولًا','err');return;}
+  if(!st.pushOn){toast('فعّل الإشعارات أولًا','err');return;}
+  const cands=(DB.users||[]).filter(u=>(u.client||u.partner)&&u.email);
+  if(!cands.length){toast('مفيش حسابات عملاء أو شركاء لإرسال تجربة لها','err');return;}
+  let sent=0;
+  for(const u of cands){
+    const ok=await apNotify(u.client?'clients':'partners',u.email,
+      'رسالة تجريبية من Aqua Pearl',
+      'لو وصلتك دى فالإشعارات شغالة تمام 👌', apAppUrl());
+    if(ok) sent++;
+  }
+  toast(sent?('اتبعت تجربة لـ '+sent+' حساب — شوف موبايلهم'):'مفيش جهاز مسجَّل للإشعارات لسه','ok');
+}
+
 function drivePost(body){
   const st=S(); if(!st.gsUrl) return Promise.reject(new Error('لم يُضبط رابط Apps Script'));
   return fetch(st.gsUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});
@@ -11112,25 +11467,49 @@ function apSetAttUrl(key,url){
   function mailKey(em) {
     return String(em || '').trim().toLowerCase().split('.').join(',').split('@').join('_at_');
   }
-  let clientRef = null;
+  let clientRef = null, partnerRef = null;
   async function clientProbe(u) {
     if (!rtdb || !u || !u.email) return false;
     const k = mailKey(u.email);
-    let snap;
-    try { snap = await rtdb.ref('clients/' + k).get(); }
-    catch (e) { return false; }                   // القواعد منعت القراءة — ليس عميلًا
+    /* عميل؟ */
+    let snap = null;
+    try { snap = await rtdb.ref('clients/' + k).get(); } catch (e) { snap = null; }
     const v = snap && snap.val();
-    if (!v || !v.payload) return false;
-    await applyClient(v);
-    /* متابعة حيّة لأى تحديث يرفعه المدير */
-    if (!clientRef) {
-      clientRef = rtdb.ref('clients/' + k);
-      clientRef.on('value', s2 => {
-        const x = s2.val();
-        if (x && x.payload) applyClient(x).catch(() => {});
-      }, () => {});
+    if (v && v.payload) {
+      await applyClient(v);
+      if (!clientRef) {
+        clientRef = rtdb.ref('clients/' + k);
+        clientRef.on('value', s2 => {
+          const x = s2.val();
+          if (x && x.payload) applyClient(x).catch(() => {});
+        }, () => {});
+      }
+      return true;
     }
-    return true;
+    /* شريك؟ */
+    let snp = null;
+    try { snp = await rtdb.ref('partners/' + k).get(); } catch (e) { snp = null; }
+    const w = snp && snp.val();
+    if (w && w.payload) {
+      await applyPartner(w);
+      if (!partnerRef) {
+        partnerRef = rtdb.ref('partners/' + k);
+        partnerRef.on('value', s3 => {
+          const x = s3.val();
+          if (x && x.payload) applyPartner(x).catch(() => {});
+        }, () => {});
+      }
+      return true;
+    }
+    return false;
+  }
+  async function applyPartner(node) {
+    const txt = await gzUnpack(node.payload);
+    const obj = (typeof txt === 'string') ? JSON.parse(txt) : txt;
+    if (!obj) return;
+    window.apAdoptPartner(obj, { name: node.name, partnerId: node.partnerId });
+    badge('ro', '🤝 حسابى', 'آخر تحديث: ' +
+      (node.at ? new Date(node.at).toLocaleString('ar-EG') : '—'));
   }
   async function applyClient(node) {
     const txt = await gzUnpack(node.payload);
@@ -11152,25 +11531,44 @@ function apSetAttUrl(key,url){
     try {
       const m = window.apAccessMaps();
       await rtdb.ref('staffmail').set(m.staff);
-      const keys = Object.keys(m.clients);
-      for (const k of keys) {
+      for (const k of Object.keys(m.clients)) {
         const c = m.clients[k];
         const json = JSON.stringify(c.slice);
         const h = window.apHash(json);
-        if (sentHash[k] === h) continue;
+        if (sentHash['c:' + k] === h) continue;
         await rtdb.ref('clients/' + k).set({
           name: c.name || '', unitId: c.unitId || '',
           at: new Date().toISOString(),
           payload: await gzPack(json)
         });
-        sentHash[k] = h;
+        sentHash['c:' + k] = h;
       }
-      /* إزالة مساحات عملاء لم يعودوا موجودين */
+      /* v61.20: مساحات الشركاء — أرقام محسوبة جاهزة، بلا أى بيانات أخرى */
+      for (const k of Object.keys(m.partners)) {
+        const c = m.partners[k];
+        const json = JSON.stringify(c.slice);
+        const h = window.apHash(json);
+        if (sentHash['p:' + k] === h) continue;
+        await rtdb.ref('partners/' + k).set({
+          name: c.name || '', partnerId: c.partnerId || '',
+          at: new Date().toISOString(),
+          payload: await gzPack(json)
+        });
+        sentHash['p:' + k] = h;
+      }
+      /* إزالة مساحات من لم يعودوا موجودين */
       try {
         const snap = await rtdb.ref('clients').get();
         const cur = snap.val() || {};
         for (const k of Object.keys(cur)) if (!m.clients[k]) {
-          await rtdb.ref('clients/' + k).remove(); delete sentHash[k];
+          await rtdb.ref('clients/' + k).remove(); delete sentHash['c:' + k];
+        }
+      } catch (e) {}
+      try {
+        const snap2 = await rtdb.ref('partners').get();
+        const cur2 = snap2.val() || {};
+        for (const k of Object.keys(cur2)) if (!m.partners[k]) {
+          await rtdb.ref('partners/' + k).remove(); delete sentHash['p:' + k];
         }
       } catch (e) {}
     } catch (e) { console.warn('syncAccess', e); }
@@ -11360,6 +11758,78 @@ function apSetAttUrl(key,url){
   /* موروث: أُبقى الاسم القديم عاملًا حتى لا ينكسر أى نداء سابق */
   window.apCloudUpload = async function (key, blob) {
     throw new Error('تم الاستغناء عن Storage — المرفقات تُخزَّن فى قاعدة البيانات');
+  };
+
+  /* ===================================================================
+     v61.20 — الإشعارات التى تصل والتطبيق مقفول (FCM)
+     العميل/الشريك يسجّل جهازه فيُحفظ «رمز الجهاز» داخل مساحته هو.
+     الإرسال يتم من Apps Script (هو وحده الذى يحمل مفتاح الخدمة) —
+     لأن إرسال FCM من المتصفح يتطلب سرًا لا يجوز وضعه فى صفحة.
+     =================================================================== */
+  let messaging = null;
+
+  async function loadMessaging() {
+    if (messaging) return messaging;
+    const c = cfgGet();
+    if (!c || !c.vapidKey) throw new Error('مفتاح الإشعارات غير مضبوط فى الإعدادات');
+    if (!('Notification' in window) || !('serviceWorker' in navigator))
+      throw new Error('المتصفح لا يدعم الإشعارات');
+    await loadSDK();
+    if (!firebase.messaging) await loadScript(SDK + 'firebase-messaging-compat.js');
+    if (!app) app = firebase.apps.length ? firebase.app() : firebase.initializeApp(c);
+    messaging = firebase.messaging();
+    return messaging;
+  }
+
+  /* يطلب الإذن ويعيد رمز الجهاز */
+  window.apPushRegister = async function () {
+    const c = cfgGet();
+    if (!c.vapidKey) throw new Error('مفتاح الإشعارات (VAPID) غير مضبوط');
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('لم تسمح بالإشعارات');
+    const m = await loadMessaging();
+    const reg = await navigator.serviceWorker.ready;
+    const tok = await m.getToken({ vapidKey: c.vapidKey, serviceWorkerRegistration: reg });
+    if (!tok) throw new Error('تعذر الحصول على رمز الجهاز');
+    /* رسالة واصلة والتطبيق مفتوح */
+    try {
+      m.onMessage(payload => {
+        const n = (payload && (payload.notification || payload.data)) || {};
+        if (window.toast) toast('🔔 ' + (n.title || '') + (n.body ? (' — ' + n.body) : ''), 'ok');
+        try { if (window.apClientMode && window.apClientMode()) {
+          const s = window.apGetDB().sales[0]; if (s) window.apBellRender(s);
+        } } catch (e) {}
+      });
+    } catch (e) {}
+    return tok;
+  };
+
+  /* يحفظ رمز الجهاز داخل مساحة صاحبه فقط */
+  window.apPushSaveToken = async function (tok) {
+    if (!rtdb || !cloudUser || !cloudUser.email) throw new Error('غير متصل');
+    const k = mailKey(cloudUser.email);
+    const space = (window.apPartnerMode && window.apPartnerMode()) ? 'partners' : 'clients';
+    await rtdb.ref(space + '/' + k + '/tok/' + tok.slice(-24)).set({
+      t: tok, at: new Date().toISOString(),
+      ua: (navigator.userAgent || '').slice(0, 90)
+    });
+    return true;
+  };
+
+  /* قراءة رموز أجهزة عميل/شريك — للمدير وقت الإرسال */
+  window.apPushTokensOf = async function (space, mail) {
+    if (!rtdb || !isCloudAdmin()) return [];
+    try {
+      const snap = await rtdb.ref(space + '/' + mailKey(mail) + '/tok').get();
+      const v = snap.val() || {};
+      return Object.keys(v).map(k => v[k] && v[k].t).filter(Boolean);
+    } catch (e) { return []; }
+  };
+  /* حذف رمز رفضته FCM (جهاز اتمسح عليه التطبيق مثلًا) */
+  window.apPushDropToken = async function (space, mail, tok) {
+    if (!rtdb || !isCloudAdmin()) return;
+    try { await rtdb.ref(space + '/' + mailKey(mail) + '/tok/' + String(tok).slice(-24)).remove(); }
+    catch (e) {}
   };
 
   /* ---------------- واجهة الإعدادات ---------------- */
