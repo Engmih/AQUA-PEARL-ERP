@@ -44,84 +44,8 @@ a{color:var(--aqua)}
 
 /* ===== Nav ===== */
 nav.tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:var(--hdrH,0px);z-index:30;box-shadow:0 2px 6px rgba(18,43,69,.06)}
-/* v61.08: تخطيط الموبايل — الشريط العلوى سطر واحد مضغوط، والبوابات شريط
-   أفقى يُسحب بالإصبع بدل أن تتكدّس وتأكل نصف الشاشة. */
-@media(max-width:760px){
-  .app-header{padding:5px 9px;gap:7px;flex-wrap:nowrap;align-items:center}
-  .app-header img.logo{height:30px;width:30px;flex:0 0 auto;padding:2px;border-radius:7px}
-  .app-header img.logo:last-of-type{display:none}   /* شعار واحد يكفى */
-  .app-header .titles{flex:1 1 auto;min-width:0}
-  /* العنوان يظهر كاملًا بلا قصّ */
-  .app-header h1{font-size:13.5px;white-space:nowrap;overflow:visible;text-overflow:clip;letter-spacing:0}
-  .app-header h1 span{display:inline;font-size:9.5px;opacity:.75}
-  .app-header .sub{display:none}
-  .app-header .clock{display:none}
-  #cloudBadge{margin-inline-end:5px!important;padding:3px 7px!important;font-size:11.5px!important}
-  .app-header .userbox{padding:3px 8px;font-size:11.5px;gap:6px;flex:0 0 auto}
-  .app-header .userbox button{padding:2px 8px;font-size:11px}
-  #btnBackup,#btnPortable{display:none!important}
-  nav.tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:none;
-    padding:6px 8px;gap:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  nav.tabs::-webkit-scrollbar{display:none}
-  nav.tabs button{white-space:nowrap;flex:0 0 auto;padding:6px 12px;font-size:12.5px}
-  .screen-title{font-size:17px}
-  .card{padding:11px 10px;margin-bottom:11px}
-  .toolbar{gap:6px}
-  .toolbar .btn{font-size:12.5px;padding:7px 11px}
+/* قواعد الموبايل نُقلت إلى ورقة أنماط منفصلة #apMobCss */
 
-  /* ===== v61.15: الهيكل الخارجى للطباعة (table.page-table) كان يفرض عرضًا
-     ثابتًا ~768px فيُقصّ نصف المحتوى على الموبايل. نحوّله لكتل عادية. ===== */
-  table.page-table,table.page-table>tbody,table.page-table>tbody>tr,
-  table.page-table>tbody>tr>td.page-cell{
-    display:block!important;width:100%!important;max-width:100%!important;padding:0}
-  main{padding:10px 8px;max-width:100%}
-  .screen{max-width:100%;overflow-x:hidden}
-
-  html,body{overflow-x:hidden;max-width:100%}
-  .screen,.card,.toolbar,.tbl-wrap{max-width:100%}
-  /* ===== v61.14: الجداول تتحوّل إلى كروت على الموبايل =====
-     كل صف يصير بطاقة بسطور «العنوان: القيمة»، فلا شىء يُقصّ ولا تمدّد
-     أفقى. يُطبَّق على كل الجداول فى كل البوابات دفعة واحدة. */
-  .tbl-wrap{max-height:none;overflow:visible;border:0;background:transparent;border-radius:0}
-  table.tbl{min-width:0;width:100%;display:block;font-size:13px;border-collapse:separate}
-  table.tbl thead{display:none}
-  table.tbl tbody,table.tbl tfoot{display:block}
-  table.tbl tr{display:block;background:#fff;border:1px solid var(--line);
-    border-radius:11px;margin:0 0 9px;padding:7px 10px;box-shadow:0 1px 3px rgba(18,43,69,.05)}
-  table.tbl tr:nth-child(even) td{background:transparent}
-  table.tbl tr:hover td{background:transparent}
-  table.tbl td{display:flex;justify-content:space-between;align-items:center;gap:12px;
-    border:0;border-bottom:1px dashed #eef3f7;padding:5px 0;white-space:normal;text-align:start}
-  table.tbl tr td:last-child{border-bottom:0}
-  table.tbl td::before{content:attr(data-label);color:var(--muted);font-size:11.5px;
-    font-weight:700;flex:0 0 42%;text-align:start}
-  table.tbl td[data-label=""]::before,table.tbl td:not([data-label])::before{content:none}
-  table.tbl td[colspan]{display:block;text-align:center}
-  table.tbl td[colspan]::before{content:none}
-  table.tbl tfoot td{font-weight:800;background:#f3f8fb}
-  /* صف الأزرار: الأزرار جنب بعض بعرض مريح */
-  table.tbl td.no-print{flex-wrap:wrap;justify-content:flex-start;gap:6px}
-  table.tbl td.no-print::before{flex:0 0 100%;margin-bottom:3px}
-
-  /* الأعمدة تحت بعضها بدل جنب بعض */
-  .grid.g2,.grid.g3,.grid.g4,.grid{grid-template-columns:1fr!important}
-
-  /* شريط البحث: كل عنصر سطر كامل */
-  .searchbar{flex-direction:column;align-items:stretch;gap:7px}
-  .searchbar select,.searchbar input,.searchbar button{min-width:0;width:100%}
-
-  /* النوافذ المنبثقة تملأ العرض ولا تخرج منه */
-  .modal-back{padding:10px 8px;align-items:flex-start}
-  .modal{width:100%;max-width:100%;padding:13px 12px;border-radius:14px;
-    max-height:88vh;overflow-y:auto}
-  .modal .actions{gap:7px}
-  .modal .actions .btn{flex:1 1 auto;justify-content:center}
-
-  /* الحاسبة */
-  .calcBox{width:100%}
-  .calcRow{flex-direction:column;align-items:stretch;gap:4px}
-  .calcRow label{flex:none}
-}
 nav.tabs button{border:1px solid var(--line);background:#fff;color:var(--navy2);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:13.5px;transition:.15s}
 nav.tabs button:hover{background:var(--aqua-soft)}
 nav.tabs button.active{background:var(--navy2);color:#fff;border-color:var(--navy2)}
@@ -561,6 +485,115 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
 @media (prefers-color-scheme:dark){
   html,body{background:#f4f8fb;color:var(--navy)}
 }
+
+
+/* ===== v61.16: كروت بيانات الوحدة — صف واحد وأضيق =====
+   سبعة كروت فى سطر واحد على الكمبيوتر بدل سطرين نصفهم فاضى. */
+.grid.gUnit{grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.grid.tight .form-row{gap:2px}
+.grid.tight .form-row label{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid.tight .form-row .fldbox,.grid.tight .form-row>div{padding:6px 8px!important}
+.grid.tight select{padding:5px 7px;font-size:12.5px}
+@media(max-width:1250px){ .grid.gUnit{grid-template-columns:repeat(4,minmax(0,1fr))} }
+@media(max-width:900px){  .grid.gUnit{grid-template-columns:repeat(3,minmax(0,1fr))} }
+
+/* ===== v61.16: أعمدة جدول العملاء — الحالة تتسع فلا يُقصّ الرقم ===== */
+#custTbl{table-layout:fixed}
+#custTbl th:nth-child(1),#custTbl td:nth-child(1){width:14%}
+#custTbl th:nth-child(2),#custTbl td:nth-child(2){width:11%}
+#custTbl th:nth-child(3),#custTbl td:nth-child(3){width:7.5%}
+#custTbl th:nth-child(4),#custTbl td:nth-child(4){width:5.5%}
+#custTbl th:nth-child(5),#custTbl td:nth-child(5){width:4.5%}
+#custTbl th:nth-child(6),#custTbl td:nth-child(6){width:6%}
+#custTbl th:nth-child(7),#custTbl td:nth-child(7){width:9.5%}
+#custTbl th:nth-child(8),#custTbl td:nth-child(8){width:9%}
+#custTbl th:nth-child(9),#custTbl td:nth-child(9){width:9%}
+#custTbl th:nth-child(10),#custTbl td:nth-child(10){width:13%;white-space:nowrap}
+#custTbl th:nth-child(11),#custTbl td:nth-child(11){width:11%;white-space:nowrap}
+#custTbl td:nth-child(11)>*{vertical-align:middle}
+#custTbl .rowBtns{display:flex;gap:5px;justify-content:flex-end;align-items:center;flex-wrap:nowrap}
+</style>
+<style id="apMobCss">
+/* ===== v61.16: كل قواعد الموبايل هنا فى ورقة مستقلة =====
+   تُعطَّل لحظة بناء ملف الـPDF ليخرج بتنسيق الكمبيوتر دائمًا. */
+/* v61.08: تخطيط الموبايل — الشريط العلوى سطر واحد مضغوط، والبوابات شريط
+   أفقى يُسحب بالإصبع بدل أن تتكدّس وتأكل نصف الشاشة. */
+@media(max-width:760px){
+  .app-header{padding:5px 9px;gap:7px;flex-wrap:nowrap;align-items:center}
+  .app-header img.logo{height:30px;width:30px;flex:0 0 auto;padding:2px;border-radius:7px}
+  .app-header img.logo:last-of-type{display:none}   /* شعار واحد يكفى */
+  .app-header .titles{flex:1 1 auto;min-width:0}
+  /* العنوان يظهر كاملًا بلا قصّ */
+  .app-header h1{font-size:13.5px;white-space:nowrap;overflow:visible;text-overflow:clip;letter-spacing:0}
+  .app-header h1 span{display:inline;font-size:9.5px;opacity:.75}
+  .app-header .sub{display:none}
+  .app-header .clock{display:none}
+  #cloudBadge{margin-inline-end:5px!important;padding:3px 7px!important;font-size:11.5px!important}
+  .app-header .userbox{padding:3px 8px;font-size:11.5px;gap:6px;flex:0 0 auto}
+  .app-header .userbox button{padding:2px 8px;font-size:11px}
+  #btnBackup,#btnPortable{display:none!important}
+  nav.tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:none;
+    padding:6px 8px;gap:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{white-space:nowrap;flex:0 0 auto;padding:6px 12px;font-size:12.5px}
+  .screen-title{font-size:17px}
+  .card{padding:11px 10px;margin-bottom:11px}
+  .toolbar{gap:6px}
+  .toolbar .btn{font-size:12.5px;padding:7px 11px}
+
+  /* ===== v61.15: الهيكل الخارجى للطباعة (table.page-table) كان يفرض عرضًا
+     ثابتًا ~768px فيُقصّ نصف المحتوى على الموبايل. نحوّله لكتل عادية. ===== */
+  table.page-table,table.page-table>tbody,table.page-table>tbody>tr,
+  table.page-table>tbody>tr>td.page-cell{
+    display:block!important;width:100%!important;max-width:100%!important;padding:0}
+  main{padding:10px 8px;max-width:100%}
+  .screen{max-width:100%;overflow-x:hidden}
+
+  html,body{overflow-x:hidden;max-width:100%}
+  .screen,.card,.toolbar,.tbl-wrap{max-width:100%}
+  /* ===== v61.14: الجداول تتحوّل إلى كروت على الموبايل =====
+     كل صف يصير بطاقة بسطور «العنوان: القيمة»، فلا شىء يُقصّ ولا تمدّد
+     أفقى. يُطبَّق على كل الجداول فى كل البوابات دفعة واحدة. */
+  .tbl-wrap{max-height:none;overflow:visible;border:0;background:transparent;border-radius:0}
+  table.tbl{min-width:0;width:100%;display:block;font-size:13px;border-collapse:separate}
+  table.tbl thead{display:none}
+  table.tbl tbody,table.tbl tfoot{display:block}
+  table.tbl tr{display:block;background:#fff;border:1px solid var(--line);
+    border-radius:11px;margin:0 0 9px;padding:7px 10px;box-shadow:0 1px 3px rgba(18,43,69,.05)}
+  table.tbl tr:nth-child(even) td{background:transparent}
+  table.tbl tr:hover td{background:transparent}
+  table.tbl td{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    border:0;border-bottom:1px dashed #eef3f7;padding:5px 0;white-space:normal;text-align:start}
+  table.tbl tr td:last-child{border-bottom:0}
+  table.tbl td::before{content:attr(data-label);color:var(--muted);font-size:11.5px;
+    font-weight:700;flex:0 0 42%;text-align:start}
+  table.tbl td[data-label=""]::before,table.tbl td:not([data-label])::before{content:none}
+  table.tbl td[colspan]{display:block;text-align:center}
+  table.tbl td[colspan]::before{content:none}
+  table.tbl tfoot td{font-weight:800;background:#f3f8fb}
+  /* صف الأزرار: الأزرار جنب بعض بعرض مريح */
+  table.tbl td.no-print{flex-wrap:wrap;justify-content:flex-start;gap:6px}
+  table.tbl td.no-print::before{flex:0 0 100%;margin-bottom:3px}
+
+  /* الأعمدة تحت بعضها بدل جنب بعض */
+  .grid.g2,.grid.g3,.grid.g4,.grid{grid-template-columns:1fr!important}
+
+  /* شريط البحث: كل عنصر سطر كامل */
+  .searchbar{flex-direction:column;align-items:stretch;gap:7px}
+  .searchbar select,.searchbar input,.searchbar button{min-width:0;width:100%}
+
+  /* النوافذ المنبثقة تملأ العرض ولا تخرج منه */
+  .modal-back{padding:10px 8px;align-items:flex-start}
+  .modal{width:100%;max-width:100%;padding:13px 12px;border-radius:14px;
+    max-height:88vh;overflow-y:auto}
+  .modal .actions{gap:7px}
+  .modal .actions .btn{flex:1 1 auto;justify-content:center}
+
+  /* الحاسبة */
+  .calcBox{width:100%}
+  .calcRow{flex-direction:column;align-items:stretch;gap:4px}
+  .calcRow label{flex:none}
+}
 /* ===================================================================
    v61.15 — تجاوزات الموبايل النهائية (آخر الملف لتغلب ما قبلها)
    =================================================================== */
@@ -591,6 +624,21 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
   .uvFinBar select{min-width:0!important;width:100%!important}
   canvas{max-width:100%!important}
 
+  /* ===== v61.16: الكارت المختصر — ٣ سطور + الأزرار، والباقى بالضغط ===== */
+  table.tbl tbody tr{position:relative;cursor:pointer}
+  table.tbl tbody tr[data-exp="0"] td[data-keep="more"],
+  #custTbl tbody tr[data-exp="0"] td[data-keep="more"],
+  table.tbl tbody tr[data-exp="0"] td[data-keep="more"][data-label]{display:none!important}
+  table.tbl tbody tr[data-exp="1"] td[data-keep="more"],
+  #custTbl tbody tr[data-exp="1"] td[data-keep="more"]{display:flex!important}
+  table.tbl tbody tr[data-keep],table.tbl tfoot tr td{cursor:default}
+  /* مؤشر صغير يوضّح إمكانية الفتح */
+  table.tbl tbody tr::after{content:'⌄';position:absolute;inset-inline-start:9px;bottom:5px;
+    font-size:14px;color:var(--muted);opacity:.65;transition:transform .15s}
+  table.tbl tbody tr[data-exp="1"]::after{transform:rotate(180deg)}
+  table.tbl tbody tr td[data-keep="sum"]:first-of-type{font-weight:800}
+  table.tbl td[data-keep="act"]{padding-top:7px;margin-top:3px;border-top:1px dashed #e7eef4}
+
   /* السطور الفارغة لا تُعرض */
   table.tbl td[data-blank="1"],#custTbl td[data-blank="1"],
   table.tbl tr td[data-blank="1"]{display:none!important}
@@ -603,6 +651,7 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
   table.tbl td::before{flex:0 0 38%;font-size:11px}
 }
 </style>
+
 <style id="pgDyn"></style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#122B45">
@@ -678,10 +727,10 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     <button class="btn green" style="width:100%;justify-content:center" onclick="doLogin()">🔓 دخول</button>
     <!-- v61.07: دخول مباشر بالبريد — لا يعتمد على أى بيانات محفوظة على الجهاز،
          فيعمل على أى جهاز جديد أو عليه نسخة قديمة من البيانات. -->
-    <div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px">
+    <div id="emLoginWrap" style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;display:none">
       <a href="javascript:void(0)" id="emLoginToggle" class="gray-note"
          style="display:block;text-align:center;cursor:pointer;font-weight:700">
-         ☁️ الدخول بالبريد وكلمة سر السحابة</a>
+         👤 دخول العملاء — بالبريد وكلمة السر</a>
       <div id="emLoginBox" style="display:none;margin-top:9px">
         <div class="form-row"><label>📧 البريد</label>
           <input type="email" id="loginEmail" style="direction:ltr" placeholder="name@example.com"></div>
@@ -3567,10 +3616,24 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.15';
-const APP_BUILD= '2026-10-21';
+const APP_VER  = 'v61.17';
+const APP_BUILD= '2026-10-22';
 window.APP_VER = APP_VER;
 const LS_KEY='aquaPearlERP_v1';
+/* ===== v61.16: بوابة العميل =====
+   العميل يدخل ببريده فيرى ملفه فقط. بياناته تُرسَل إلى مساحة منفصلة على
+   السحابة (/clients) ولا يصل أبدًا إلى /erp. ولأن متصفّحه قد يكون نفس
+   متصفّح الموظّف، لا تُكتب نسخة العميل فوق بيانات النظام أبدًا — لها
+   مفتاح مستقل. */
+const LS_KEY_CLIENT='aquaPearlERP_client';
+let AP_CLIENT=false;                 /* هل الجلسة الحالية لعميل؟ */
+function apClientMode(){ return !!AP_CLIENT; }
+window.apClientMode=apClientMode;
+/* مفتاح آمن للبريد داخل Firebase (نفس التحويل مكتوب فى قواعد الأمان) */
+function apMailKey(em){
+  return String(em||'').trim().toLowerCase().split('.').join(',').split('@').join('_at_');
+}
+window.apMailKey=apMailKey;
 const $=(s,el)=>(el||document).querySelector(s);
 const $$=(s,el)=>Array.from((el||document).querySelectorAll(s));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3688,7 +3751,7 @@ window.apAdoptDB=function(obj){
       if(u){ CURRENT_USER=u; const n=$('#curUserName'); if(n) n.textContent=u.name; }
     }
     $('#hdrCompany').textContent=S().companyName+' — '+S().projectName;
-    if(CURRENT_USER){ buildTabs(); nav(allowed(scr)?scr:'dashboard'); }
+    if(CURRENT_USER){ buildTabs(); nav(allowed(scr)?scr:'dashboard'); syncHeaderBtns(); }
     return true;
   }catch(e){ console.error('adoptDB',e); if(window.toast) toast('تعذر تطبيق نسخة السحابة: '+e.message,'err'); return false; }
 };
@@ -3724,6 +3787,11 @@ function save(){
   DB.savedAt=new Date().toISOString();
   let str;
   try{str=JSON.stringify(DB);}catch(e){toast('تعذر تجهيز البيانات للحفظ: '+e.message,'err');return;}
+  /* v61.16: جلسة عميل — تُحفظ فى مفتاح مستقل ولا تلمس بيانات النظام إطلاقًا */
+  if(AP_CLIENT){
+    try{ localStorage.setItem(LS_KEY_CLIENT,str); }catch(e){}
+    return;
+  }
   try{localStorage.setItem(LS_KEY,str);LS_OK=true;}
   catch(e){
     console.warn('LS save failed',e);LS_OK=false;
@@ -3810,6 +3878,8 @@ function apReadOnly(){
 }
 function allowed(id){
   if(!CURRENT_USER)return false;
+  /* v61.16: العميل لا يرى إلا ملفه */
+  if(AP_CLIENT) return id==='customerFile';
   if(CURRENT_USER.admin)return true;
   if(id==='settings')return false;               // الإعدادات للمدير فقط
   if(id==='dashboard')return true;
@@ -3818,6 +3888,11 @@ function allowed(id){
 }
 function buildTabs(){
   const tabs=$('nav.tabs');
+  /* v61.16: العميل — زر واحد لملفه */
+  if(AP_CLIENT){
+    tabs.innerHTML='<button data-s="customerFile" class="active" onclick="apClientOpenFile()">📄 ملفى</button>';
+    return;
+  }
   tabs.innerHTML=SCREENS.filter(([id])=>allowed(id)).map(([id,lb])=>`<button data-s="${id}" onclick="nav('${id}')">${lb}</button>`).join('');
 }
 function showLogin(){
@@ -3830,16 +3905,23 @@ function showLogin(){
   $('#loginPass').value='';$('#loginErr').textContent='';
   $('#loginOverlay').classList.add('open');
   $('#loginPass').onkeydown=e=>{if(e.key==='Enter')doLogin();};
-  /* v61.07: فتح/غلق قسم الدخول بالبريد */
-  const tg=$('#emLoginToggle'), bx=$('#emLoginBox');
+  /* v61.16: قسم الدخول بالبريد مخفى — يظهر فقط بعد فشل الدخول العادى */
+  const tg=$('#emLoginToggle'), bx=$('#emLoginBox'), wrap=$('#emLoginWrap');
+  /* v61.16: المدخل ظاهر دائمًا — العملاء يدخلون منه ببريدهم */
+  if(wrap) wrap.style.display='block';
+  if(bx) bx.style.display='none';
   if(tg&&bx){
     tg.onclick=()=>{ const on=bx.style.display!=='none';
       bx.style.display=on?'none':'block';
-      tg.textContent=on?'☁️ الدخول بالبريد وكلمة سر السحابة':'▲ إخفاء';
-      if(!on){ const e2=$('#loginEmail'); if(e2){ if(!e2.value){
-        const a=(DB.users||[]).find(x=>x.admin); if(a&&a.email)e2.value=a.email; } e2.focus(); } } };
+      tg.textContent=on?'👤 دخول العملاء — بالبريد وكلمة السر':'▲ إخفاء';
+      if(!on){ const e2=$('#loginEmail'); if(e2) e2.focus(); } };
     const pe=$('#loginEmailPass'); if(pe) pe.onkeydown=e=>{ if(e.key==='Enter')doLoginEmail(); };
   }
+  /* v61.16: على الكمبيوتر نضع المؤشر فى كلمة السر مباشرة.
+     على الموبايل لا نفعل، حتى لا يقفز الكيبورد ويغطى الشاشة. */
+  try{
+    if(window.innerWidth>760){ const pw=$('#loginPass'); if(pw) setTimeout(()=>pw.focus(),120); }
+  }catch(e){}
 }
 async function doLogin(){
   /* v63: لو السحابة مضبوطة، سجّل الدخول عليها أولًا ببريد المستخدم */
@@ -3848,12 +3930,19 @@ async function doLogin(){
   if(cfg&&cfg.apiKey&&u0&&u0.email){
     try{
       $('#loginErr').textContent='⏳ جارٍ الاتصال بالسحابة...';
+      window.apClientProbe=null;
       await window.apCloudLogin(u0.email,$('#loginPass').value);
+      /* v61.16: لو الحساب حساب عميل — طبقة السحابة تفتح ملفه وتتولّى الباقى */
+      try{
+        for(let i=0;i<25&&!window.apClientProbe;i++) await new Promise(r=>setTimeout(r,120));
+        if(window.apClientProbe) await window.apClientProbe;
+      }catch(e){}
+      if(AP_CLIENT){ $('#loginErr').textContent=''; return; }
       $('#loginErr').textContent='';
       CURRENT_USER=u0; sessionStorage.setItem(SESSION_KEY,u0.id);
       $('#loginOverlay').classList.remove('open');
       $('#curUserName').textContent=u0.name; $('#userBox').style.display='flex';
-      buildTabs(); nav('dashboard');
+      buildTabs(); nav('dashboard'); checkBackupDue();
       return;
     }catch(e){
       /* السحابة رفضت — لو كلمة السر المحلية صحيحة نسمح بالدخول محليًا (عرض فقط
@@ -3863,16 +3952,21 @@ async function doLogin(){
         CURRENT_USER=u0; sessionStorage.setItem(SESSION_KEY,u0.id);
         $('#loginOverlay').classList.remove('open');
         $('#curUserName').textContent=u0.name; $('#userBox').style.display='flex';
-        buildTabs(); nav('dashboard');
+        buildTabs(); nav('dashboard'); checkBackupDue();
         setTimeout(()=>toast('دخلت محليًا — حساب السحابة غير مفعّل لهذا البريد، فلن تُحفظ التعديلات أونلاين','err'),700);
         return;
       }
       $('#loginErr').textContent='تعذر الدخول: '+(e&&e.code==='auth/invalid-credential'?'البريد أو كلمة السر غير صحيحة':(e.message||''));
+      apShowEmailLogin();
       return;
     }
   }
   const u=findUser($('#loginUser').value);
-  if(!u||u.pass!==pHash($('#loginPass').value)){$('#loginErr').textContent='كلمة السر غير صحيحة';return;}
+  if(!u||u.pass!==pHash($('#loginPass').value)){
+    $('#loginErr').textContent='كلمة السر غير صحيحة';
+    apShowEmailLogin();                 /* المخرج يظهر وقت الحاجة فقط */
+    return;
+  }
   CURRENT_USER=u;sessionStorage.setItem(SESSION_KEY,u.id);
   $('#loginOverlay').classList.remove('open');
   $('#curUserName').textContent=u.name;$('#userBox').style.display='flex';
@@ -3881,12 +3975,21 @@ async function doLogin(){
 }
 /* v61.07: دخول بالبريد مباشرة على السحابة ثم سحب أحدث نسخة قبل اختيار المستخدم.
    هذا هو الطريق المضمون لأى جهاز جديد أو عليه بيانات قديمة. */
+
+/* v61.16: إظهار مدخل الدخول بالبريد بعد فشل محاولة عادية */
+function apShowEmailLogin(){
+  const w=$('#emLoginWrap'); if(!w) return;
+  w.style.display='block';
+  const tg=$('#emLoginToggle');
+  if(tg) tg.textContent='☁️ جرّب الدخول بالبريد وكلمة سر السحابة';
+}
 async function doLoginEmail(){
   const err=$('#loginErr');
   const em=(($('#loginEmail')&&$('#loginEmail').value)||'').trim();
   const pw=($('#loginEmailPass')&&$('#loginEmailPass').value)||'';
   if(!em||!pw){ err.textContent='اكتب البريد وكلمة السر'; return; }
   if(typeof window.apCloudLogin!=='function'){ err.textContent='السحابة غير مهيأة على هذا الجهاز'; return; }
+  window.apClientProbe=null;
   err.textContent='⏳ جارٍ الاتصال بالسحابة...';
   try{ await window.apCloudLogin(em,pw); }
   catch(e){
@@ -3894,7 +3997,13 @@ async function doLoginEmail(){
     err.textContent='تعذر الدخول: '+(bad?'البريد أو كلمة السر غير صحيحة':(e&&e.message||''));
     return;
   }
-  err.textContent='⏳ جارٍ تحميل أحدث نسخة...';
+  err.textContent='⏳ جارٍ تحميل بياناتك...';
+  /* v61.16: لو كان عميلًا، طبقة السحابة تفتح له ملفه تلقائيًا */
+  try{
+    for(let i=0;i<25&&!window.apClientProbe;i++) await new Promise(r=>setTimeout(r,120));
+    if(window.apClientProbe) await window.apClientProbe;
+  }catch(e){}
+  if(AP_CLIENT){ err.textContent=''; return; }
   try{ if(typeof window.apCloudPull==='function') await window.apCloudPull(); }catch(e){}
   const low=em.toLowerCase();
   let u=(DB.users||[]).find(x=>String(x.email||'').toLowerCase()===low);
@@ -3906,11 +4015,15 @@ async function doLoginEmail(){
   CURRENT_USER=u; sessionStorage.setItem(SESSION_KEY,u.id);
   $('#loginOverlay').classList.remove('open');
   $('#curUserName').textContent=u.name; $('#userBox').style.display='flex';
-  buildTabs(); nav('dashboard');
+  buildTabs(); nav('dashboard'); checkBackupDue();
   toast('أهلًا '+u.name+' — تم تحميل أحدث نسخة من السحابة ✔','ok');
 }
 function logout(){
-  try{ if(typeof window.apCloudLogout==='function') window.apCloudLogout(); }catch(e){}showLogin();}
+  try{ if(typeof window.apCloudLogout==='function') window.apCloudLogout(); }catch(e){}
+  /* v61.16: الخروج من جلسة عميل يُعيد تحميل الصفحة حتى تعود بيانات النظام
+     الأصلية للجهاز كما هى — نسخة العميل كانت فى الذاكرة ومفتاح مستقل */
+  if(AP_CLIENT){ AP_CLIENT=false; try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){} location.reload(); return; }
+  showLogin();}
 let currentScreen='dashboard';
 function nav(id,arg){
   if(!allowed(id)){toast('غير مصرح لك بفتح هذه البوابة 🔒','err');return;}
@@ -3952,12 +4065,19 @@ function stats(){
   const cash=DB.sales.filter(s=>s.mode==='cash').length, inst=DB.sales.filter(s=>s.mode==='inst').length;
   return {total,avail,sold,ret,salesTotal,collected,remaining,overdue,cash,inst};
 }
+/* v61.16: أرقام لوحة التحكم صلاحية مستقلة — الواجهة تبقى للجميع */
+function canSeeStats(){
+  if(!CURRENT_USER) return false;
+  if(CURRENT_USER.admin) return true;
+  return (CURRENT_USER.perms||[]).includes('dashStats');
+}
 function renderDashboard(){
   const st=stats();
+  const SH=canSeeStats();
   $('#scr-dashboard').innerHTML=`
    <h2 class="screen-title">لوحة التحكم</h2>
-   <div class="dash-wrap">
-     <div class="dash-col">
+   <div class="dash-wrap${SH?'':' dash-nostats'}">
+     <div class="dash-col"${SH?'':' style="display:none"'}>
        <div class="stat" onclick="nav('unitView')"><span class="ic">🏢</span><div><div class="tt">إجمالي الوحدات</div><div class="nm">${fmtN(st.total)}</div></div></div>
        <div class="stat green" onclick="auOpen()" title="فتح جدول تعديل الوحدات المتاحة"><span class="ic">🟢</span><div><div class="tt">المتاحة</div><div class="nm">${fmtN(st.avail)}</div></div></div>
        <div class="stat" onclick="nav('sold')"><span class="ic">💰</span><div><div class="tt">المباعة</div><div class="nm">${fmtN(st.sold)}</div></div></div>
@@ -3968,7 +4088,7 @@ function renderDashboard(){
        <img src="${window.ASSETS.hero}" alt="Aqua Pearl City">
        <div class="hero-cap"><b>Aqua Pearl City</b> — City for elite life</div>
      </div>
-     <div class="dash-col">
+     <div class="dash-col"${SH?'':' style="display:none"'}>
        <div class="stat" onclick="nav('collected')"><span class="ic">💵</span><div><div class="tt">إجمالي المحصل</div><div class="nm">${fmtM(st.collected)}</div></div></div>
        <div class="stat gold" onclick="nav('due')"><span class="ic">⏳</span><div><div class="tt">إجمالي المتبقي</div><div class="nm">${fmtM(st.remaining)}</div></div></div>
        <div class="stat red" onclick="nav('reports')"><span class="ic">⚠️</span><div><div class="tt">عملاء متأخرون</div><div class="nm">${fmtN(st.overdue)}</div></div></div>
@@ -4265,9 +4385,10 @@ function renderSettings(){
     </div>
     <p class="gray-note">أرشيف خارجى مستقل عن Firebase: ملف JSON كامل للبيانات + المرفقات الجديدة، مرة كل يوم تلقائيًا على مساحتك فى Drive.</p></div>
   ${cloudCardHTML()}
+  ${qrCardHTML()}
   <div class="card"><h3>👥 المستخدمون والصلاحيات</h3>
     <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th class="no-print"></th></tr></thead><tbody>
-    ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':'<span class="badge av">مستخدم</span>'}</td>
+    ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':'<span class="badge av">مستخدم</span>')}</td>
       <td style="white-space:nowrap;direction:ltr">${u.email?esc(u.email):'<span class="gray-note">—</span>'}
         <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="setUserMail('${u.id}')" title="تعديل البريد">✉️</button></td>
       <!-- v61.06: مستخدم السحابة كلمة سره فى Firebase لا هنا — فلا نعرض
@@ -4282,11 +4403,23 @@ function renderSettings(){
                  <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="togglePw('${u.id}')" title="إظهار / إخفاء">👁</button>`
               : '<span class="gray-note">— غير متاحة (قديمة)</span>'}
              <button class="btn sm gold no-print" style="padding:1px 7px" onclick="setUserPass('${u.id}')" title="تغيير كلمة السر">🔑</button>`}</td>
-      <td style="white-space:normal">${u.admin?'كل البوابات':(u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—'}</td>
-      <td class="no-print">${u.admin?'':`<button class="btn sm red" onclick="deleteUser('${u.id}')">🗑️ حذف</button>`}</td></tr>`).join('')}
+      <td style="white-space:normal">${u.admin?'كل البوابات':(u.client?(function(){const un=unitById(u.unitId);return '📄 ملفه فقط'+(un?(' — وحدة '+esc(un.unitNo||'')+' '+esc(un.building||'')):'');})():((u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—'))}</td>
+      <td class="no-print">${u.admin?'':`<button class="btn sm ghost" onclick="editUser('${u.id}')" title="تعديل الصلاحيات والبيانات">✏️ تعديل</button>
+        <button class="btn sm red" onclick="deleteUser('${u.id}')">🗑️ حذف</button>`}</td></tr>`).join('')}
     </tbody></table>
     <p class="gray-note">كلمات السر القديمة مُشفّرة ولا يمكن استرجاعها — غيّرها مرة واحدة من 🔑 لتظهر هنا. تظهر لحساب المدير فقط وتُحفظ ضمن النسخة الاحتياطية.</p></div>
     <h3 style="margin-top:6px">➕ إضافة مستخدم جديد</h3>
+    <!-- v61.16: حساب عميل — يرى ملفه فقط -->
+    <div style="background:#f6fafc;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700">
+        <input type="checkbox" id="nuClient" style="width:auto" onchange="nuClientToggle()"> 👤 هذا المستخدم <b>عميل</b> — يرى ملفه فقط
+      </label>
+      <div id="nuUnitWrap" style="display:none;margin-top:8px">
+        <div class="form-row"><label>🏢 وحدة العميل</label>
+          <select id="nuUnit"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML('')}</select></div>
+        <span class="gray-note">يُنشأ حسابه على السحابة تلقائيًا وتُرفع له نسخة ملفه فى مساحة منفصلة — لا يرى أى بيانات أخرى ولا يقدر يعدّل.</span>
+      </div>
+    </div>
     <div class="grid g3" style="margin-bottom:8px">
       <div class="form-row"><label>👤 اسم المستخدم</label><input id="nuName"></div>
       <div class="form-row"><label>🔑 كلمة السر</label><input id="nuPass" type="password"></div>
@@ -4294,10 +4427,12 @@ function renderSettings(){
         <span class="gray-note">لو كتبت بريدًا، يُنشأ حساب السحابة تلقائيًا بنفس كلمة السر (٦ أحرف على الأقل).</span></div>
       <div class="form-row"><label>&nbsp;</label><button class="btn green" onclick="addUser()">➕ إضافة المستخدم</button></div>
     </div>
+    <div id="nuPermsWrap">
     <label class="gray-note" style="display:block;margin-bottom:6px">البوابات المسموحة للمستخدم الجديد (الرئيسية متاحة دائمًا — الإعدادات للمدير فقط):</label>
     <div class="perm-list" id="nuPerms">
+      <label><input type="checkbox" value="dashStats"> 📊 أرقام لوحة التحكم</label>
       ${SCREENS.filter(([id])=>id!=='dashboard'&&id!=='settings').map(([id,lb])=>`<label><input type="checkbox" value="${id}"> ${lb}</label>`).join('')}
-    </div>
+    </div></div>
     <h3 style="margin-top:14px">🔑 تغيير كلمة سر المدير</h3>
     <div class="grid g3">
       <div class="form-row"><label>كلمة السر الحالية ${(typeof window.apCloudOn==='function'&&window.apCloudOn())?'<span class="gray-note">(مطلوبة)</span>':'<span class="gray-note">(غير مطلوبة محليًا)</span>'}</label><input id="adPassCur" type="password"></div>
@@ -4326,6 +4461,104 @@ function renderSettings(){
     r.onload=()=>{S().logoAqua=r.result;save();toast('تم حفظ الشعار','ok');};r.readAsDataURL(f);
   });
 }
+/* ===================================================================
+   v61.17 — رمز QR لتنزيل التطبيق
+   يُولَّد داخل النظام بلا إنترنت ولا خدمة خارجية. يمسحه أى شخص
+   بكاميرا الموبايل فيفتح رابط النظام ومنه «إضافة إلى الشاشة الرئيسية».
+   =================================================================== */
+function apAppUrl(){
+  const s=S();
+  if(s.appUrl) return s.appUrl;
+  try{
+    if(location.protocol==='http:'||location.protocol==='https:')
+      return location.origin+location.pathname.replace(/\/index\.html$/,'/');
+  }catch(e){}
+  return 'https://aqua-pearl-erp.pages.dev/';
+}
+function qrCardHTML(){
+  const url=apAppUrl();
+  let svg='';
+  try{ svg=window.APQR?APQR.svg(url,230):''; }
+  catch(e){ svg='<div class="gray-note">تعذر توليد الرمز: '+esc(e.message)+'</div>'; }
+  return `<div class="card"><h3>📲 رمز QR لتنزيل التطبيق</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+      <div id="qrBox" style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;
+           box-shadow:0 2px 10px rgba(13,59,92,.07);line-height:0">${svg}</div>
+      <div style="flex:1;min-width:240px">
+        <div class="form-row"><label>🔗 رابط التطبيق</label>
+          <input id="stAppUrl" style="direction:ltr" value="${esc(url)}" placeholder="https://aqua-pearl-erp.pages.dev/"></div>
+        <div class="toolbar" style="margin-top:8px">
+          <button class="btn aqua" onclick="qrRefresh()">🔄 تحديث الرمز</button>
+          <button class="btn green" onclick="qrDownload()">⬇️ تنزيل PNG</button>
+          <button class="btn ghost" onclick="qrCopyLink()">📋 نسخ الرابط</button>
+          <button class="btn ghost" onclick="qrShareWA()">📲 إرسال واتساب</button>
+          <button class="btn ghost" onclick="qrPrint()">🖨️ طباعة</button>
+        </div>
+        <p class="gray-note" style="margin-top:8px">
+          امسح الرمز بكاميرا الموبايل ← يفتح النظام ← من قائمة المتصفح اختر
+          «إضافة إلى الشاشة الرئيسية / تثبيت التطبيق».
+          الرمز يُحفظ مع الإعدادات، فعلّقه فى المكتب أو ضعه على الكارت.</p>
+      </div>
+    </div></div>`;
+}
+function qrRefresh(){
+  const v=(($('#stAppUrl')&&$('#stAppUrl').value)||'').trim();
+  if(!v){toast('اكتب رابط التطبيق','err');return;}
+  if(!/^https?:\/\//i.test(v)){toast('الرابط لازم يبدأ بـ https://','err');return;}
+  S().appUrl=v; save();
+  const box=$('#qrBox');
+  try{ if(box) box.innerHTML=APQR.svg(v,230); toast('تم تحديث الرمز ✔','ok'); }
+  catch(e){ toast('تعذر توليد الرمز: '+e.message,'err'); }
+}
+function qrCanvas(px){
+  return new Promise((res,rej)=>{
+    const svg=APQR.svg(apAppUrl(),px||760);
+    const img=new Image();
+    img.onload=()=>{ const c=document.createElement('canvas'); c.width=c.height=px||760;
+      const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height);
+      x.drawImage(img,0,0,c.width,c.height); res(c); };
+    img.onerror=()=>rej(new Error('تعذر رسم الرمز'));
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  });
+}
+async function qrDownload(){
+  try{
+    const c=await qrCanvas(820);
+    c.toBlob(b=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(b); a.download='Aqua Pearl ERP - QR.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+      toast('تم تنزيل الرمز ✔','ok');
+    },'image/png');
+  }catch(e){ toast('تعذر التنزيل: '+e.message,'err'); }
+}
+function qrCopyLink(){
+  const v=apAppUrl();
+  try{ navigator.clipboard.writeText(v); toast('تم نسخ الرابط ✔','ok'); }
+  catch(e){ toast('انسخه يدويًا: '+v,'err'); }
+}
+function qrShareWA(){
+  const t='رابط نظام '+S().projectName+':\n'+apAppUrl()+
+    '\nافتح الرابط ثم اختر من قائمة المتصفح «إضافة إلى الشاشة الرئيسية».';
+  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+}
+function qrPrint(){
+  const url=apAppUrl();
+  let svg=''; try{ svg=APQR.svg(url,420); }catch(e){ toast('تعذر توليد الرمز','err'); return; }
+  const w=window.open('','_blank','width=680,height=820');
+  if(!w){toast('اسمح بالنوافذ المنبثقة للطباعة','err');return;}
+  w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8">'+
+    '<title>Aqua Pearl ERP — QR</title><style>body{font-family:Tahoma,Arial,sans-serif;text-align:center;'+
+    'padding:40px;color:#0d3b5c}h1{margin:0 0 4px;font-size:26px}h2{margin:0 0 26px;font-size:16px;font-weight:400;color:#44607a}'+
+    'p{direction:ltr;font-size:13px;color:#44607a;margin-top:18px;word-break:break-all}'+
+    '.n{margin-top:10px;font-size:13px;color:#44607a}</style></head><body>'+
+    '<h1>'+esc(S().companyName)+'</h1><h2>'+esc(S().projectName)+'</h2>'+svg+
+    '<p>'+esc(url)+'</p><div class="n">امسح الرمز بكاميرا الموبايل لفتح النظام وتثبيته</div>'+
+    '</body></html>');
+  w.document.close(); setTimeout(()=>{ try{ w.print(); }catch(e){} },400);
+}
+
 /* v61.06: ملخص حالة النسخ — ثلاثة سطور تقول أين بياناتك فعلًا */
 function backupStateHTML(){
   const live=(typeof window.apCloudOn==='function')&&window.apCloudOn();
@@ -4359,15 +4592,34 @@ function saveSettings(){
   s.depositClubToPartners=$('#stDepClub').value==='1';
   s.ffPdfPath=$('#stFF').value.trim();s.sfPdfPath=$('#stSF').value.trim();
   s.gsUrl=$('#stGs').value.trim();s.gsEnabled=$('#stGsEn').checked;
+  /* v61.17: رابط التطبيق المستعمل فى رمز QR */
+  const au=(($('#stAppUrl')&&$('#stAppUrl').value)||'').trim();
+  if(au&&/^https?:\/\//i.test(au)) s.appUrl=au;
   const seq=Math.max(0,Math.floor(Number($('#stSeq').value)||0));DB.seq.counter=seq;
   save();toast('تم حفظ الإعدادات','ok');
+}
+/* v61.16: إظهار/إخفاء اختيار الوحدة عند تعليم «عميل» */
+function nuClientToggle(){
+  const on=$('#nuClient')&&$('#nuClient').checked;
+  const w=$('#nuUnitWrap'); if(w) w.style.display=on?'block':'none';
+  const p=$('#nuPermsWrap'); if(p) p.style.display=on?'none':'block';
 }
 async function addUser(){
   const name=$('#nuName').value.trim(), pass=$('#nuPass').value;
   if(!name||!pass){toast('أدخل اسم المستخدم وكلمة السر','err');return;}
   if((DB.users||[]).some(u=>u.name.toLowerCase()===name.toLowerCase())){toast('اسم المستخدم موجود بالفعل','err');return;}
-  const perms=$$('#nuPerms input:checked').map(c=>c.value);
+  let perms=$$('#nuPerms input:checked').map(c=>c.value);
   const mail=(($('#nuMail')&&$('#nuMail').value)||'').trim();
+  /* v61.16: حساب عميل */
+  const isClient=!!($('#nuClient')&&$('#nuClient').checked);
+  let cUnit='';
+  if(isClient){
+    cUnit=(($('#nuUnit')&&$('#nuUnit').value)||'').trim();
+    if(!cUnit){toast('اختر وحدة العميل','err');return;}
+    if(!mail){toast('حساب العميل لازم بريد — العميل بيدخل ببريده','err');return;}
+    if((DB.users||[]).some(u=>u.client&&u.unitId===cUnit)){toast('الوحدة دى لها حساب عميل بالفعل','err');return;}
+    perms=['customerFile'];
+  }
   /* v64: لو فيه بريد والمدير متصل بالسحابة — يُنشأ حساب Firebase تلقائيًا */
   const canCloud=mail&&(typeof window.apIsCloudAdmin==='function')&&window.apIsCloudAdmin();
   if(canCloud){
@@ -4383,8 +4635,17 @@ async function addUser(){
       }
     }
   }
-  DB.users.push({id:uid(),name,pass:pHash(pass),pPlain:pass,email:mail,admin:false,perms});
-  save();toast('تمت إضافة المستخدم '+name,'ok');renderSettings();
+  const rec={id:uid(),name,pass:pHash(pass),pPlain:pass,email:mail,admin:false,perms};
+  if(isClient){ rec.client=true; rec.unitId=cUnit; }
+  DB.users.push(rec);
+  save();
+  toast(isClient?('تم إنشاء حساب العميل '+name+' — يدخل ببريده ويرى ملفه فقط ✔'):('تمت إضافة المستخدم '+name),'ok');
+  apPushAccess();
+  renderSettings();
+}
+/* v61.16: ارفع خرائط الصلاحيات ومساحات العملاء فورًا بعد أى تغيير */
+function apPushAccess(){
+  try{ if(typeof window.apCloudSyncAccess==='function') window.apCloudSyncAccess(); }catch(e){}
 }
 /* v64: إرسال رابط تغيير كلمة السر السحابية لمستخدم */
 async function cloudResetUser(id){
@@ -4425,10 +4686,81 @@ function setUserPass(id){
     toast('اتغيّرت محليًا فقط — لكلمة السر السحابية استخدم 📨','err');
   else toast('تم تغيير كلمة سر '+u.name+' ✔','ok');
 }
+
+/* ===== v61.16: تعديل مستخدم قائم — الاسم والبريد والصلاحيات ===== */
+function editUser(id){
+  const u=findUser(id); if(!u) return;
+  if(!isAdmin()){toast('للمدير فقط 🔒','err');return;}
+  const perms=u.perms||[];
+  const opts=[['dashStats','📊 أرقام لوحة التحكم']]
+    .concat(SCREENS.filter(([k])=>k!=='dashboard'&&k!=='settings'))
+    .map(([k,lb])=>`<label><input type="checkbox" value="${k}" ${perms.includes(k)?'checked':''}> ${lb}</label>`).join('');
+  const html=`<div class="grid g2" style="margin-bottom:10px">
+      <div class="form-row"><label>👤 اسم المستخدم</label><input id="euName" value="${esc(u.name)}"></div>
+      <div class="form-row"><label>📧 البريد (الدخول السحابى)</label><input id="euMail" type="email" style="direction:ltr" value="${esc(u.email||'')}"></div>
+    </div>
+    <div style="background:#f6fafc;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700">
+        <input type="checkbox" id="euClient" style="width:auto" ${u.client?'checked':''} onchange="euClientToggle()"> 👤 هذا المستخدم <b>عميل</b> — يرى ملفه فقط
+      </label>
+      <div id="euUnitWrap" style="display:${u.client?'block':'none'};margin-top:8px">
+        <div class="form-row"><label>🏢 وحدة العميل</label>
+          <select id="euUnit"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML(u.unitId||'')}</select></div>
+      </div>
+    </div>
+    <div id="euPermsWrap" style="display:${u.client?'none':'block'}">
+    <label class="gray-note" style="display:block;margin-bottom:6px">البوابات المسموحة:</label>
+    <div class="perm-list" id="euPerms">${opts}</div></div>`;
+  openBox('✏️ تعديل المستخدم — '+esc(u.name), html, 'حفظ', ()=>{
+    const nm=($('#euName').value||'').trim();
+    if(!nm){toast('اكتب اسم المستخدم','err');return false;}
+    if((DB.users||[]).some(x=>x.id!==u.id&&x.name.toLowerCase()===nm.toLowerCase())){
+      toast('الاسم مستخدم بالفعل','err');return false;}
+    const isC=!!($('#euClient')&&$('#euClient').checked);
+    const cu=(($('#euUnit')&&$('#euUnit').value)||'').trim();
+    if(isC){
+      if(!cu){toast('اختر وحدة العميل','err');return false;}
+      if(!($('#euMail').value||'').trim()){toast('حساب العميل لازم بريد','err');return false;}
+      if((DB.users||[]).some(x=>x.id!==u.id&&x.client&&x.unitId===cu)){toast('الوحدة دى لها حساب عميل بالفعل','err');return false;}
+    }
+    u.name=nm;
+    u.email=($('#euMail').value||'').trim();
+    if(isC){ u.client=true; u.unitId=cu; u.perms=['customerFile']; }
+    else{ delete u.client; delete u.unitId; u.perms=$$('#euPerms input:checked').map(c=>c.value); }
+    save(); apPushAccess(); renderSettings();
+    toast('تم حفظ تعديلات '+u.name+' ✔','ok');
+    return true;
+  });
+}
+function euClientToggle(){
+  const on=$('#euClient')&&$('#euClient').checked;
+  const w=$('#euUnitWrap'); if(w) w.style.display=on?'block':'none';
+  const p=$('#euPermsWrap'); if(p) p.style.display=on?'none':'block';
+}
+/* نافذة عامة بسيطة للنماذج */
+function openBox(title,bodyHTML,okLabel,onOk){
+  let m=document.getElementById('apBox');
+  if(!m){
+    m=document.createElement('div'); m.id='apBox'; m.className='modal-back';
+    m.innerHTML='<div class="modal"><h3><span id="apBoxT"></span>'
+      +'<button class="x" onclick="closeModal(\'apBox\')">✕</button></h3>'
+      +'<div id="apBoxB"></div>'
+      +'<div class="actions"><button class="btn green" id="apBoxOk"></button>'
+      +'<button class="btn ghost" onclick="closeModal(\'apBox\')">إلغاء</button></div></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click',e=>{ if(e.target===m) closeModal('apBox'); });
+  }
+  document.getElementById('apBoxT').textContent=title;
+  document.getElementById('apBoxB').innerHTML=bodyHTML;
+  const ok=document.getElementById('apBoxOk');
+  ok.textContent=okLabel||'حفظ';
+  ok.onclick=()=>{ if(onOk()!==false) closeModal('apBox'); };
+  openModal('apBox');
+}
 function deleteUser(id){
   const u=findUser(id);if(!u||u.admin)return;
   confirmBox('حذف مستخدم','سيتم حذف المستخدم <b>'+esc(u.name)+'</b> ولن يتمكن من الدخول للنظام. متابعة؟','حذف',()=>{
-    DB.users=DB.users.filter(x=>x.id!==id);save();renderSettings();toast('تم حذف المستخدم','ok');
+    DB.users=DB.users.filter(x=>x.id!==id);save();apPushAccess();renderSettings();toast('تم حذف المستخدم','ok');
   },true);
 }
 async function changeAdminPass(){
@@ -4492,10 +4824,17 @@ function exportPortable(){
     });
   }catch(e){console.error(e);toast('تعذر إنشاء النسخة المحمولة: '+e.message,'err');}
 }
+/* v61.16: إظهار زرَّى «نسخة احتياطية» و«نسخة محمولة» بمجرد وجود مستخدم.
+   كانا يظهران فقط مع أول حفظ، فيختفيان بعد الدخول من السحابة حتى أول تعديل. */
+function syncHeaderBtns(){
+  const show = !!CURRENT_USER && !AP_CLIENT;
+  const bb=$('#btnBackup'); if(bb) bb.style.display=show?'':'none';
+  const pb=$('#btnPortable'); if(pb) pb.style.display=show?'':'none';
+}
 function checkBackupDue(){
   const btn=$('#btnBackup');if(!btn)return false;
-  btn.style.display=CURRENT_USER?'':'none';
-  const pb=$('#btnPortable');if(pb)pb.style.display=CURRENT_USER?'':'none';
+  syncHeaderBtns();
+  if(AP_CLIENT) return false;
   const hasData=DB.sales.length>0||DB.payments.length>0;
   const last=DB.lastBackupAt?new Date(DB.lastBackupAt).getTime():0;
   const saved=DB.savedAt?new Date(DB.savedAt).getTime():0;
@@ -5972,6 +6311,124 @@ function cfSaveEditApply(newPrice,newDown,newMode){
   toast('تم حفظ التعديلات ✔','ok');
   renderCustomerFile(s.id);
 }
+
+/* ===== v61.16: باقة التشطيب — تسجيل فقط، لا تمسّ الأسعار =====
+   كل بيع لوحدة «تشطيب كامل» له باقة. القديمة تُعتبر لاكچرى افتراضيًا. */
+const FIN_CHOICES=[
+  {k:'luxury',  ar:'لاكچري سمارت'},
+  {k:'premium', ar:'بريميوم'},
+  {k:'classic', ar:'كلاسيك'},
+  {k:'super',   ar:'نسبة إشراف ١٥٪'}
+];
+function isFullFin(u){ return /كامل/.test(String(u&&u.finishing||'')); }
+function salePkg(s,u){
+  if(!s) return '';
+  if(s.finPkg) return s.finPkg;
+  return isFullFin(u)?'luxury':'';      /* الافتراضى للقديم */
+}
+function pkgAr(k){ const f=FIN_CHOICES.find(x=>x.k===k); return f?f.ar:'—'; }
+function setSalePkg(saleId,val){
+  const s=saleById(saleId); if(!s) return;
+  if(!isAdmin()){toast('التعديل للمدير فقط 🔒','err');return;}
+  s.finPkg=val; save();
+  toast('تم حفظ الباقة: '+pkgAr(val),'ok');
+}
+function pkgSelectHTML(s,u){
+  const cur=salePkg(s,u)||'luxury';
+  const opts=FIN_CHOICES.map(f=>'<option value="'+f.k+'"'+(f.k===cur?' selected':'')+'>'+f.ar+'</option>').join('');
+  return '<div class="form-row"><label>📦 باقة التشطيب</label>'
+    +'<select onchange="setSalePkg(\''+s.id+'\',this.value)">'+opts+'</select></div>';
+}
+
+
+/* ===================================================================
+   v61.16 — بونص السداد المبكّر
+   من دفع قبل الاستحقاق بأكثر من شهر يُحتسب له 0.03% عن كل يوم بعد
+   الشهر الأول، على المبلغ المدفوع. مرآة لغرامة التأخير (1.5% شهريًا).
+   عرض فقط — لا يمسّ المتبقى ولا حالة العميل ولا أى حساب قائم.
+   =================================================================== */
+const EARLY_DAILY_PCT = 0.03;     /* % عن كل يوم بعد الشهر الأول */
+const EARLY_GRACE_DAYS = 30;      /* الشهر الأول لا بونص عنه */
+
+/* صفوف البونص: كل دفعة سُدِّدت قبل استحقاقها بأكثر من شهر */
+function earlyRows(sale){
+  if(!sale||sale.mode==='cash') return [];
+  let sched=[];
+  try{ sched=scheduleWithStatus(sale)||[]; }catch(e){ return []; }
+  /* ترتيب الأقساط بالتاريخ، والدفعات بالتاريخ، ثم توزيع كل دفعة على
+     الأقساط بالترتيب — نفس منطق التحصيل المستعمل فى المتأخرات */
+  const inst=sched.map(i=>({due:i.due, amount:Number(i.amount)||0, left:Number(i.amount)||0}))
+                  .sort((a,b)=>String(a.due).localeCompare(String(b.due)));
+  const pays=instPaymentsOf(sale.id).slice()
+            .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const rows=[];
+  pays.forEach(p=>{
+    let amt=Number(p.amount)||0;
+    for(let k=0;k<inst.length&&amt>0.5;k++){
+      const it=inst[k];
+      if(it.left<=0.5) continue;
+      const use=Math.min(amt,it.left);
+      it.left-=use; amt-=use;
+      const days=daysBetween(p.date,it.due);        /* موجب = دفع قبل الاستحقاق */
+      if(days>EARLY_GRACE_DAYS){
+        const cnt=days-EARLY_GRACE_DAYS;
+        rows.push({date:p.date, due:it.due, receiptNo:p.receiptNo,
+                   amount:use, days:days, countedDays:cnt,
+                   bonus:use*EARLY_DAILY_PCT/100*cnt});
+      }
+    }
+  });
+  return rows;
+}
+function earlyTotals(sale){
+  const rows=earlyRows(sale);
+  return {rows, count:rows.length,
+          paid:rows.reduce((a,r)=>a+r.amount,0),
+          bonus:rows.reduce((a,r)=>a+r.bonus,0)};
+}
+/* الصافى: موجب = للعميل بونص · سالب = عليه غرامة */
+function bonusPenaltyNet(sale){
+  const L=lateTotals(sale), E=earlyTotals(sale);
+  return {late:L, early:E, net:E.bonus-L.penalty};
+}
+/* كارت البونص والغرامات داخل ملف العميل */
+function bonusPenaltyCard(sale){
+  const B=bonusPenaltyNet(sale);
+  const pen=Math.round(B.late.penalty), bon=Math.round(B.early.bonus);
+  const net=Math.round(B.net);
+  const good=net>=0;
+  const col=good?'var(--green)':'var(--red)';
+  const arrow=good?'⬆️':'⬇️';
+  const money=good?'💶':'💸';
+  const label=good?'بونص مستحق للعميل':'غرامات مستحقة على العميل';
+  const rowsL=B.late.rows.map(r=>`<tr><td>${fmtD(r.due)}</td><td>${fmtM(Math.round(r.amount))}</td>
+      <td>${r.months} شهر</td><td>${r.pct.toFixed(1)}٪</td>
+      <td style="color:var(--red);font-weight:800">${fmtM(Math.round(r.penalty))}</td></tr>`).join('');
+  const rowsE=B.early.rows.map(r=>`<tr><td>${fmtD(r.date)}</td><td>${fmtD(r.due)}</td>
+      <td>${fmtM(Math.round(r.amount))}</td><td>${r.countedDays} يوم</td>
+      <td style="color:var(--green);font-weight:800">${fmtM(Math.round(r.bonus))}</td></tr>`).join('');
+  return `<div class="card"><h3>⚖️ البونص والغرامات</h3>
+    <div class="grid g3" style="margin-bottom:10px">
+      ${fld('💸','إجمالي الغرامات (تأخير ١.٥٪ شهريًا)','<span style="color:var(--red)">'+fmtM(pen)+'</span>')}
+      ${fld('💶','إجمالي البونص (سداد مبكّر ٠.٠٣٪ يوميًا)','<span style="color:var(--green)">'+fmtM(bon)+'</span>')}
+      <div class="form-row"><label>${money} الصافي — ${label}</label>
+        <div style="padding:8px 10px;border:1.6px solid ${col};border-radius:10px;
+             background:${good?'#eefaf3':'#fdeeee'};font-weight:900;font-size:16px;color:${col}">
+          ${arrow} ${fmtM(Math.abs(net))}</div></div>
+    </div>
+    ${B.late.rows.length?`<details style="margin-bottom:8px"><summary class="gray-note" style="cursor:pointer">تفاصيل الغرامات (${B.late.rows.length})</summary>
+      <div class="tbl-wrap" style="margin-top:7px"><table class="tbl"><thead><tr>
+        <th>تاريخ الاستحقاق</th><th>قيمة القسط</th><th>التأخير</th><th>النسبة</th><th>الغرامة</th>
+      </tr></thead><tbody>${rowsL}</tbody></table></div></details>`:''}
+    ${B.early.rows.length?`<details><summary class="gray-note" style="cursor:pointer">تفاصيل البونص (${B.early.rows.length})</summary>
+      <div class="tbl-wrap" style="margin-top:7px"><table class="tbl"><thead><tr>
+        <th>تاريخ السداد</th><th>تاريخ الاستحقاق</th><th>المبلغ</th><th>أيام محتسبة</th><th>البونص</th>
+      </tr></thead><tbody>${rowsE}</tbody></table></div></details>`:''}
+    <p class="gray-note" style="margin-top:8px">البونص: ٠.٠٣٪ عن كل يوم سداد مبكّر بعد الشهر الأول.
+      الأرقام للعرض والتفاوض — لا تدخل حساب المتبقى ولا حالة العميل.</p>
+  </div>`;
+}
+
 function renderCustomerFile(saleId){
   if(saleId&&saleId!==cfSaleId)cfEdit=false;
   if(saleId)cfSaleId=saleId;
@@ -5985,7 +6442,13 @@ function renderCustomerFile(saleId){
   const depSt=depPaid>=Number(s.deliveryDeposit||0)-0.5&&s.deliveryDeposit>0?'مسددة ✔':depPaid>0?'جزئية':'غير مسددة';
   const depCls=depSt.startsWith('مسددة')?'pos':depPaid>0?'':'neg';
   const posCls=pos.state==='debtor'?'neg':'pos';
-  if(cfEdit){renderCustomerFileEdit(s,u);return;}
+  if(cfEdit&&!AP_CLIENT){renderCustomerFileEdit(s,u);return;}
+  /* v61.16: العميل يرى ملفه للقراءة فقط — بلا أزرار تعديل أو قبض */
+  if(AP_CLIENT){
+    el.innerHTML=apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
+    cfShowSchedule();
+    return;
+  }
   el.innerHTML=`
   <h2 class="screen-title">ملف العميل — ${esc(s.customer.name)}</h2>
   <div class="toolbar no-print">
@@ -6008,14 +6471,17 @@ function renderCustomerFile(saleId){
     ${fld('📄','رقم العقد',esc(s.contractNo))}
     ${fld('📅','تاريخ التعاقد',fmtD(s.contractDate))}
   </div></div>
-  <div class="card"><h3>🏢 بيانات الوحدة</h3><div class="grid g3">
+  <div class="card"><h3>🏢 بيانات الوحدة</h3>
+    <div class="grid gUnit tight">
     ${fld('🏗️','رقم العمارة',esc(u.building||'—'))}
     ${fld('🔢','رقم الوحدة',esc(u.unitNo||'—'))}
     ${fld('📐','المساحة',fmtN(u.area)+' م²')}
     ${fld('🎨','التشطيب',esc(u.finishing||'—'))}
     ${fld('🌅','الإطلالة',esc(u.view)||'—')}
     ${fld('ℹ️','حالة الوحدة',statusAr(u.status||'sold'))}
+    ${isFullFin(u)?pkgSelectHTML(s,u):''}
   </div></div>
+  ${bonusPenaltyCard(s)}
   <div class="card"><h3>💳 بيانات الدفع</h3><div class="grid g4">
     ${fld('💵','سعر الوحدة (إجمالي)',fmtM(s.finalPrice),'money')}
     ${fld('🏦','وديعة الاستلام'+(s.depositPct?' ('+s.depositPct+'٪)':''),fmtM(s.deliveryDeposit),'money')}
@@ -6045,6 +6511,134 @@ function renderCustomerFile(saleId){
   <div id="cfExtra"></div>`;
   cfShowSchedule();
 }
+/* ===================================================================
+   v61.16 — بوابة العميل
+   العميل يُنشأ من «الإعدادات ← إضافة مستخدم» بعلامة «عميل» واختيار وحدته.
+   النظام يرفع له نسخة مصغّرة من ملفه إلى مساحة منفصلة تمامًا على
+   Firebase (/clients/<مفتاح بريده>) ولا يملك أى وصول إلى /erp.
+   كل ذلك يتم تلقائيًا من داخل النظام — بلا فتح Firebase Console.
+   =================================================================== */
+
+/* ---- شاشة العميل: ملفه كاملًا بلا أى زر تعديل أو قبض ---- */
+function apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
+  return `
+  <h2 class="screen-title">ملفى — ${esc(s.customer.name)}</h2>
+  <div class="toolbar no-print">
+    <button class="btn aqua" onclick="cfShowSchedule()">📅 الأقساط المستحقة</button>
+    <button class="btn" onclick="cfShowPayments()">💰 الدفعات الفعلية (الإيصالات)</button>
+    <button class="btn ghost" onclick="printScreen()">🖨️ طباعة الملف</button>
+  </div>
+  <div class="card"><h3>👤 بياناتى</h3><div class="grid g3">
+    ${fld('👤','الاسم',esc(s.customer.name))}
+    ${fld('📞','رقم الهاتف',esc(s.customer.phone))}
+    ${fld('🪪','الرقم القومي',esc(s.customer.nid)||'—')}
+    ${fld('📍','العنوان',esc(s.customer.address)||'—')}
+    ${fld('📄','رقم العقد',esc(s.contractNo))}
+    ${fld('📅','تاريخ التعاقد',fmtD(s.contractDate))}
+  </div></div>
+  <div class="card"><h3>🏢 بيانات الوحدة</h3>
+    <div class="grid gUnit tight">
+    ${fld('🏗️','رقم العمارة',esc(u.building||'—'))}
+    ${fld('🔢','رقم الوحدة',esc(u.unitNo||'—'))}
+    ${fld('📐','المساحة',fmtN(u.area)+' م²')}
+    ${fld('🎨','التشطيب',esc(u.finishing||'—'))}
+    ${fld('🌅','الإطلالة',esc(u.view)||'—')}
+    ${fld('ℹ️','حالة الوحدة',statusAr(u.status||'sold'))}
+    ${isFullFin(u)?fld('📦','باقة التشطيب',esc(pkgAr(salePkg(s,u)))):''}
+  </div></div>
+  ${bonusPenaltyCard(s)}
+  <div class="card"><h3>💳 بيانات الدفع</h3><div class="grid g4">
+    ${fld('💵','سعر الوحدة (إجمالي)',fmtM(s.finalPrice),'money')}
+    ${fld('🏦','وديعة الاستلام'+(s.depositPct?' ('+s.depositPct+'٪)':''),fmtM(s.deliveryDeposit),'money')}
+    ${fld('💰','المقدم',s.mode==='cash'?'كاش':fmtM(s.down),'money')}
+    ${fld('⏳','المتبقي',fmtM(saleRemaining(s)),'money')}
+    ${fld('✅','إجمالي الأقساط المحصلة',fmtM(col),'money')}
+    ${fld('📉','إجمالي الأقساط المتبقية',fmtM(Math.max(0,(s.finalPrice-s.down)-col)),'money')}
+    ${fld('🧮','المستحق حتى تاريخه',fmtM(due),'money')}
+    <div class="field"><span class="ic">⚖️</span><div><span class="lb">المتأخرات / الزيادة — موقفى</span>
+      <span class="vl ${posCls}">${pos.label}${pos.diff?' — '+fmtN(Math.abs(pos.diff))+' ج.م':''}</span></div></div>
+    <div class="field"><span class="ic">🏦</span><div><span class="lb">سداد دفعة الاستلام</span>
+      <span class="vl ${depCls}">${depSt} — المسدد: ${fmtN(depPaid)} من ${fmtN(s.deliveryDeposit)}</span></div></div>
+  </div></div>
+  <div id="cfExtra"></div>`;
+}
+function apUnitOptionsHTML(sel){
+  return (DB.sales||[]).map(s=>{
+    const u=unitById(s.unitId); if(!u) return '';
+    const lb=(u.unitNo||'')+' - '+(u.building||'')+' — '+((s.customer&&s.customer.name)||'');
+    return '<option value="'+u.id+'"'+(u.id===sel?' selected':'')+'>'+esc(lb)+'</option>';
+  }).join('');
+}
+function apClientOpenFile(){
+  const s=(DB.sales||[])[0]; if(!s) return;
+  nav('customerFile',s.id);
+}
+
+/* ---- بناء النسخة المصغّرة لعميل واحد (وحدة واحدة فقط) ---- */
+function apClientSlice(unitId){
+  const u=(DB.units||[]).find(x=>x.id===unitId);
+  const s=(DB.sales||[]).find(x=>x.unitId===unitId);
+  if(!u||!s) return null;
+  const st=Object.assign({},DB.settings||{});
+  /* لا تُرسَل أى مفاتيح أو روابط خدمات مع نسخة العميل */
+  ['gsUrl','gsSheet','gsEnabled','driveUrl','backupDirName','ffPdfPath','sfPdfPath'].forEach(k=>{ delete st[k]; });
+  return {
+    settings:st,
+    seq:{year:new Date().getFullYear(),counter:0},
+    units:[u],
+    sales:[s],
+    payments:(DB.payments||[]).filter(p=>p.saleId===s.id),
+    returned:[],partners:[],banks:[],bankTx:[],expenses:[],zakatPays:[],
+    cashflowCfg:{start:'',overdue:false,b:{}},
+    attIdx:[],
+    users:[],
+    savedAt:new Date().toISOString()
+  };
+}
+/* بصمة سريعة — حتى لا نُعيد الرفع إلا عند تغيّر فعلى */
+function apHash(str){
+  let h=5381; for(let i=0;i<str.length;i++){ h=((h<<5)+h+str.charCodeAt(i))|0; }
+  return String(h);
+}
+/* ---- تجهيز خرائط الصلاحيات التى يرفعها المدير ---- */
+function apAccessMaps(){
+  const staff={}, clients={};
+  (DB.users||[]).forEach(u=>{
+    const em=String(u.email||'').trim(); if(!em) return;
+    if(u.client){
+      const sl=apClientSlice(u.unitId); if(!sl) return;
+      clients[apMailKey(em)]={name:u.name,unitId:u.unitId,slice:sl};
+    }else{
+      staff[apMailKey(em)]=true;
+    }
+  });
+  try{
+    const c=(typeof window.apCloudCfg==='function')?window.apCloudCfg():null;
+    if(c&&c.adminEmail) staff[apMailKey(c.adminEmail)]=true;
+  }catch(e){}
+  return {staff,clients};
+}
+/* ---- تحميل نسخة العميل فى المتصفح ---- */
+window.apAdoptClientDB=function(obj,info){
+  try{
+    AP_CLIENT=true;
+    DB=migrateDB(obj);
+    DB.users=[];
+    try{ localStorage.setItem(LS_KEY_CLIENT,JSON.stringify(DB)); }catch(e){}
+    const s=(DB.sales||[])[0];
+    CURRENT_USER={id:'client',name:(info&&info.name)||(s&&s.customer&&s.customer.name)||'عميل',
+                  admin:false,client:true,perms:['customerFile']};
+    const n=$('#curUserName'); if(n) n.textContent=CURRENT_USER.name;
+    const ub=$('#userBox'); if(ub) ub.style.display='flex';
+    const ov=$('#loginOverlay'); if(ov) ov.classList.remove('open');
+    /* إخفاء كل ما لا يخصّ العميل */
+    ['#btnBackup','#btnPortable'].forEach(sel=>{ const e2=$(sel); if(e2) e2.style.display='none'; });
+    const hc=$('#hdrCompany'); if(hc) hc.textContent=S().companyName+' — '+S().projectName;
+    buildTabs();
+    if(s) nav('customerFile',s.id);
+    return true;
+  }catch(e){ console.error('adoptClient',e); return false; }
+};
 function renderCustomerFileEdit(s,u){
   const el=$('#scr-customerFile');
   const fr=(lb,id,val,type)=>`<div class="form-row"><label>${lb}</label><input id="${id}" type="${type||'text'}" value="${esc(val==null?'':val)}"></div>`;
@@ -7053,9 +7647,40 @@ async function boot(){
             const blank=!(td.textContent||'').trim() && !td.querySelector('img,svg,button,a,input,select');
             if(blank) td.setAttribute('data-blank','1'); else td.removeAttribute('data-blank');
           });
+          /* v61.16: أول ٣ خلايا غير فارغة = ملخص يظهر دائمًا، وخلية
+             الأزرار تظهر دائمًا، والباقى يُطوى ويُفتح بالضغط على الكارت. */
+          const PRIO=['المتبقي','الحالة','القيمة','المبلغ','تاريخ الاستحقاق',
+                      'إجمالي السعر','الإجمالي','اسم الملف','التاريخ','تاريخ الإضافة'];
+          const cells=[].slice.call(tr.children);
+          const pick={};
+          cells.forEach((td,i)=>{
+            if(td.classList.contains('no-print')||td.querySelector('button')) td.setAttribute('data-keep','act');
+            else td.setAttribute('data-keep','more');
+          });
+          const body=cells.filter(td=>td.getAttribute('data-keep')!=='act'
+                                   && td.getAttribute('data-blank')!=='1');
+          if(body[0]){ body[0].setAttribute('data-keep','sum'); pick[0]=1; }
+          let n=body[0]?1:0;
+          PRIO.forEach(lbl=>{
+            if(n>=3) return;
+            const hit=body.find(td=>td.getAttribute('data-keep')!=='sum'
+                                 && (td.getAttribute('data-label')||'')===lbl);
+            if(hit){ hit.setAttribute('data-keep','sum'); n++; }
+          });
+          for(let k=0;k<body.length&&n<3;k++){
+            if(body[k].getAttribute('data-keep')!=='sum'){ body[k].setAttribute('data-keep','sum'); n++; }
+          }
+          if(!tr.hasAttribute('data-exp')) tr.setAttribute('data-exp','0');
         });
       });
     };
+    /* ضغطة على الكارت تفتح باقى البيانات وتقفلها */
+    document.addEventListener('click',function(e){
+      if(window.innerWidth>760) return;
+      if(e.target.closest('button,a,input,select,label,details')) return;
+      const tr=e.target.closest('table.tbl tbody tr'); if(!tr) return;
+      tr.setAttribute('data-exp', tr.getAttribute('data-exp')==='1'?'0':'1');
+    },true);
     let t0=null;
     const run=()=>{ clearTimeout(t0); t0=setTimeout(()=>{ try{ tag(document); }catch(e){} },40); };
     run();
@@ -9191,6 +9816,9 @@ async function uvBuildPdf(u){
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({unit:'pt',format:'a4'});
   const M=24;
+  /* v61.16: نعطّل قواعد الموبايل أثناء التصوير ليخرج الملف بتنسيق
+     الكمبيوتر دائمًا — سواء بنيته من الموبايل أو من الكمبيوتر. */
+  const mobCss=document.getElementById('apMobCss');
   const shot=async(innerHTML,width)=>{
     const snap=document.createElement('div');
     snap.style.cssText='position:fixed;left:-12000px;top:0;width:'+width+'px;background:#fff;padding:14px;direction:rtl;font-family:Segoe UI,Tahoma,Arial';
@@ -9198,8 +9826,25 @@ async function uvBuildPdf(u){
     snap.querySelectorAll('.no-print').forEach(x=>x.remove());
     document.body.appendChild(snap);
     snap.querySelectorAll('*').forEach(el=>{el.style.letterSpacing='normal';});
-    const cv=await html2canvas(snap,{scale:2.4,backgroundColor:'#ffffff',logging:false});
-    snap.remove(); return cv;
+    const wasOff = mobCss ? mobCss.disabled : null;
+    if(mobCss){
+      mobCss.disabled = true;
+      /* إجبار المتصفح على إعادة حساب التخطيط قبل التصوير، وإلا يصوّر
+         بالتنسيق القديم لأن التعطيل لا يُطبَّق فورًا */
+      void document.body.offsetHeight;
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    }
+    let cv;
+    try{
+      /* عرض نافذة افتراضى عريض: المكتبة تصوّر داخل إطار بعرض الشاشة،
+         فلو تُرك على عرض الموبايل تُعاد قواعد الموبايل داخل الإطار. */
+      cv = await html2canvas(snap,{scale:2.4,backgroundColor:'#ffffff',logging:false,
+        windowWidth:1400, windowHeight:2200});
+    } finally {
+      if(mobCss){ mobCss.disabled = wasOff; void document.body.offsetHeight; }
+      snap.remove();
+    }
+    return cv;
   };
   /* --- صفحة 1: بورتريه — بيانات الوحدة + التشطيب + الدفع --- */
   let W=pdf.internal.pageSize.getWidth(), H=pdf.internal.pageSize.getHeight();
@@ -9557,11 +10202,99 @@ function apSetAttUrl(key,url){
 
   function onUser(u) {
     cloudUser = u || null;
-    if (!u) { badge('off', '🔒 سجّل الدخول'); return; }
-    badge(isCloudAdmin() ? 'on' : 'ro', isCloudAdmin() ? '☁️ متصل' : '👁 قراءة فقط',
-      u.email + (isCloudAdmin() ? ' — صلاحية التعديل' : ' — عرض فقط'));
-    listen();
+    if (!u) { badge('off', '🔒 سجّل الدخول'); window.apClientProbe = null; return; }
+    if (isCloudAdmin()) {
+      window.apClientProbe = Promise.resolve(false);
+      badge('on', '☁️ متصل', u.email + ' — صلاحية التعديل');
+      listen();
+      setTimeout(() => { syncAccess().catch(() => {}); }, 1500);
+      return;
+    }
+    /* v61.16: غير المدير — نسأل أولًا: هل له مساحة عميل؟ */
+    badge('wait', '⏳ تحقق…');
+    window.apClientProbe = clientProbe(u).then(isClient => {
+      if (isClient) return true;                  // دخل كعميل
+      badge('ro', '👁 قراءة فقط', u.email + ' — عرض فقط');
+      listen();
+      return false;
+    }).catch(() => {
+      badge('ro', '👁 قراءة فقط', u.email + ' — عرض فقط');
+      listen();
+      return false;
+    });
   }
+
+  /* ---------------- بوابة العميل ----------------
+     مساحة منفصلة: /clients/<مفتاح البريد>. العميل لا يقرأ /erp إطلاقًا،
+     والمدير وحده هو من يكتب هنا. */
+  function mailKey(em) {
+    return String(em || '').trim().toLowerCase().split('.').join(',').split('@').join('_at_');
+  }
+  let clientRef = null;
+  async function clientProbe(u) {
+    if (!rtdb || !u || !u.email) return false;
+    const k = mailKey(u.email);
+    let snap;
+    try { snap = await rtdb.ref('clients/' + k).get(); }
+    catch (e) { return false; }                   // القواعد منعت القراءة — ليس عميلًا
+    const v = snap && snap.val();
+    if (!v || !v.payload) return false;
+    await applyClient(v);
+    /* متابعة حيّة لأى تحديث يرفعه المدير */
+    if (!clientRef) {
+      clientRef = rtdb.ref('clients/' + k);
+      clientRef.on('value', s2 => {
+        const x = s2.val();
+        if (x && x.payload) applyClient(x).catch(() => {});
+      }, () => {});
+    }
+    return true;
+  }
+  async function applyClient(node) {
+    const txt = await gzUnpack(node.payload);
+    const obj = (typeof txt === 'string') ? JSON.parse(txt) : txt;
+    if (!obj) return;
+    window.apAdoptClientDB(obj, { name: node.name, unitId: node.unitId });
+    badge('ro', '👤 ملفى', 'آخر تحديث: ' +
+      (node.at ? new Date(node.at).toLocaleString('ar-EG') : '—'));
+  }
+
+  /* رفع خرائط الصلاحيات — المدير فقط. تُستدعى بعد كل حفظ وبعد كل تعديل
+     على المستخدمين، ولا ترفع نسخة عميل إلا لو تغيّرت فعلًا. */
+  const sentHash = {};
+  let accessBusy = false;
+  async function syncAccess() {
+    if (!rtdb || !isCloudAdmin() || accessBusy) return;
+    if (typeof window.apAccessMaps !== 'function') return;
+    accessBusy = true;
+    try {
+      const m = window.apAccessMaps();
+      await rtdb.ref('staffmail').set(m.staff);
+      const keys = Object.keys(m.clients);
+      for (const k of keys) {
+        const c = m.clients[k];
+        const json = JSON.stringify(c.slice);
+        const h = window.apHash(json);
+        if (sentHash[k] === h) continue;
+        await rtdb.ref('clients/' + k).set({
+          name: c.name || '', unitId: c.unitId || '',
+          at: new Date().toISOString(),
+          payload: await gzPack(json)
+        });
+        sentHash[k] = h;
+      }
+      /* إزالة مساحات عملاء لم يعودوا موجودين */
+      try {
+        const snap = await rtdb.ref('clients').get();
+        const cur = snap.val() || {};
+        for (const k of Object.keys(cur)) if (!m.clients[k]) {
+          await rtdb.ref('clients/' + k).remove(); delete sentHash[k];
+        }
+      } catch (e) {}
+    } catch (e) { console.warn('syncAccess', e); }
+    finally { accessBusy = false; }
+  }
+  window.apCloudSyncAccess = syncAccess;
 
   /* ---------------- تسجيل الدخول ---------------- */
   window.apCloudLogin = async function (email, pass) {
@@ -9642,6 +10375,8 @@ function apSetAttUrl(key,url){
       });
       myRev = nextRev;
       badge('on', '☁️ متصل', 'آخر رفع: ' + new Date().toLocaleTimeString('ar-EG'));
+      /* v61.16: حدِّث مساحات العملاء بعد كل حفظ */
+      syncAccess().catch(() => {});
     } catch (e) {
       console.error('cloud push', e);
       badge('off', '⚠️ تعذر الحفظ', e.message);
@@ -9746,6 +10481,284 @@ function apSetAttUrl(key,url){
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 })();
+
+</script>
+
+<script>
+/* ===================================================================
+   v61.17 — مولّد QR Code مصغّر (byte mode, مستوى تصحيح M, إصدارات 1–10)
+   مكتوب هنا بالكامل حتى يظل ملف النظام مستقلًا ويعمل بلا إنترنت.
+   =================================================================== */
+(function (root) {
+  /* --- حقل جالوا GF(256) --- */
+  var EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  (function () {
+    var x = 1;
+    for (var i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
+    for (i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  })();
+  function gmul(a, b) { return (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]]; }
+
+  /* متعددة حدود التوليد لعدد معيّن من رموز التصحيح */
+  function rsPoly(n) {
+    var p = [1];
+    for (var i = 0; i < n; i++) {
+      var q = p.slice(); q.push(0);
+      for (var j = 0; j < p.length; j++) q[j + 1] ^= gmul(p[j], EXP[i]);
+      p = q;
+    }
+    return p;
+  }
+  function rsEncode(data, ecLen) {
+    var gen = rsPoly(ecLen), res = new Array(ecLen).fill(0);
+    for (var i = 0; i < data.length; i++) {
+      var f = data[i] ^ res[0];
+      res.shift(); res.push(0);
+      if (f !== 0) for (var j = 0; j < ecLen; j++) res[j] ^= gmul(gen[j + 1], f);
+    }
+    return res;
+  }
+
+  /* --- جداول الإصدارات (مستوى M فقط) --- */
+  /* [ecPerBlock, blocks1, data1, blocks2, data2] */
+  var RS_M = [null,
+    [10, 1, 16, 0, 0], [16, 1, 28, 0, 0], [26, 1, 44, 0, 0], [18, 2, 32, 0, 0],
+    [24, 2, 43, 0, 0], [16, 4, 27, 0, 0], [18, 4, 31, 0, 0], [22, 2, 38, 2, 39],
+    [22, 3, 36, 2, 37], [26, 4, 43, 1, 44]
+  ];
+  var ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34],
+    [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50]];
+
+  function dataCodewords(v) { var r = RS_M[v]; return r[1] * r[2] + r[3] * r[4]; }
+  function capacityBytes(v) {
+    var cc = v < 10 ? 8 : 16;
+    return Math.floor((dataCodewords(v) * 8 - 4 - cc) / 8);
+  }
+
+  /* --- ترميز النص إلى UTF-8 --- */
+  function utf8(str) {
+    var out = [];
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) { out.push(0xc0 | (c >> 6), 0x80 | (c & 63)); }
+      else if (c >= 0xd800 && c <= 0xdbff && i + 1 < str.length) {
+        var c2 = str.charCodeAt(++i);
+        var cp = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+        out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      } else { out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+    }
+    return out;
+  }
+
+  /* --- بناء تيار البيانات النهائى (مع تشابك الكتل) --- */
+  function buildCodewords(bytes, v) {
+    var bits = [];
+    function put(val, len) { for (var i = len - 1; i >= 0; i--) bits.push((val >> i) & 1); }
+    put(4, 4);                                   // byte mode
+    put(bytes.length, v < 10 ? 8 : 16);
+    for (var i = 0; i < bytes.length; i++) put(bytes[i], 8);
+    var total = dataCodewords(v) * 8;
+    for (i = 0; i < 4 && bits.length < total; i++) bits.push(0);   // terminator
+    while (bits.length % 8) bits.push(0);
+    var data = [];
+    for (i = 0; i < bits.length; i += 8) {
+      var b = 0; for (var j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+      data.push(b);
+    }
+    var pad = [0xEC, 0x11], k = 0;
+    while (data.length < dataCodewords(v)) data.push(pad[k++ % 2]);
+
+    /* تقسيم إلى كتل ثم تشابك */
+    var r = RS_M[v], blocks = [], ecBlocks = [], p = 0;
+    function take(n) { var a = data.slice(p, p + n); p += n; return a; }
+    for (i = 0; i < r[1]; i++) { var d = take(r[2]); blocks.push(d); ecBlocks.push(rsEncode(d, r[0])); }
+    for (i = 0; i < r[3]; i++) { var d2 = take(r[4]); blocks.push(d2); ecBlocks.push(rsEncode(d2, r[0])); }
+
+    var out = [], maxD = Math.max(r[2], r[4] || 0);
+    for (i = 0; i < maxD; i++) for (j = 0; j < blocks.length; j++) if (i < blocks[j].length) out.push(blocks[j][i]);
+    for (i = 0; i < r[0]; i++) for (j = 0; j < ecBlocks.length; j++) out.push(ecBlocks[j][i]);
+    return out;
+  }
+
+  /* --- بناء المصفوفة --- */
+  function newMatrix(size) {
+    var m = [], r = [];
+    for (var i = 0; i < size; i++) { m.push(new Int8Array(size).fill(-1)); }
+    return m;
+  }
+  function placeFinder(m, fn, row, col) {
+    for (var r = -1; r <= 7; r++) for (var c = -1; c <= 7; c++) {
+      var rr = row + r, cc = col + c;
+      if (rr < 0 || cc < 0 || rr >= m.length || cc >= m.length) continue;
+      var on = (r >= 0 && r <= 6 && (c === 0 || c === 6)) ||
+               (c >= 0 && c <= 6 && (r === 0 || r === 6)) ||
+               (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+      m[rr][cc] = on ? 1 : 0; fn[rr][cc] = 1;
+    }
+  }
+  function bchFormat(fmt) {
+    var d = fmt << 10;
+    for (var i = 4; i >= 0; i--) if (d & (1 << (i + 10))) d ^= 0x537 << i;
+    return ((fmt << 10) | d) ^ 0x5412;
+  }
+  function bchVersion(v) {
+    var d = v << 12;
+    for (var i = 5; i >= 0; i--) if (d & (1 << (i + 12))) d ^= 0x1f25 << i;
+    return (v << 12) | d;
+  }
+
+  function buildMatrix(v, cw, mask) {
+    var size = v * 4 + 17;
+    var m = newMatrix(size), fn = [];
+    for (var i = 0; i < size; i++) fn.push(new Int8Array(size));
+
+    placeFinder(m, fn, 0, 0); placeFinder(m, fn, 0, size - 7); placeFinder(m, fn, size - 7, 0);
+
+    /* التوقيت */
+    for (i = 8; i < size - 8; i++) {
+      m[6][i] = (i % 2 === 0) ? 1 : 0; fn[6][i] = 1;
+      m[i][6] = (i % 2 === 0) ? 1 : 0; fn[i][6] = 1;
+    }
+    /* أنماط المحاذاة */
+    var al = ALIGN[v];
+    for (var a = 0; a < al.length; a++) for (var b = 0; b < al.length; b++) {
+      var cr = al[a], cc0 = al[b];
+      if ((cr <= 8 && cc0 <= 8) || (cr <= 8 && cc0 >= size - 9) || (cr >= size - 9 && cc0 <= 8)) continue;
+      for (var dr = -2; dr <= 2; dr++) for (var dc = -2; dc <= 2; dc++) {
+        var on = Math.max(Math.abs(dr), Math.abs(dc)) !== 1;
+        m[cr + dr][cc0 + dc] = on ? 1 : 0; fn[cr + dr][cc0 + dc] = 1;
+      }
+    }
+    /* الوحدة الداكنة + حجز خانات صيغة المعلومات */
+    m[size - 8][8] = 1; fn[size - 8][8] = 1;
+    for (i = 0; i <= 8; i++) { if (i !== 6) { fn[8][i] = 1; fn[i][8] = 1; } }
+    for (i = 0; i < 8; i++) { fn[8][size - 1 - i] = 1; fn[size - 1 - i][8] = 1; }
+
+    /* معلومات الإصدار (٧ فأعلى) */
+    if (v >= 7) {
+      var vb = bchVersion(v);
+      for (i = 0; i < 18; i++) {
+        var bit = (vb >> i) & 1, r1 = Math.floor(i / 3), c1 = size - 11 + (i % 3);
+        m[r1][c1] = bit; fn[r1][c1] = 1;
+        m[c1][r1] = bit; fn[c1][r1] = 1;
+      }
+    }
+
+    /* وضع البيانات بنمط الزجزاج */
+    var bitIdx = 0, total = cw.length * 8, up = true;
+    for (var col = size - 1; col > 0; col -= 2) {
+      if (col === 6) col--;
+      for (var t = 0; t < size; t++) {
+        var row = up ? (size - 1 - t) : t;
+        for (var s = 0; s < 2; s++) {
+          var cx = col - s;
+          if (fn[row][cx]) continue;
+          var bit2 = 0;
+          if (bitIdx < total) bit2 = (cw[bitIdx >> 3] >> (7 - (bitIdx & 7))) & 1;
+          bitIdx++;
+          if (maskFn(mask, row, cx)) bit2 ^= 1;
+          m[row][cx] = bit2;
+        }
+      }
+      up = !up;
+    }
+
+    /* صيغة المعلومات */
+    var f = bchFormat((0 << 3) | mask);     // 0 = مستوى M
+    for (i = 0; i < 15; i++) {
+      var bt = (f >> i) & 1;
+      /* العمود الرأسى يسار أعلى */
+      if (i < 6) m[i][8] = bt;
+      else if (i < 8) m[i + 1][8] = bt;
+      else m[size - 15 + i][8] = bt;
+      /* الصف الأفقى أعلى */
+      if (i < 8) m[8][size - 1 - i] = bt;
+      else if (i === 8) m[8][7] = bt;
+      else m[8][14 - i] = bt;
+    }
+    return m;
+  }
+
+  function maskFn(k, i, j) {
+    switch (k) {
+      case 0: return (i + j) % 2 === 0;
+      case 1: return i % 2 === 0;
+      case 2: return j % 3 === 0;
+      case 3: return (i + j) % 3 === 0;
+      case 4: return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+      case 5: return ((i * j) % 2) + ((i * j) % 3) === 0;
+      case 6: return (((i * j) % 2) + ((i * j) % 3)) % 2 === 0;
+      case 7: return (((i + j) % 2) + ((i * j) % 3)) % 2 === 0;
+    }
+    return false;
+  }
+
+  function penalty(m) {
+    var n = m.length, p = 0, i, j, k;
+    /* قاعدة ١ — خمسة متتالية فأكثر */
+    for (i = 0; i < n; i++) {
+      for (var dir = 0; dir < 2; dir++) {
+        var run = 1, prev = dir ? m[0][i] : m[i][0];
+        for (j = 1; j < n; j++) {
+          var cur = dir ? m[j][i] : m[i][j];
+          if (cur === prev) { run++; } else { if (run >= 5) p += run - 2; run = 1; prev = cur; }
+        }
+        if (run >= 5) p += run - 2;
+      }
+    }
+    /* قاعدة ٢ — مربعات ٢×٢ */
+    for (i = 0; i < n - 1; i++) for (j = 0; j < n - 1; j++) {
+      var a = m[i][j];
+      if (a === m[i][j + 1] && a === m[i + 1][j] && a === m[i + 1][j + 1]) p += 3;
+    }
+    /* قاعدة ٣ — نمط ١٠١١١٠١ مع أربع فراغات */
+    var P1 = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0], P2 = [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+    function match(get, start) {
+      var ok1 = true, ok2 = true;
+      for (k = 0; k < 11; k++) { var v2 = get(start + k); if (v2 !== P1[k]) ok1 = false; if (v2 !== P2[k]) ok2 = false; }
+      return (ok1 ? 1 : 0) + (ok2 ? 1 : 0);
+    }
+    for (i = 0; i < n; i++) for (j = 0; j + 11 <= n; j++) {
+      p += 40 * match(function (x) { return m[i][x]; }, j);
+      p += 40 * match(function (x) { return m[x][i]; }, j);
+    }
+    /* قاعدة ٤ — توازن الأسود والأبيض */
+    var dark = 0;
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) if (m[i][j]) dark++;
+    var pct = dark * 100 / (n * n);
+    p += Math.floor(Math.abs(pct - 50) / 5) * 10;
+    return p;
+  }
+
+  /* --- الواجهة --- */
+  function make(text) {
+    var bytes = utf8(String(text));
+    var v = 0;
+    for (var i = 1; i <= 10; i++) if (bytes.length <= capacityBytes(i)) { v = i; break; }
+    if (!v) throw new Error('النص أطول مما يسعه رمز QR هنا');
+    var cw = buildCodewords(bytes, v);
+    var best = null, bestP = Infinity;
+    for (var k = 0; k < 8; k++) {
+      var m = buildMatrix(v, cw, k), p = penalty(m);
+      if (p < bestP) { bestP = p; best = m; }
+    }
+    return best;
+  }
+
+  /* يرسم الرمز كـ SVG — لا يحتاج canvas ولا صورة خارجية */
+  function svg(text, px, quiet) {
+    var m = make(text), n = m.length, q = (quiet == null ? 4 : quiet), tot = n + q * 2;
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" width="' + px + '" height="' + px +
+      '" viewBox="0 0 ' + tot + ' ' + tot + '" shape-rendering="crispEdges">' +
+      '<rect width="' + tot + '" height="' + tot + '" fill="#ffffff"/><path fill="#0d3b5c" d="';
+    for (var i = 0; i < n; i++) for (var j = 0; j < n; j++)
+      if (m[i][j]) s += 'M' + (j + q) + ' ' + (i + q) + 'h1v1h-1z';
+    return s + '"/></svg>';
+  }
+
+  root.APQR = { make: make, svg: svg, capacityBytes: capacityBytes };
+})(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
 
