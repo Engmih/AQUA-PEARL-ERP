@@ -3952,7 +3952,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.20';
+const APP_VER  = 'v61.21';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -11768,10 +11768,22 @@ function apSetAttUrl(key,url){
      =================================================================== */
   let messaging = null;
 
+  /* v61.21: المفتاح يُحفظ فى إعدادات النظام (الإعدادات ← الإشعارات).
+     كان الكود يقرأه من إعدادات السحابة فلا يجده أبدًا. */
+  function vapidKey() {
+    try {
+      const st = (window.apGetDB && window.apGetDB().settings) || {};
+      if (st.vapidKey) return String(st.vapidKey).trim();
+    } catch (e) {}
+    const c = cfgGet();
+    return String((c && c.vapidKey) || '').trim();
+  }
+  window.apVapidKey = vapidKey;
+
   async function loadMessaging() {
     if (messaging) return messaging;
     const c = cfgGet();
-    if (!c || !c.vapidKey) throw new Error('مفتاح الإشعارات غير مضبوط فى الإعدادات');
+    if (!vapidKey()) throw new Error('مفتاح الإشعارات غير مضبوط فى الإعدادات');
     if (!('Notification' in window) || !('serviceWorker' in navigator))
       throw new Error('المتصفح لا يدعم الإشعارات');
     await loadSDK();
@@ -11783,13 +11795,13 @@ function apSetAttUrl(key,url){
 
   /* يطلب الإذن ويعيد رمز الجهاز */
   window.apPushRegister = async function () {
-    const c = cfgGet();
-    if (!c.vapidKey) throw new Error('مفتاح الإشعارات (VAPID) غير مضبوط');
+    const vk = vapidKey();
+    if (!vk) throw new Error('مفتاح الإشعارات (VAPID) غير مضبوط');
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') throw new Error('لم تسمح بالإشعارات');
     const m = await loadMessaging();
     const reg = await navigator.serviceWorker.ready;
-    const tok = await m.getToken({ vapidKey: c.vapidKey, serviceWorkerRegistration: reg });
+    const tok = await m.getToken({ vapidKey: vk, serviceWorkerRegistration: reg });
     if (!tok) throw new Error('تعذر الحصول على رمز الجهاز');
     /* رسالة واصلة والتطبيق مفتوح */
     try {
