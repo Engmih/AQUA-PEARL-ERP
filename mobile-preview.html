@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aqua Pearl ERP — محاكاة الموبايل</title>
+<style>
+  :root{
+    --navy:#122B45; --navy2:#0d3b5c; --aqua:#0FA3A3; --line:#dfe8ef;
+    --bg:#eef3f7; --card:#ffffff; --muted:#64788c; --gold:#C9A227;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--navy2);
+       min-height:100vh;display:flex;flex-direction:column}
+  header{background:linear-gradient(90deg,var(--navy) 0%,#17496f 100%);color:#fff;
+         padding:9px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+         box-shadow:0 2px 10px rgba(0,0,0,.14);position:sticky;top:0;z-index:5}
+  header h1{margin:0;font-size:16px;font-weight:800;letter-spacing:.2px;white-space:nowrap}
+  header h1 small{font-weight:400;opacity:.72;font-size:11.5px;display:block;margin-top:1px}
+  .grow{flex:1 1 auto}
+  .ctl{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  label.f{font-size:11.5px;opacity:.85}
+  select,input[type=url],button{
+    font-family:inherit;font-size:13px;border-radius:8px;border:1px solid rgba(255,255,255,.28);
+    background:rgba(255,255,255,.12);color:#fff;padding:5px 9px;outline:none}
+  select option{color:#111}
+  input[type=url]{min-width:240px;direction:ltr;text-align:left}
+  input[type=url]::placeholder{color:rgba(255,255,255,.55)}
+  button{cursor:pointer;font-weight:700;background:var(--aqua);border-color:transparent}
+  button:hover{filter:brightness(1.08)}
+  button.ghost{background:rgba(255,255,255,.12)}
+  button.gold{background:var(--gold);color:#201a00}
+
+  .stage{flex:1 1 auto;display:flex;align-items:flex-start;justify-content:center;
+         gap:26px;padding:22px 16px 34px;flex-wrap:wrap;overflow:auto}
+
+  .phone{background:#1b1b1e;border-radius:38px;padding:12px;
+         box-shadow:0 18px 50px rgba(13,59,92,.28),0 0 0 2px #35363b inset;
+         flex:0 0 auto;position:relative}
+  .phone.flat{border-radius:14px;padding:8px}
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);
+         width:36%;height:20px;background:#1b1b1e;border-radius:0 0 14px 14px;z-index:2;pointer-events:none}
+  .phone.flat .notch{display:none}
+  .screenwrap{background:#fff;border-radius:28px;overflow:hidden;position:relative}
+  .phone.flat .screenwrap{border-radius:8px}
+  iframe{display:block;border:0;background:#fff}
+  .cap{color:var(--muted);font-size:12px;text-align:center;margin-top:9px;font-weight:700}
+  .cap b{color:var(--navy2)}
+
+  .panel{flex:0 0 300px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+         padding:14px 15px;box-shadow:0 2px 12px rgba(13,59,92,.06)}
+  .panel h2{margin:0 0 9px;font-size:14px;color:var(--navy2)}
+  .panel p,.panel li{font-size:12.5px;line-height:1.75;color:var(--muted);margin:5px 0}
+  .panel ul{margin:6px 0;padding-inline-start:18px}
+  .panel code{background:#f1f6fa;border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+              font-size:11.5px;direction:ltr;display:inline-block}
+  .warn{background:#FFF6E0;border:1px solid #ecd9a0;border-radius:10px;padding:9px 11px;
+        font-size:12px;color:#6b5516;line-height:1.7;margin-top:10px}
+  .err{display:none;background:#fdeeee;border:1px solid #f0c2c2;color:#9b2222;
+       border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.75;margin-top:10px}
+  @media(max-width:900px){ .panel{flex:1 1 100%;order:2} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>محاكاة الموبايل <small>Aqua Pearl ERP — للمراجعة من الكمبيوتر</small></h1>
+
+  <div class="ctl">
+    <label class="f">الجهاز</label>
+    <select id="dev"></select>
+  </div>
+
+  <div class="ctl">
+    <label class="f">الرابط</label>
+    <input type="url" id="url" placeholder="https://aqua-pearl-erp.pages.dev/">
+    <button id="go">فتح</button>
+  </div>
+
+  <div class="grow"></div>
+
+  <div class="ctl">
+    <button class="ghost" id="rot" title="تدوير الشاشة">⟳ تدوير</button>
+    <button class="ghost" id="two" title="عرض جهازين جنب بعض">⧉ جهازين</button>
+    <button class="gold" id="rel" title="إعادة تحميل">↻ تحديث</button>
+  </div>
+</header>
+
+<div class="stage">
+  <div>
+    <div class="phone" id="ph1"><div class="notch"></div>
+      <div class="screenwrap"><iframe id="fr1" title="معاينة الموبايل"></iframe></div></div>
+    <div class="cap" id="cap1">—</div>
+  </div>
+
+  <div id="slot2" style="display:none">
+    <div class="phone" id="ph2"><div class="notch"></div>
+      <div class="screenwrap"><iframe id="fr2" title="معاينة ثانية"></iframe></div></div>
+    <div class="cap" id="cap2">—</div>
+  </div>
+
+  <div class="panel">
+    <h2>طريقة الاستعمال</h2>
+    <p>اختر الجهاز من القائمة، والصفحة تظهر بنفس مقاس شاشته بالظبط — نفس اللى هيشوفه المستخدم.</p>
+    <ul>
+      <li><b>تدوير</b> — عرضى وطولى</li>
+      <li><b>جهازين</b> — موبايل وتابلت جنب بعض للمقارنة</li>
+      <li><b>الرابط</b> — تقدر تحطّ أى نسخة، الأونلاين أو ملف على جهازك</li>
+    </ul>
+    <div class="warn">
+      ده إطار معاينة فقط — المقاسات والتنسيق حقيقية ١٠٠٪، لكن اللمس بالإصبع
+      والكاميرا وتثبيت التطبيق متتجربش إلا من الموبايل نفسه.
+    </div>
+    <div class="err" id="err">
+      <b>الصفحة مش ظاهرة؟</b><br>
+      غالبًا فتحت ملف الـ HTML ده من جهازك مباشرة وحطّيت رابط أونلاين — المتصفح بيمنع الخلط.
+      الحل: افتح الاتنين من نفس المكان، أو حمّل <code>index.html</code> جنب الملف ده
+      وخلّى الرابط <code>index.html</code>.
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var DEVICES = [
+    { n:'iPhone SE',               w:375,  h:667 },
+    { n:'iPhone 12/13 mini',       w:375,  h:812 },
+    { n:'iPhone 14 / 15',          w:390,  h:844 },
+    { n:'iPhone 14/15 Pro Max',    w:430,  h:932 },
+    { n:'Samsung Galaxy S20/S21',  w:360,  h:800 },
+    { n:'Galaxy S22/S23/S24/S25 Ultra', w:384, h:854 },
+    { n:'Xiaomi / Oppo شائع',      w:393,  h:873 },
+    { n:'موبايل صغير جدًا',         w:320,  h:568 },
+    { n:'iPad mini',               w:768,  h:1024, flat:true },
+    { n:'iPad Pro 11',             w:834,  h:1194, flat:true }
+  ];
+
+  var g = function(id){ return document.getElementById(id); };
+  var dev = g('dev'), url = g('url'), fr1 = g('fr1'), fr2 = g('fr2');
+  var rotated = false, twoUp = false;
+
+  DEVICES.forEach(function(d,i){
+    var o = document.createElement('option');
+    o.value = i; o.textContent = d.n + ' — ' + d.w + '×' + d.h;
+    dev.appendChild(o);
+  });
+  dev.value = 2;   /* iPhone 14 */
+
+  /* الرابط الافتراضى: index.html جنب هذا الملف لو موجود، وإلا النسخة الأونلاين */
+  var DEFAULT_URL = 'index.html';
+  try{
+    if (location.protocol !== 'http:' && location.protocol !== 'https:')
+      DEFAULT_URL = 'index.html';
+  }catch(e){}
+  url.value = DEFAULT_URL;
+
+  function fit(ph, fr, cap, d){
+    var w = rotated ? d.h : d.w, h = rotated ? d.w : d.h;
+    /* نصغّر لو الشاشة مش واسعة كفاية، مع إبقاء المقاس المنطقى كما هو */
+    var avail = Math.max(320, window.innerHeight - 200);
+    var scale = Math.min(1, avail / h);
+    fr.style.width  = w + 'px';
+    fr.style.height = h + 'px';
+    fr.style.transform = scale < 1 ? 'scale(' + scale.toFixed(3) + ')' : '';
+    fr.style.transformOrigin = 'top right';
+    ph.querySelector('.screenwrap').style.width  = Math.round(w * scale) + 'px';
+    ph.querySelector('.screenwrap').style.height = Math.round(h * scale) + 'px';
+    ph.className = 'phone' + (d.flat || rotated ? ' flat' : '');
+    cap.innerHTML = '<b>' + d.n + '</b> — ' + w + '×' + h +
+      (scale < 1 ? ' (معروضة بـ ' + Math.round(scale * 100) + '٪)' : '');
+  }
+
+  function apply(){
+    var d  = DEVICES[Number(dev.value) || 0];
+    var d2 = DEVICES[8];                       /* iPad mini للمقارنة */
+    fit(g('ph1'), fr1, g('cap1'), d);
+    if (twoUp) fit(g('ph2'), fr2, g('cap2'), d2);
+  }
+
+  function load(){
+    var u = (url.value || '').trim() || DEFAULT_URL;
+    fr1.src = u;
+    if (twoUp) fr2.src = u;
+    /* الحالة الوحيدة التى يمنعها المتصفح فعلًا ويمكن الجزم بها:
+       هذا الملف مفتوح من القرص ورابط أونلاين مكتوب فى الخانة. */
+    var fromDisk = (location.protocol === 'file:');
+    var online   = /^https?:\/\//i.test(u);
+    g('err').style.display = (fromDisk && online) ? 'block' : 'none';
+  }
+
+  dev.addEventListener('change', apply);
+  g('go').addEventListener('click', load);
+  url.addEventListener('keydown', function(e){ if (e.key === 'Enter') load(); });
+  g('rel').addEventListener('click', function(){
+    fr1.src = fr1.src; if (twoUp) fr2.src = fr2.src;
+  });
+  g('rot').addEventListener('click', function(){ rotated = !rotated; apply(); });
+  g('two').addEventListener('click', function(){
+    twoUp = !twoUp;
+    g('slot2').style.display = twoUp ? '' : 'none';
+    apply();
+    if (twoUp) fr2.src = fr1.src;
+  });
+  window.addEventListener('resize', apply);
+
+  apply(); load();
+})();
+</script>
+</body>
+</html>

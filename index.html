@@ -516,6 +516,129 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
 /* ===================================================================
    v61.18 — كروت البونص والغرامات + خانات الاحتساب لكل قسط
    =================================================================== */
+/* ===================================================================
+   v61.19 — بوابة العميل: الجرس · كارت البونص الواحد · شاشة الترحيب
+   =================================================================== */
+#apBell{position:relative;border:0;background:rgba(255,255,255,.14);color:#fff;
+  width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1;
+  display:grid;place-items:center;margin-inline-end:8px;transition:background .15s}
+#apBell:hover{background:rgba(255,255,255,.26)}
+#apBell.hot{animation:bellRing 2.6s ease-in-out 1s 3}
+@keyframes bellRing{0%,88%,100%{transform:rotate(0)}91%{transform:rotate(13deg)}
+  94%{transform:rotate(-11deg)}97%{transform:rotate(7deg)}}
+#apBell i{position:absolute;top:-3px;inset-inline-end:-3px;background:#e53935;color:#fff;
+  font-style:normal;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;
+  display:grid;place-items:center;padding:0 3px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.alGrp{border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin-bottom:9px;background:#fbfdfe}
+.alGrp>b{display:block;margin-bottom:6px;font-size:13px}
+.alGrp.bad{background:#fdeeee;border-color:#f0c2c2} .alGrp.bad>b{color:#b3261e}
+.alGrp.ok{background:#eefaf3;border-color:#bfe6d2} .alGrp.ok>b{color:#0f8f57}
+.alGrp.soon{background:#f6fbfd;border-color:#cfe3f1}
+.alRow{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;
+  border-top:1px dashed rgba(0,0,0,.08)}
+
+.card.bpOne .bpBig{border:1.8px solid;border-radius:14px;padding:14px 12px;text-align:center;cursor:pointer}
+.card.bpOne .bpBig .lb{font-size:12px;color:var(--muted);margin-bottom:4px}
+.card.bpOne .bpBig .nm{font-size:25px;font-weight:900;letter-spacing:-.4px}
+.card.bpOne .bpBig .hint{font-size:11px;color:var(--muted);margin-top:5px;font-weight:700}
+
+/* ---- شاشة الترحيب ---- */
+.apGreet{position:fixed;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;
+  padding:22px 18px;background:rgba(10,30,50,.55);backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .28s ease}
+.apGreet.show{opacity:1}
+.apGreet .gBox{position:relative;width:100%;max-width:320px;border-radius:20px;padding:26px 20px 20px;
+  text-align:center;background:#fff;overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.3);
+  transform:scale(.72) translateY(16px)}
+.apGreet.show .gBox{animation:gPop .5s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes gPop{from{transform:scale(.72) translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.apGreet .gX{position:absolute;inset-inline-end:11px;top:11px;width:29px;height:29px;border-radius:50%;
+  border:0;background:rgba(0,0,0,.07);color:#45566a;font-size:16px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;transition:background .15s,transform .15s}
+.apGreet .gX:hover{background:rgba(0,0,0,.14);transform:rotate(90deg)}
+.apGreet .gTtl{font-size:15px;font-weight:800;margin:14px 0 2px}
+.apGreet .gSml{font-size:11.5px;color:var(--muted);margin:0 0 14px;line-height:1.7}
+.apGreet .gAmt{font-size:33px;font-weight:900;letter-spacing:-.5px;line-height:1;direction:ltr;
+  display:inline-block;font-variant-numeric:tabular-nums}
+.apGreet .gCur{font-size:14px;font-weight:700;margin-inline-start:5px}
+.apGreet .gGo{margin-top:17px;width:100%;border:0;border-radius:12px;padding:11px;color:#fff;
+  font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.apGreet .gDue{margin-top:12px;background:#fff;border:1px dashed #f0c2c2;border-radius:10px;
+  padding:8px 10px;font-size:11px;color:#8a3a33;line-height:1.65}
+
+.apGreet.bon .gBox{background:linear-gradient(170deg,#f3fdf8 0%,#ffffff 52%)}
+.apGreet.bon .gTtl,.apGreet.bon .gAmt,.apGreet.bon .gCur{color:#0f8f57}
+.apGreet.bon .gGo{background:linear-gradient(135deg,#13a768,#0f8f57);box-shadow:0 6px 16px rgba(15,143,87,.32)}
+.apGreet .gMedal{width:86px;height:86px;margin:0 auto;position:relative}
+.apGreet.show .gMedal{animation:gDrop .62s cubic-bezier(.2,1.4,.4,1) .07s both}
+@keyframes gDrop{from{transform:translateY(-34px) scale(.5);opacity:0}to{transform:none;opacity:1}}
+.apGreet .gRing{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(15,143,87,.28)}
+.apGreet.show .gRing{animation:gHalo 1.5s ease-out .5s infinite}
+@keyframes gHalo{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.55);opacity:0}}
+.apGreet .gCoin{position:absolute;inset:7px;border-radius:50%;display:grid;place-items:center;font-size:33px;
+  background:radial-gradient(circle at 32% 28%,#ffe9a8,#C9A227 62%,#9d7c12);
+  box-shadow:0 7px 18px rgba(201,162,39,.45),inset 0 -3px 7px rgba(0,0,0,.18)}
+.apGreet.show .gCoin{animation:gSpin 1.25s cubic-bezier(.3,.1,.2,1) .28s both}
+@keyframes gSpin{from{transform:rotateY(0)}to{transform:rotateY(720deg)}}
+.apGreet .gShine{position:absolute;top:0;bottom:0;width:48%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.72),transparent)}
+.apGreet.show .gShine{animation:gSweep 1.25s ease-in-out .75s both}
+@keyframes gSweep{from{inset-inline-end:-55%}to{inset-inline-end:118%}}
+.apGreet .gConf{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.apGreet .gConf i{position:absolute;top:-16px;width:7px;height:11px;border-radius:2px;opacity:0}
+.apGreet.show .gConf i{animation:gFall 1.9s linear both}
+@keyframes gFall{0%{opacity:0;transform:translateY(0) rotate(0)}12%{opacity:1}
+  100%{opacity:0;transform:translateY(330px) rotate(620deg)}}
+
+.apGreet.pen .gBox{background:linear-gradient(170deg,#fff5f4 0%,#ffffff 52%)}
+.apGreet.pen .gTtl,.apGreet.pen .gAmt,.apGreet.pen .gCur{color:#b3261e}
+.apGreet.pen .gGo{background:linear-gradient(135deg,#d14b3f,#b3261e);box-shadow:0 6px 16px rgba(179,38,30,.3)}
+.apGreet .gWarn{width:86px;height:86px;margin:0 auto;position:relative;display:grid;place-items:center}
+.apGreet.show .gWarn{animation:gRise .5s cubic-bezier(.2,1.2,.4,1) .06s both}
+@keyframes gRise{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.apGreet .gWarn svg{width:86px;height:86px;overflow:visible}
+.apGreet .gTri{fill:none;stroke:#b3261e;stroke-width:5.5;stroke-linejoin:round;
+  stroke-dasharray:230;stroke-dashoffset:230}
+.apGreet.show .gTri{animation:gDraw .85s cubic-bezier(.4,0,.2,1) .18s forwards}
+@keyframes gDraw{to{stroke-dashoffset:0}}
+.apGreet .gBang{opacity:0}
+.apGreet.show .gBang{animation:gBangIn .3s ease .9s forwards, gShake .5s ease 1.2s 2}
+@keyframes gBangIn{to{opacity:1}}
+@keyframes gShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2.5px)}75%{transform:translateX(2.5px)}}
+.apGreet .gPulse{position:absolute;inset:4px;border-radius:50%;border:2.5px solid rgba(179,38,30,.3)}
+.apGreet.show .gPulse{animation:gHalo 1.9s ease-out .9s infinite}
+@media print{.apGreet,#apBell{display:none!important}}
+
+/* ===================================================================
+   v61.19 — جدول المصروفات الشهري: سكرول يمين وشمال مع تثبيت صف الشهور
+   وعمود البند، على الكمبيوتر والموبايل سواء.
+   =================================================================== */
+.expWrap{overflow:auto!important;max-height:min(70vh,620px)!important;
+  border:1px solid var(--line);border-radius:11px;-webkit-overflow-scrolling:touch}
+table.cfExpTbl thead th{position:sticky;top:0;z-index:3;
+  background:var(--navy,#122B45)!important;color:#fff!important}
+table.cfExpTbl tbody td:first-child,
+table.cfExpTbl tbody th:first-child{position:sticky;inset-inline-start:0;z-index:2;
+  background:#fff;box-shadow:1px 0 0 0 var(--line),-1px 0 0 0 var(--line)}
+table.cfExpTbl tbody tr:last-child td:first-child{background:#FBF3D9}
+table.cfExpTbl thead th:first-child{z-index:4;inset-inline-start:0;position:sticky}
+
+/* v61.19: خانة الحالة — الكلمة ثم الرقم بين قوسين على الكمبيوتر */
+#custTbl td.cSt .stNum::before{content:' ('}
+#custTbl td.cSt .stNum::after{content:')'}
+#custTbl td.cSt .stNum.dash{display:none}
+#custTbl td.cUnit .uBld{display:none}
+.custFiltersM{display:none}
+
+/* v61.19: بطاقة قابلة للطى بسهم */
+.card.apFold>details>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+  padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.card.apFold>details>summary::-webkit-details-marker{display:none}
+.card.apFold>details>summary::after{content:'⌄';margin-inline-start:auto;font-size:19px;
+  color:var(--muted);transition:transform .18s;line-height:1}
+.card.apFold>details[open]>summary::after{transform:rotate(180deg)}
+.card.apFold>details>summary h3{border:0!important;padding:0!important}
+
 .field.bpTile{cursor:pointer;transition:box-shadow .15s,border-color .15s}
 .field.bpTile:hover{border-color:var(--aqua2,#0FA3A3);box-shadow:0 2px 10px rgba(15,163,163,.18)}
 .field.bpTile .bpHint{display:block;font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:600}
@@ -678,6 +801,136 @@ table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2
   .screen-title{margin-bottom:8px!important}
   .toolbar{gap:6px!important}
   /* خانة الاحتساب: الاسم والمربع على سطر واحد */
+  /* v61.19: وصف باقات التشطيب يُخفى على الموبايل فقط — يبقى على
+     الكمبيوتر وفى الـPDF المرسل للعميل كما هو. */
+  .uvPkgPeek .pk .d{display:none!important}
+
+  /* ===== v61.19: جداول العميل أربعة أعمدة فى سطر واحد =====
+     كل قسط سطر، وكل إيصال سطر — لا كروت. */
+  table.tbl.apCliTbl{display:table!important;width:100%!important;min-width:0!important;
+    table-layout:fixed!important;border-collapse:collapse!important}
+  table.tbl.apCliTbl thead{display:table-header-group!important}
+  table.tbl.apCliTbl tbody{display:table-row-group!important}
+  table.tbl.apCliTbl tr{display:table-row!important;padding:0!important;margin:0!important;
+    border:0!important;background:none!important;box-shadow:none!important;cursor:default}
+  table.tbl.apCliTbl tr::after{display:none!important}
+  table.tbl.apCliTbl th,table.tbl.apCliTbl td{display:table-cell!important;width:auto!important;
+    padding:8px 4px!important;font-size:12px!important;text-align:center;vertical-align:middle!important;
+    border-bottom:1px solid var(--line)!important;white-space:normal!important;overflow-wrap:anywhere}
+  table.tbl.apCliTbl tbody tr[data-exp] td[data-keep],
+  table.tbl.apCliTbl tbody tr[data-exp] td[data-blank],
+  table.tbl.apCliTbl tbody tr[data-exp] td{display:table-cell!important}
+  table.tbl.apCliTbl td::before,table.tbl.apCliTbl th::before{display:none!important;content:none!important}
+  table.tbl.apCliTbl thead th{background:var(--navy,#122B45)!important;color:#fff!important;
+    font-size:11px!important;padding:8px 4px!important;border:0!important}
+  table.tbl.apCliTbl tr>:nth-child(1){width:14%}
+  table.tbl.apCliTbl tr>:nth-child(2){width:34%}
+  table.tbl.apCliTbl tr>:nth-child(3){width:28%}
+  table.tbl.apCliTbl tr>:nth-child(4){width:24%}
+  table.tbl.apCliTbl .badge{font-size:10.5px;padding:2px 7px}
+  table.tbl.apCliTbl .btn{padding:5px 8px!important;font-size:14px!important}
+  /* الجرس يأخذ مكانه بلا تزاحم مع العنوان */
+  body.ap-client #cloudBadge{display:none!important}
+
+  /* ===== v61.19: جدول المصروفات يفضل جدولًا على الموبايل =====
+     أعمدة الشهور لا تصلح ككروت — نتركه جدولًا ونسحبه بالإصبع،
+     مع تثبيت صف الشهور وعمود البند. */
+  table.tbl.cfExpTbl{display:table!important;width:auto!important;min-width:max-content!important;
+    table-layout:auto!important;border-collapse:separate!important;border-spacing:0!important}
+  table.tbl.cfExpTbl thead{display:table-header-group!important}
+  table.tbl.cfExpTbl tbody{display:table-row-group!important}
+  table.cfExpTbl tr{display:table-row!important;padding:0!important;margin:0!important;
+    border:0!important;background:none!important;box-shadow:none!important;cursor:default}
+  table.cfExpTbl tr::after{display:none!important}
+  table.cfExpTbl th,table.cfExpTbl td{display:table-cell!important;width:auto!important;
+    white-space:nowrap!important;padding:5px 6px!important;font-size:11.5px!important;
+    border-bottom:1px solid var(--line)!important;text-align:center;vertical-align:middle!important}
+  table.cfExpTbl td::before,table.cfExpTbl th::before{display:none!important;content:none!important}
+  /* قواعد طىّ الكروت تخفى كل خلية data-keep="more" — وده كان بيخفى
+     أعمدة الشهور نفسها. نتجاوزها بتخصيص أعلى. */
+  table.tbl.cfExpTbl tbody tr[data-exp] td[data-keep],
+  table.tbl.cfExpTbl tbody tr[data-exp] td[data-blank],
+  table.tbl.cfExpTbl tbody tr[data-exp] td{display:table-cell!important}
+  /* العمود الثابت لازم يغطّى ما يمرّ تحته تمامًا */
+  table.tbl.cfExpTbl tbody td:first-child{z-index:6!important;background:#fff!important}
+  table.tbl.cfExpTbl tbody tr:last-child td:first-child{background:#FBF3D9!important}
+  table.tbl.cfExpTbl thead th{z-index:5!important}
+  table.tbl.cfExpTbl thead th:first-child{z-index:8!important}
+  table.cfExpTbl input{width:78px!important;min-width:0!important;padding:3px 4px!important;
+    font-size:11.5px!important;text-align:center}
+  table.cfExpTbl tbody td:first-child input{width:104px!important}
+  .expWrap{overflow:auto!important;max-height:62vh!important;border:1px solid var(--line)!important;
+    background:#fff!important}
+
+  /* ===== v61.19: قاعدة العملاء جدول حقيقى على الموبايل =====
+     كل عميل سطر واحد: العميل · الوحدة · الحالة · الأزرار.
+     الأعمدة الباقية تُخفى، وفلاترها تنتقل لشريط فوق الجدول.
+     الطباعة لا تتأثر لأن هذه الورقة كلها screen فقط. */
+  .custFiltersM{display:flex!important;flex-wrap:wrap;gap:8px;align-items:center;
+    margin:-2px 0 9px;font-size:11.5px;color:var(--muted)}
+  .custFiltersM>span{display:inline-flex;align-items:center;gap:5px;background:#fff;
+    border:1px solid var(--line);border-radius:9px;padding:4px 8px}
+
+  #custTbl{display:table!important;width:100%!important;min-width:0!important;
+    table-layout:auto!important;border-collapse:collapse!important}
+  #custTbl colgroup{display:none!important}
+  #custTbl thead{display:table-header-group!important}
+  #custTbl tbody{display:table-row-group!important}
+  #custTbl tr{display:table-row!important;padding:0!important;margin:0!important;
+    border:0!important;background:none!important;box-shadow:none!important;cursor:default}
+  #custTbl tr::after{display:none!important}
+  #custTbl th,#custTbl td{display:table-cell!important;width:auto!important;
+    padding:7px 5px!important;font-size:12px!important;vertical-align:middle!important;
+    border-bottom:1px solid var(--line)!important;white-space:normal!important;
+    overflow-wrap:anywhere;text-align:center}
+  #custTbl td::before,#custTbl th::before{display:none!important;content:none!important}
+  /* نُظهر العميل (١) والوحدة (٥) والحالة (١٠) والأزرار (١١) فقط */
+  #custTbl tr>:nth-child(2),#custTbl tr>:nth-child(3),#custTbl tr>:nth-child(4),
+  #custTbl tr>:nth-child(6),#custTbl tr>:nth-child(7),#custTbl tr>:nth-child(8),
+  #custTbl tr>:nth-child(9){display:none!important}
+  /* قواعد طىّ الكروت تستهدف #custTbl بالاسم، فنتجاوزها صراحةً للأعمدة الباقية */
+  #custTbl tbody tr[data-exp] td:nth-child(1),
+  #custTbl tbody tr[data-exp] td:nth-child(5),
+  #custTbl tbody tr[data-exp] td:nth-child(10),
+  #custTbl tbody tr[data-exp] td:nth-child(11){display:table-cell!important}
+  #custTbl tr>:nth-child(1){width:40%!important;text-align:start;font-weight:800}
+  #custTbl tr>:nth-child(5){width:21%!important;white-space:nowrap!important}
+  #custTbl tr>:nth-child(10){width:24%!important;white-space:nowrap!important}
+  #custTbl tr>:nth-child(11){width:15%!important}
+  #custTbl thead th{background:var(--navy,#122B45)!important;color:#fff!important;
+    font-size:11px!important;padding:7px 4px!important;border:0!important}
+  #custTbl thead th br,#custTbl thead th .thm{display:none!important}
+  #custTbl td.cUnit .uBld{display:inline;color:var(--muted);font-size:10.5px}
+  #custTbl td.cSt .stWord{display:none!important}
+  #custTbl td.cSt .stNum{font-weight:800}
+  #custTbl td.cSt .stNum::before,#custTbl td.cSt .stNum::after{content:''!important}
+  #custTbl td.cSt .stNum.dash{display:inline!important;color:var(--muted);font-weight:400}
+  #custTbl td.cSt.neg .stNum{color:#b3261e}
+  #custTbl td.cSt.pos .stNum{color:#0f8f57}
+  #custTbl .rowBtns{display:flex;gap:4px;justify-content:center;flex-wrap:nowrap}
+  #custTbl .rowBtns .btn{padding:5px 7px!important;font-size:14px!important;line-height:1}
+  #custTbl .rowBtns .btn .btnTxt{display:none}
+
+  /* ===== v61.19: كروت الرئيسية — اتنين فى الصف بترتيب ثابت =====
+     كانت flex فيتمدّد الكارت لعرض الصف لوحده لما رقمه طويل، فيطلع
+     الترتيب مختلف مع كل تغيّر فى الأرقام. دلوقتى شبكة ثابتة وترتيب
+     مكتوب بالاسم لا يتغيّر مهما كبرت الأرقام. */
+  .dash-wrap{display:grid!important;grid-template-columns:1fr 1fr!important;
+    gap:8px!important;height:auto!important;max-height:none!important;min-height:0!important}
+  .dash-col{display:contents!important}
+  .dash-hero{grid-column:1 / -1;order:0;min-height:160px!important}
+  .dash-col .stat{flex:none!important;min-height:0!important;padding:7px 9px!important}
+  .stat[data-k="total"]{order:1}      .stat[data-k="avail"]{order:2}
+  .stat[data-k="sold"]{order:3}       .stat[data-k="ret"]{order:4}
+  .stat[data-k="cash"]{order:5}       .stat[data-k="inst"]{order:6}
+  .stat[data-k="overdue"]{order:7}    .stat[data-k="salesTotal"]{order:8}
+  .stat[data-k="collected"]{order:9}  .stat[data-k="remaining"]{order:10}
+  /* الأرقام الكبيرة تدخل كاملة بلا قصّ */
+  .stat .tt{font-size:10px!important;line-height:1.3}
+  .stat .nm{font-size:13px!important;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
+  .stat .ic{font-size:15px!important}
+  .stat>div{min-width:0}
+
   table.tbl td.bpChk{justify-content:space-between!important;align-items:center!important;
     padding:3px 0!important}
   table.tbl td.bpChk::before{flex:0 0 auto!important;margin-bottom:0!important}
@@ -726,7 +979,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 <header class="app-header">
   <img class="logo" src="data:image/jpeg;base64,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Vo8W9vpHuVmcLgtBVN2xRd6trs/bOVgTpbnWnwnopHJG5j3Me0te04LXDBB7iF1lgxzKt9qbRti1G3N0t0ck2MCZvmSD/iHFRZf9h8zS6SwXMPb2Q1bcH0B4+cLX3MKun5ebs8PerFvxEXo4J9YQi6M96+XROPIhbfd9AaotRPlNnqHsH4cA61v/AC8fctalikhduzRvjd3PaWn3rGqoqp6w39rIx78a264n6SxDC7vCCn73D1LIHEJg9xUdV/BS6WwMHPJ9K7Axo4AAepc5HeF3UtNPVyCOlhlneeTYmFx9yc5eTNFHOZ0dK5W5WXZnqq6kFtsdSxn+8q3CMezn7lJGm9iVFAWS6grn1bu2GAGNnrPM+5XUY1yvpDVZe38HF616z4RzQjarZW3arbS22llqqh3Jkbc+3sAUyaJ2MhpZVaqkDzzFFC7h/wAbhz9A9ql2zWS22alFNa6OGlhA+DG3GfSeZ9a9HdCz7WHTRzq5y4/aO9GRkxNFiOCn9/6Y9BRwUNLFTUsMcMEY3WRxtw1o7gFk4HcmEWZHJy8zM85EREBERAREQEREBERAREQEREBERAREQEREBERAREQFxhcog43VjVVvpKtu7VU0Eze6SMO/aspE6vYmY6Ndn0Tpmoz1tjtx9EDR+xY38neks5+wFBn/AOn/AOa2tFHgp8F0ZV+OUVz6y16DRem6fHU2S3Nxy+4NP7V7VPRwU7QIIY4m90bA0e5d6L2KYjpCFd25X89Uz5uN0JurlF6rEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREH/9k=" alt="Trust Group">
   <div class="titles">
-    <h1>Aqua Pearl ERP <span id="hdrVer" style="font-size:12px;font-weight:400;opacity:.8">v61.15</span></h1>
+    <h1>Aqua Pearl ERP <span id="hdrVer" style="font-size:12px;font-weight:400;opacity:.8"></span></h1>
     <div class="sub" id="hdrCompany">Trust Group — Aqua Pearl City</div>
   </div>
   <div class="userbox no-print" id="userBox" style="display:none"><span>👤 <b id="curUserName"></b></span><button onclick="logout()">خروج</button></div>
@@ -772,10 +1025,23 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     <img src="data:image/jpeg;base64,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" alt="Aqua Pearl">
     <h2>Aqua Pearl ERP</h2>
     <div class="sub">Trust Group — تسجيل الدخول</div>
-    <div class="form-row"><label>👤 اسم المستخدم</label><select id="loginUser"></select></div>
+    <!-- v61.19: رقم الإصدار يُكتب من مصدر واحد (APP_VER) فلا يتجمّد رقم قديم -->
+    <div class="sub" id="loginVer" style="margin-top:-4px;font-size:11.5px;opacity:.6"></div>
+    <!-- v61.19: اسم المستخدم يُكتب بدل القائمة المنسدلة -->
+    <div class="form-row"><label>👤 اسم المستخدم</label>
+      <input type="text" id="loginUser" list="loginUserList" autocomplete="username"
+             placeholder="اكتب اسم المستخدم">
+      <datalist id="loginUserList"></datalist></div>
     <div class="form-row"><label>🔑 كلمة السر</label><input type="password" id="loginPass"></div>
     <div id="loginErr"></div>
     <button class="btn green" style="width:100%;justify-content:center" onclick="doLogin()">🔓 دخول</button>
+    <!-- v61.19: الدخول بالبصمة — يظهر على الموبايل بعد تفعيله مرة واحدة -->
+    <div id="bioWrap" style="display:none;margin-top:9px">
+      <button class="btn aqua" style="width:100%;justify-content:center" onclick="apBioLogin()">
+        🔐 دخول ببصمتك <span id="bioName" style="font-weight:400;opacity:.85"></span></button>
+      <div class="gray-note" style="margin-top:6px;text-align:center;font-size:11.5px">
+        أو اكتب كلمة السر فوق وادخل عادى</div>
+    </div>
     <!-- v61.07: دخول مباشر بالبريد — لا يعتمد على أى بيانات محفوظة على الجهاز،
          فيعمل على أى جهاز جديد أو عليه نسخة قديمة من البيانات. -->
     <div id="emLoginWrap" style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;display:none">
@@ -3667,9 +3933,21 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.18';
-const APP_BUILD= '2026-10-22';
+const APP_VER  = 'v61.19';
+const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
+/* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
+   لحظة الفتح ثم يُصحَّح بعد تحميل البيانات. الآن مصدره واحد فقط. */
+(function(){
+  function stamp(){
+    const h=document.getElementById('hdrVer');
+    if(h){ h.textContent=APP_VER; h.title='إصدار '+APP_VER+' — بناء '+APP_BUILD; }
+    const l=document.getElementById('loginVer');
+    if(l) l.textContent=APP_VER+' · '+APP_BUILD;
+  }
+  stamp();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',stamp);
+})();
 const LS_KEY='aquaPearlERP_v1';
 /* ===== v61.16: بوابة العميل =====
    العميل يدخل ببريده فيرى ملفه فقط. بياناته تُرسَل إلى مساحة منفصلة على
@@ -3944,7 +4222,8 @@ function buildTabs(){
   const tabs=$('nav.tabs');
   /* v61.16: العميل — زر واحد لملفه */
   if(AP_CLIENT){
-    tabs.innerHTML='<button data-s="customerFile" class="active" onclick="apClientOpenFile()">📄 ملفى</button>';
+    const T=[['file','📄 ملفى'],['sched','📅 الأقساط المستحقة'],['pays','💰 الدفعات الفعلية']];
+    tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_CTAB===k?' class="active"':''} onclick="apClientGo('${k}')">${lb}</button>`).join('');
     return;
   }
   tabs.innerHTML=SCREENS.filter(([id])=>allowed(id)).map(([id,lb])=>`<button data-s="${id}" onclick="nav('${id}')">${lb}</button>`).join('');
@@ -3955,7 +4234,14 @@ function showLogin(){
   const bb=$('#btnBackup');if(bb)bb.style.display='none';
   const pb2=$('#btnPortable');if(pb2)pb2.style.display='none';
   const fb=$('#shareFab');if(fb)fb.style.display='none';
-  $('#loginUser').innerHTML=(DB.users||[]).map(u=>`<option value="${u.id}">${esc(u.name)}${u.admin?' (مدير)':''}</option>`).join('');
+  try{ apBioMount(); }catch(e){}
+  /* v61.19: اقتراحات بالأسماء — والمستخدم يكتب اسمه */
+  const dl=$('#loginUserList');
+  if(dl) dl.innerHTML=(DB.users||[]).filter(u=>!u.client)
+    .map(u=>`<option value="${esc(u.name)}">${u.admin?'مدير':'مستخدم'}</option>`).join('');
+  const lu=$('#loginUser');
+  if(lu){ let last=''; try{ last=localStorage.getItem('apLastUser')||''; }catch(e){}
+    lu.value=last; lu.onkeydown=e=>{ if(e.key==='Enter'){ const pw=$('#loginPass'); if(pw) pw.focus(); } }; }
   $('#loginPass').value='';$('#loginErr').textContent='';
   $('#loginOverlay').classList.add('open');
   $('#loginPass').onkeydown=e=>{if(e.key==='Enter')doLogin();};
@@ -3977,10 +4263,161 @@ function showLogin(){
     if(window.innerWidth>760){ const pw=$('#loginPass'); if(pw) setTimeout(()=>pw.focus(),120); }
   }catch(e){}
 }
+/* ===================================================================
+   v61.19 — الدخول بالبصمة على الموبايل
+   جلسة Firebase محفوظة على الجهاز أصلًا؛ البصمة هى قفل النظام نفسه.
+   أول مرة يدخل بكلمة السر ويُسأل: «تفعّل البصمة على الجهاز ده؟».
+   الكمبيوتر يبقى بكلمة السر كما طلب. تعمل من https فقط (شرط المتصفح).
+   =================================================================== */
+const BIO_KEY='apBioCred';
+function apBioSupported(){
+  try{
+    return !!(window.PublicKeyCredential && navigator.credentials &&
+      (location.protocol==='https:'||location.hostname==='localhost'));
+  }catch(e){ return false; }
+}
+function apIsPhone(){
+  try{ return window.matchMedia('(pointer:coarse)').matches || window.innerWidth<=760; }
+  catch(e){ return window.innerWidth<=760; }
+}
+function apBioGet(){
+  try{ return JSON.parse(localStorage.getItem(BIO_KEY)||'null'); }catch(e){ return null; }
+}
+function apBioClear(){ try{ localStorage.removeItem(BIO_KEY); }catch(e){} }
+function b64u(buf){
+  const u8=new Uint8Array(buf); let s='';
+  for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]);
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function unb64u(str){
+  const s=String(str).replace(/-/g,'+').replace(/_/g,'/');
+  const bin=atob(s+'==='.slice((s.length+3)%4));
+  const u8=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  return u8;
+}
+/* تسجيل البصمة لهذا المستخدم على هذا الجهاز */
+async function apBioEnroll(user){
+  if(!apBioSupported()) throw new Error('المتصفح لا يدعم البصمة هنا');
+  const ch=crypto.getRandomValues(new Uint8Array(32));
+  const id=crypto.getRandomValues(new Uint8Array(16));
+  const cred=await navigator.credentials.create({publicKey:{
+    challenge:ch,
+    rp:{name:'Aqua Pearl ERP'},
+    user:{id:id,name:user.email||user.name,displayName:user.name},
+    pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+    authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',
+      residentKey:'preferred'},
+    timeout:60000, attestation:'none'
+  }});
+  if(!cred) throw new Error('لم يتم التسجيل');
+  localStorage.setItem(BIO_KEY,JSON.stringify({
+    credId:b64u(cred.rawId), userId:user.id, name:user.name, email:user.email||'',
+    at:new Date().toISOString()
+  }));
+  return true;
+}
+/* التحقق بالبصمة */
+async function apBioVerify(){
+  const rec=apBioGet();
+  if(!rec||!rec.credId) throw new Error('البصمة غير مفعّلة على هذا الجهاز');
+  const ch=crypto.getRandomValues(new Uint8Array(32));
+  const a=await navigator.credentials.get({publicKey:{
+    challenge:ch,
+    allowCredentials:[{type:'public-key',id:unb64u(rec.credId)}],
+    userVerification:'required', timeout:60000
+  }});
+  if(!a) throw new Error('فشل التحقق');
+  return rec;
+}
+/* زرار الدخول بالبصمة فى شاشة الدخول */
+function apBioMount(){
+  const wrap=$('#bioWrap'); if(!wrap) return;
+  const rec=apBioGet();
+  const ok=apBioSupported()&&apIsPhone()&&rec&&findUser(rec.userId);
+  wrap.style.display=ok?'block':'none';
+  if(ok){
+    const nm=$('#bioName'); if(nm) nm.textContent=rec.name||'';
+  }
+}
+async function apBioLogin(){
+  const err=$('#loginErr');
+  try{
+    err.textContent='⏳ فى انتظار البصمة...';
+    const rec=await apBioVerify();
+    const u=findUser(rec.userId);
+    if(!u){ err.textContent='المستخدم لم يعد موجودًا — ادخل بكلمة السر'; apBioClear(); apBioMount(); return; }
+    /* جلسة السحابة محفوظة على الجهاز، فلا نحتاج كلمة السر مرة أخرى.
+       لو انتهت الجلسة نطلب كلمة السر صراحةً بدل أن ندخله بلا صلاحية. */
+    const live=(typeof window.apCloudOn==='function')&&window.apCloudOn();
+    const cfg=(typeof window.apCloudCfg==='function')?window.apCloudCfg():null;
+    if(cfg&&cfg.apiKey&&u.email&&!live){
+      err.textContent='انتهت جلستك على السحابة — ادخل بكلمة السر مرة واحدة';
+      return;
+    }
+    err.textContent='';
+    CURRENT_USER=u; sessionStorage.setItem(SESSION_KEY,u.id);
+    $('#loginOverlay').classList.remove('open');
+    $('#curUserName').textContent=u.name; $('#userBox').style.display='flex';
+    buildTabs(); nav('dashboard'); checkBackupDue();
+  }catch(e){
+    const no=e&&(e.name==='NotAllowedError'||e.name==='AbortError');
+    err.textContent=no?'اتلغى التحقق — جرّب تانى أو ادخل بكلمة السر'
+                     :('تعذر الدخول بالبصمة: '+(e&&e.message||''));
+  }
+}
+/* عرض البصمة بعد أول دخول ناجح على الموبايل */
+function apBioOffer(u){
+  try{
+    if(!apBioSupported()||!apIsPhone()) return;
+    if(apBioGet()) return;
+    if(localStorage.getItem('apBioAsked')==='1') return;
+    setTimeout(()=>{
+      confirmBox('🔐 الدخول بالبصمة',
+        'تحب تفعّل الدخول بالبصمة على الجهاز ده؟ المرة الجاية تدخل ببصمتك بدل كلمة السر.',
+        'فعّل البصمة', async ()=>{
+          try{ await apBioEnroll(u); toast('تم تفعيل البصمة على هذا الجهاز ✔','ok'); }
+          catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); }
+          try{ localStorage.setItem('apBioAsked','1'); }catch(e){}
+        });
+      try{ localStorage.setItem('apBioAsked','1'); }catch(e){}
+    },1200);
+  }catch(e){}
+}
+/* إلغاء البصمة من الإعدادات */
+function apBioDisable(){
+  apBioClear();
+  try{ localStorage.removeItem('apBioAsked'); }catch(e){}
+  toast('تم إلغاء البصمة من هذا الجهاز','ok');
+  if(typeof renderSettings==='function'&&currentScreen==='settings') renderSettings();
+}
+async function apBioEnableFromSettings(){
+  if(!CURRENT_USER){ toast('سجّل الدخول أولًا','err'); return; }
+  if(!apBioSupported()){ toast('البصمة تعمل من الرابط الأونلاين فقط (https)','err'); return; }
+  try{ await apBioEnroll(CURRENT_USER); toast('تم تفعيل البصمة على هذا الجهاز ✔','ok'); }
+  catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); }
+  if(currentScreen==='settings') renderSettings();
+}
+
+/* v61.19: الاسم يُكتب — نطابقه بالاسم أو بالبريد، بلا حساسية لحالة الأحرف */
+function apResolveUser(txt){
+  const t=String(txt||'').trim().toLowerCase();
+  if(!t) return null;
+  const us=DB.users||[];
+  return us.find(u=>String(u.name||'').trim().toLowerCase()===t)
+      || us.find(u=>String(u.email||'').trim().toLowerCase()===t)
+      || null;
+}
 async function doLogin(){
   /* v63: لو السحابة مضبوطة، سجّل الدخول عليها أولًا ببريد المستخدم */
   const cfg=(typeof window.apCloudCfg==='function')?window.apCloudCfg():null;
-  const u0=findUser($('#loginUser').value);
+  const typed=($('#loginUser').value||'').trim();
+  const u0=apResolveUser(typed);
+  if(!u0){
+    $('#loginErr').textContent = typed ? 'مفيش مستخدم بالاسم ده' : 'اكتب اسم المستخدم';
+    return;
+  }
+  try{ localStorage.setItem('apLastUser',u0.name); }catch(e){}
   if(cfg&&cfg.apiKey&&u0&&u0.email){
     try{
       $('#loginErr').textContent='⏳ جارٍ الاتصال بالسحابة...';
@@ -3996,7 +4433,7 @@ async function doLogin(){
       CURRENT_USER=u0; sessionStorage.setItem(SESSION_KEY,u0.id);
       $('#loginOverlay').classList.remove('open');
       $('#curUserName').textContent=u0.name; $('#userBox').style.display='flex';
-      buildTabs(); nav('dashboard'); checkBackupDue();
+      buildTabs(); nav('dashboard'); checkBackupDue(); apBioOffer(u0);
       return;
     }catch(e){
       /* السحابة رفضت — لو كلمة السر المحلية صحيحة نسمح بالدخول محليًا (عرض فقط
@@ -4006,7 +4443,7 @@ async function doLogin(){
         CURRENT_USER=u0; sessionStorage.setItem(SESSION_KEY,u0.id);
         $('#loginOverlay').classList.remove('open');
         $('#curUserName').textContent=u0.name; $('#userBox').style.display='flex';
-        buildTabs(); nav('dashboard'); checkBackupDue();
+        buildTabs(); nav('dashboard'); checkBackupDue(); apBioOffer(u0);
         setTimeout(()=>toast('دخلت محليًا — حساب السحابة غير مفعّل لهذا البريد، فلن تُحفظ التعديلات أونلاين','err'),700);
         return;
       }
@@ -4015,7 +4452,7 @@ async function doLogin(){
       return;
     }
   }
-  const u=findUser($('#loginUser').value);
+  const u=u0;
   if(!u||u.pass!==pHash($('#loginPass').value)){
     $('#loginErr').textContent='كلمة السر غير صحيحة';
     apShowEmailLogin();                 /* المخرج يظهر وقت الحاجة فقط */
@@ -4024,7 +4461,7 @@ async function doLogin(){
   CURRENT_USER=u;sessionStorage.setItem(SESSION_KEY,u.id);
   $('#loginOverlay').classList.remove('open');
   $('#curUserName').textContent=u.name;$('#userBox').style.display='flex';
-  buildTabs();nav('dashboard');
+  buildTabs();nav('dashboard');apBioOffer(u);
   if(checkBackupDue())setTimeout(()=>toast('⚠️ لديك تغييرات منذ أكثر من يوم بدون نسخة احتياطية — اضغط زر «💾 نسخة احتياطية» أعلى الشاشة','err'),800);
 }
 /* v61.07: دخول بالبريد مباشرة على السحابة ثم سحب أحدث نسخة قبل اختيار المستخدم.
@@ -4069,7 +4506,7 @@ async function doLoginEmail(){
   CURRENT_USER=u; sessionStorage.setItem(SESSION_KEY,u.id);
   $('#loginOverlay').classList.remove('open');
   $('#curUserName').textContent=u.name; $('#userBox').style.display='flex';
-  buildTabs(); nav('dashboard'); checkBackupDue();
+  buildTabs(); nav('dashboard'); checkBackupDue(); apBioOffer(u);
   toast('أهلًا '+u.name+' — تم تحميل أحدث نسخة من السحابة ✔','ok');
 }
 function logout(){
@@ -4132,22 +4569,22 @@ function renderDashboard(){
    <h2 class="screen-title">لوحة التحكم</h2>
    <div class="dash-wrap${SH?'':' dash-nostats'}">
      <div class="dash-col"${SH?'':' style="display:none"'}>
-       <div class="stat" onclick="nav('unitView')"><span class="ic">🏢</span><div><div class="tt">إجمالي الوحدات</div><div class="nm">${fmtN(st.total)}</div></div></div>
-       <div class="stat green" onclick="auOpen()" title="فتح جدول تعديل الوحدات المتاحة"><span class="ic">🟢</span><div><div class="tt">المتاحة</div><div class="nm">${fmtN(st.avail)}</div></div></div>
-       <div class="stat" onclick="nav('sold')"><span class="ic">💰</span><div><div class="tt">المباعة</div><div class="nm">${fmtN(st.sold)}</div></div></div>
-       <div class="stat red" onclick="nav('returnedScr')"><span class="ic">🔄</span><div><div class="tt">المرتجعة</div><div class="nm">${fmtN(st.ret)}</div></div></div>
-       <div class="stat gold" onclick="nav('reports')"><span class="ic">💵</span><div><div class="tt">إجمالي المبيعات</div><div class="nm">${fmtM(st.salesTotal)}</div></div></div>
+       <div class="stat" data-k="total" onclick="nav('unitView')"><span class="ic">🏢</span><div><div class="tt">إجمالي الوحدات</div><div class="nm">${fmtN(st.total)}</div></div></div>
+       <div class="stat green" data-k="avail" onclick="auOpen()" title="فتح جدول تعديل الوحدات المتاحة"><span class="ic">🟢</span><div><div class="tt">المتاحة</div><div class="nm">${fmtN(st.avail)}</div></div></div>
+       <div class="stat" data-k="sold" onclick="nav('sold')"><span class="ic">💰</span><div><div class="tt">المباعة</div><div class="nm">${fmtN(st.sold)}</div></div></div>
+       <div class="stat red" data-k="ret" onclick="nav('returnedScr')"><span class="ic">🔄</span><div><div class="tt">المرتجعة</div><div class="nm">${fmtN(st.ret)}</div></div></div>
+       <div class="stat gold" data-k="salesTotal" onclick="nav('reports')"><span class="ic">💵</span><div><div class="tt">إجمالي المبيعات</div><div class="nm">${fmtM(st.salesTotal)}</div></div></div>
      </div>
      <div class="hero-banner dash-hero">
        <img src="${window.ASSETS.hero}" alt="Aqua Pearl City">
        <div class="hero-cap"><b>Aqua Pearl City</b> — City for elite life</div>
      </div>
      <div class="dash-col"${SH?'':' style="display:none"'}>
-       <div class="stat" onclick="nav('collected')"><span class="ic">💵</span><div><div class="tt">إجمالي المحصل</div><div class="nm">${fmtM(st.collected)}</div></div></div>
-       <div class="stat gold" onclick="nav('due')"><span class="ic">⏳</span><div><div class="tt">إجمالي المتبقي</div><div class="nm">${fmtM(st.remaining)}</div></div></div>
-       <div class="stat red" onclick="nav('reports')"><span class="ic">⚠️</span><div><div class="tt">عملاء متأخرون</div><div class="nm">${fmtN(st.overdue)}</div></div></div>
-       <div class="stat" onclick="nav('sold')"><span class="ic">💳</span><div><div class="tt">مبيعات كاش</div><div class="nm">${fmtN(st.cash)}</div></div></div>
-       <div class="stat green" onclick="nav('sold')"><span class="ic">🗓️</span><div><div class="tt">مبيعات تقسيط</div><div class="nm">${fmtN(st.inst)}</div></div></div>
+       <div class="stat" data-k="collected" onclick="nav('collected')"><span class="ic">💵</span><div><div class="tt">إجمالي المحصل</div><div class="nm">${fmtM(st.collected)}</div></div></div>
+       <div class="stat gold" data-k="remaining" onclick="nav('due')"><span class="ic">⏳</span><div><div class="tt">إجمالي المتبقي</div><div class="nm">${fmtM(st.remaining)}</div></div></div>
+       <div class="stat red" data-k="overdue" onclick="nav('reports')"><span class="ic">⚠️</span><div><div class="tt">عملاء متأخرون</div><div class="nm">${fmtN(st.overdue)}</div></div></div>
+       <div class="stat" data-k="cash" onclick="nav('sold')"><span class="ic">💳</span><div><div class="tt">مبيعات كاش</div><div class="nm">${fmtN(st.cash)}</div></div></div>
+       <div class="stat green" data-k="inst" onclick="nav('sold')"><span class="ic">🗓️</span><div><div class="tt">مبيعات تقسيط</div><div class="nm">${fmtN(st.inst)}</div></div></div>
      </div>
    </div>`;
 }
@@ -4440,6 +4877,7 @@ function renderSettings(){
     <p class="gray-note">أرشيف خارجى مستقل عن Firebase: ملف JSON كامل للبيانات + المرفقات الجديدة، مرة كل يوم تلقائيًا على مساحتك فى Drive.</p></div>
   ${cloudCardHTML()}
   ${qrCardHTML()}
+  ${bioCardHTML()}
   <div class="card"><h3>👥 المستخدمون والصلاحيات</h3>
     <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th class="no-print"></th></tr></thead><tbody>
     ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':'<span class="badge av">مستخدم</span>')}</td>
@@ -4554,6 +4992,22 @@ function qrCardHTML(){
           الرمز يُحفظ مع الإعدادات، فعلّقه فى المكتب أو ضعه على الكارت.</p>
       </div>
     </div></div>`;
+}
+/* v61.19: بطاقة الدخول بالبصمة فى الإعدادات */
+function bioCardHTML(){
+  const sup=apBioSupported(), rec=apBioGet();
+  const on=!!(rec&&findUser(rec.userId));
+  return `<div class="card"><h3>🔐 الدخول بالبصمة على هذا الجهاز</h3>
+    <div class="toolbar">
+      ${on?`<button class="btn red" onclick="apBioDisable()">🚫 إلغاء البصمة من هذا الجهاز</button>`
+          :`<button class="btn green" ${sup?'':'disabled'} onclick="apBioEnableFromSettings()">🔐 تفعيل البصمة</button>`}
+      <span class="gray-note">${on
+        ? ('مفعّلة لـ «'+esc(rec.name||'')+'» — الدخول ببصمتك بدل كلمة السر')
+        : (sup?'غير مفعّلة على هذا الجهاز':'المتصفح هنا لا يدعمها — تعمل من الرابط الأونلاين (https) فقط')}</span>
+    </div>
+    <p class="gray-note" style="margin-top:7px">البصمة قفل لهذا الجهاز فقط ولا تُرسل لأى مكان — بياناتها لا تغادر موبايلك.
+      على الكمبيوتر يفضل الدخول بكلمة السر. ولو غيّرت الجهاز، فعّلها عليه من هنا.</p>
+  </div>`;
 }
 function qrRefresh(){
   const v=(($('#stAppUrl')&&$('#stAppUrl').value)||'').trim();
@@ -6263,15 +6717,22 @@ function renderCustomers(){
     const cls=pos.state==='debtor'?'neg':pos.state==='creditor'?'pos':'';
     return `<tr data-bld="${esc(u.building||'')}" data-mode="${s.mode}" data-state="${pos.state}">
       <td class="nm" title="${esc(s.customer.name)}">${esc(s.customer.name)}</td><td title="${esc(s.customer.phone)}">${esc(s.customer.phone)}</td><td>${esc(s.contractNo)}</td>
-      <td><b>${esc(u.building||'')}</b></td><td>${esc(u.unitNo||'')}</td><td>${s.mode==='cash'?'كاش':'تقسيط'}</td>
+      <td><b>${esc(u.building||'')}</b></td><td class="cUnit">${esc(u.unitNo||'')}<span class="uBld"> · ${esc(u.building||'')}</span></td><td>${s.mode==='cash'?'كاش':'تقسيط'}</td>
       <td>${fmtM(s.finalPrice)}</td><td>${fmtM(collectedOf(s.id))}</td><td>${fmtM(saleRemaining(s))}</td>
-      <td class="${cls}">${pos.label}${pos.diff?' ('+fmtN(Math.abs(pos.diff))+')':''}</td>
-      <td class="no-print"><div class="rowBtns"><button class="btn sm aqua" onclick="nav('customerFile','${s.id}')">📂 الملف</button>${pos.state==='debtor'?`<button class="btn sm red icon" title="إرسال إنذار متأخرات" onclick="openLateNotice('${s.id}')">⚠️</button>`:''}</div></td>
+      <td class="cSt ${cls}"><span class="stWord">${pos.label}</span>${pos.diff?'<span class="stNum">'+fmtN(Math.abs(pos.diff))+'</span>':'<span class="stNum dash">—</span>'}</td>
+      <td class="no-print"><div class="rowBtns"><button class="btn sm aqua" onclick="nav('customerFile','${s.id}')">📂<span class="btnTxt"> الملف</span></button>${pos.state==='debtor'?`<button class="btn sm red icon" title="إرسال إنذار متأخرات" onclick="openLateNotice('${s.id}')">⚠️</button>`:''}</div></td>
     </tr>`;
   }).join('');
   $('#scr-customers').innerHTML=`
   <h2 class="screen-title">قاعدة العملاء</h2>
   <div class="toolbar no-print"><input id="custSearch" placeholder="🔍 بحث بالاسم / الهاتف / العقد..." style="min-width:260px"><span class="gray-note" id="custCount"></span><button class="btn ghost" style="margin-inline-start:auto" onclick="printScreen()">🖨️ طباعة</button></div>
+  <!-- v61.19: نفس الفلاتر فى شريط مستقل يظهر على الموبايل فقط،
+       لأن أعمدتها مخفية هناك فلا يمكن الوصول لفلاترها من رأس الجدول -->
+  <div class="custFiltersM no-print">
+    <span>🏗️ العمارة ${thMulti('thmBldM',blds.map(b=>({v:b,t:b})))}</span>
+    <span>💳 النظام ${thMulti('thmModeM',[{v:'cash',t:'كاش'},{v:'inst',t:'تقسيط'}])}</span>
+    <span>⚖️ الحالة ${thMulti('thmStateM',[{v:'regular',t:'منتظم'},{v:'debtor',t:'مدين'},{v:'creditor',t:'دائن'}])}</span>
+  </div>
   <div class="tbl-wrap" style="overflow:visible"><table class="tbl" id="custTbl">
   <colgroup>
     <col style="width:15%"><col style="width:10%"><col style="width:9%">
@@ -6296,7 +6757,9 @@ function renderCustomers(){
 }
 function custFilter(){
   const q=($('#custSearch').value||'').trim().toLowerCase();
-  const bld=thmVals('thmBld'), mode=thmVals('thmMode'), state=thmVals('thmState');
+  /* v61.19: الفلاتر موجودة فى رأس الجدول (كمبيوتر) وفى الشريط (موبايل) */
+  const both=(a,b)=>[...new Set(thmVals(a).concat(thmVals(b)))];
+  const bld=both('thmBld','thmBldM'), mode=both('thmMode','thmModeM'), state=both('thmState','thmStateM');
   let n=0;
   $$('#custTbl tbody tr').forEach(tr=>{
     if(!tr.dataset)return;
@@ -6353,6 +6816,8 @@ function cfSaveEditApply(newPrice,newDown,newMode){
   s.contractDate=$('#ceCDate').value||s.contractDate;
   s.deliveryDeposit=Number($('#ceDep').value)||0;
   s.depositPct=s.finalPrice?+((s.deliveryDeposit/s.finalPrice*100)||0).toFixed(2):0;
+  /* v61.19: باقة التشطيب تُحفظ مع باقى البيانات */
+  const pk=$('#cePkg'); if(pk&&pk.value) s.finPkg=pk.value;
   // schedule edits
   (s.schedule||[]).forEach((inst,ix)=>{
     const d=$('#ceD'+ix),a=$('#ceA'+ix),n=$('#ceN'+ix);
@@ -6499,7 +6964,7 @@ function bonusPenaltyCard(sale){
   const rowsE=B.early.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.date)}</td><td>${fmtD(r.due)}</td>
       <td>${fmtM(Math.round(r.amount))}</td><td>${r.countedDays} يوم</td>
       <td style="color:var(--green);font-weight:800">${fmtM(Math.round(r.bonus))}</td></tr>`).join('');
-  const on=!!sale.bpApply;
+  const on=!!sale.bpApply, rc=!!sale.bpOnReceipt;
   /* v61.18: الكروت نفسها تُضغط فتفتح تفاصيلها */
   const tile=(ic,lb,val,color,target,n)=>
     `<div class="field bpTile" ${n?`onclick="bpOpen('${target}')" title="اضغط لعرض التفاصيل"`:''}>
@@ -6522,6 +6987,12 @@ function bonusPenaltyCard(sale){
       <span>احتساب الصافى ضمن <b>المتبقى</b> و<b>حالة العميل</b>
         <span class="gray-note">— ${on?'مُفعَّل لهذا العميل':'مُطفأ: الأرقام للعرض والتفاوض فقط'}</span></span>
     </label>
+    <label class="no-print bpApply${rc?' on':''}">
+      <input type="checkbox" ${rc?'checked':''} ${isAdmin()?'':'disabled'}
+             onchange="bpReceiptToggle('${sale.id}',this.checked)">
+      <span>إظهاره فى <b>إيصال الدفع</b>
+        <span class="gray-note">— ${rc?'هيطلع فى كل إيصالات هذا العميل':'مُطفأ: الإيصال بلا بونص ولا غرامات'}</span></span>
+    </label>
     ${B.late.rows.length?`<details id="bpDetL" style="margin-bottom:8px"><summary class="gray-note" style="cursor:pointer">تفاصيل الغرامات (${B.late.rows.length})</summary>
       <div class="tbl-wrap" style="margin-top:7px"><table class="tbl"><thead><tr>
         <th>القسط</th><th>تاريخ الاستحقاق</th><th>قيمة القسط</th><th>التأخير</th><th>النسبة</th><th>الغرامة</th>
@@ -6533,6 +7004,30 @@ function bonusPenaltyCard(sale){
     <p class="gray-note" style="margin-top:8px">البونص: ٠.٠٣٪ عن كل يوم سداد مبكّر بعد الشهر الأول.
       لاستبعاد قسط بعينه، شيل علامة «بونص» أو «غرامة» جنبه فى جدول الأقساط بالأسفل.</p>
   </div>`;
+}
+/* v61.19: بوكس البونص والغرامات داخل إيصال الدفع — يظهر فقط لو
+   علّمت الخانة لهذا العميل، ومستقل تمامًا عن مفتاح احتساب الصافى. */
+function bpReceiptCard(sale,row){
+  try{
+    if(!sale||!sale.bpOnReceipt) return '';
+    const B=bonusPenaltyNet(sale);
+    const pen=Math.round(B.late.penalty), bon=Math.round(B.early.bonus), net=Math.round(B.net);
+    if(!pen&&!bon) return '';
+    const good=net>=0, col=good?'#0f8f57':'#c0392b';
+    return `<div class="rc2-card"><div class="hd">⚖️ البونص والغرامات</div>
+      ${row('💸','إجمالي الغرامات','<span style="color:#c0392b">'+fmtN(pen)+' جنيه</span>')}
+      ${row('💶','إجمالي البونص','<span style="color:#0f8f57">'+fmtN(bon)+' جنيه</span>')}
+      ${row(good?'⬆️':'⬇️',good?'الصافي — بونص للعميل':'الصافي — غرامات على العميل',
+            '<b style="color:'+col+'">'+fmtN(Math.abs(net))+' جنيه</b>')}
+    </div>`;
+  }catch(e){ return ''; }
+}
+function bpReceiptToggle(saleId,on){
+  const s=saleById(saleId); if(!s) return;
+  if(!isAdmin()){toast('التعديل للمدير فقط 🔒','err');return;}
+  if(on) s.bpOnReceipt=true; else delete s.bpOnReceipt;
+  save(); renderCustomerFile(s.id);
+  toast(on?'هيظهر فى إيصال الدفع ✔':'مش هيظهر فى الإيصال','ok');
 }
 /* فتح تفاصيل البونص/الغرامات والانتقال إليها */
 function bpOpen(which){
@@ -6559,8 +7054,8 @@ function renderCustomerFile(saleId){
   if(cfEdit&&!AP_CLIENT){renderCustomerFileEdit(s,u);return;}
   /* v61.16: العميل يرى ملفه للقراءة فقط — بلا أزرار تعديل أو قبض */
   if(AP_CLIENT){
-    el.innerHTML=apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
-    cfShowSchedule();
+    el.innerHTML=apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
+    try{ apBellRender(s); }catch(e){}
     return;
   }
   el.innerHTML=`
@@ -6593,7 +7088,7 @@ function renderCustomerFile(saleId){
     ${fld('🎨','التشطيب',esc(u.finishing||'—'))}
     ${fld('🌅','الإطلالة',esc(u.view)||'—')}
     ${fld('ℹ️','حالة الوحدة',statusAr(u.status||'sold'))}
-    ${isFullFin(u)?pkgSelectHTML(s,u):''}
+    ${isFullFin(u)?fld('📦','باقة التشطيب',esc(pkgAr(salePkg(s,u)))):''}
   </div></div>
   ${bonusPenaltyCard(s)}
   <div class="card"><h3>💳 بيانات الدفع</h3><div class="grid g4">
@@ -6633,15 +7128,117 @@ function renderCustomerFile(saleId){
    كل ذلك يتم تلقائيًا من داخل النظام — بلا فتح Firebase Console.
    =================================================================== */
 
-/* ---- شاشة العميل: ملفه كاملًا بلا أى زر تعديل أو قبض ---- */
+/* ===================================================================
+   v61.19 — بوابة العميل
+   ثلاث تبّات: ملفى · الأقساط المستحقة · الدفعات الفعلية.
+   كل شىء للقراءة فقط — لا حذف ولا مشاركة ولا تعديل.
+   =================================================================== */
+let AP_CTAB='file';
+
+/* --- تنبيهات العميل: المتأخر + أول قسط مستحق --- */
+function apClientAlerts(s){
+  const out={late:[],next:null,newPays:[]};
+  try{
+    if(s.mode!=='cash'){
+      const rows=scheduleWithStatus(s), today=todayISO();
+      rows.forEach(i=>{
+        if(i.st==='محصل') return;
+        if(i.due<today) out.late.push(i);
+        else if(!out.next) out.next=i;
+      });
+    }
+    /* دفعات لم يرها بعد */
+    const seen=apSeenPays();
+    out.newPays=paymentsOf(s.id).filter(p=>seen.indexOf(p.id)<0);
+  }catch(e){}
+  return out;
+}
+function apSeenPays(){
+  try{ return JSON.parse(localStorage.getItem('apSeenPays_'+(cfSaleId||''))||'[]'); }
+  catch(e){ return []; }
+}
+function apMarkPaysSeen(s){
+  try{ localStorage.setItem('apSeenPays_'+s.id,
+    JSON.stringify(paymentsOf(s.id).map(p=>p.id))); }catch(e){}
+}
+function apBellRender(s){
+  let el=document.getElementById('apBell');
+  if(!el){
+    const host=document.querySelector('.userbox'); if(!host) return;
+    el=document.createElement('button');
+    el.id='apBell'; el.className='no-print'; el.type='button';
+    el.onclick=apBellOpen;
+    host.insertBefore(el,host.firstChild);
+  }
+  const a=apClientAlerts(s);
+  const n=a.late.length+(a.next?1:0)+a.newPays.length;
+  el.innerHTML='🔔'+(n?'<i>'+n+'</i>':'');
+  el.title=n?('عندك '+n+' تنبيه'):'لا توجد تنبيهات';
+  el.classList.toggle('hot',a.late.length>0);
+}
+function apBellOpen(){
+  const s=saleById(cfSaleId); if(!s) return;
+  const a=apClientAlerts(s);
+  let h='';
+  if(a.newPays.length){
+    h+='<div class="alGrp ok"><b>💰 دفعات جديدة مسجّلة لك</b>'
+      +a.newPays.map(p=>`<div class="alRow"><span>إيصال ${esc(p.receiptNo)} — ${fmtD(p.date)}</span>
+         <b>${fmtM(p.amount)}</b></div>`).join('')+'</div>';
+  }
+  if(a.late.length){
+    h+='<div class="alGrp bad"><b>⚠️ أقساط متأخرة ('+a.late.length+')</b>'
+      +a.late.map(i=>`<div class="alRow"><span>قسط ${i.no} — ${fmtD(i.due)}</span>
+         <b>${fmtM(Math.max(0,Number(i.amount||0)-Number(i.paid||0)))}</b></div>`).join('')+'</div>';
+  }
+  if(a.next){
+    h+='<div class="alGrp soon"><b>📅 أقرب قسط مستحق</b>'
+      +`<div class="alRow"><span>قسط ${a.next.no} — ${fmtD(a.next.due)}</span>
+         <b>${fmtM(a.next.amount)}</b></div></div>`;
+  }
+  if(!h) h='<p class="gray-note" style="text-align:center;margin:10px 0">مفيش تنبيهات — كل حاجة تمام 👌</p>';
+  openBox('🔔 التنبيهات',h,'تمام',()=>{ apMarkPaysSeen(s); apBellRender(s); return true; });
+}
+
+/* --- كارت واحد: بونص وغرامات --- */
+function apClientBpCard(sale){
+  const B=bonusPenaltyNet(sale);
+  const pen=Math.round(B.late.penalty), bon=Math.round(B.early.bonus), net=Math.round(B.net);
+  const good=net>=0;
+  const col=good?'var(--green)':'var(--red)';
+  const rowsL=B.late.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.due)}</td>
+      <td>${fmtM(Math.round(r.amount))}</td><td>${r.months} شهر</td>
+      <td style="color:var(--red);font-weight:800">${fmtM(Math.round(r.penalty))}</td></tr>`).join('');
+  const rowsE=B.early.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.date)}</td>
+      <td>${fmtM(Math.round(r.amount))}</td><td>${r.countedDays} يوم</td>
+      <td style="color:var(--green);font-weight:800">${fmtM(Math.round(r.bonus))}</td></tr>`).join('');
+  const any=B.late.rows.length||B.early.rows.length;
+  return `<div class="card bpOne"><h3>⚖️ بونص وغرامات</h3>
+    <div class="bpBig" style="border-color:${col};background:${good?'#eefaf3':'#fdeeee'}"
+         ${any?'onclick="apBpToggle()"':''}>
+      <div class="lb">${good?'بونص مستحق لك':'غرامات مستحقة عليك'}</div>
+      <div class="nm" style="color:${col}">${good?'⬆️':'⬇️'} ${fmtM(Math.abs(net))}</div>
+      ${any?'<div class="hint">اضغط لعرض التفاصيل ▾</div>':'<div class="hint">لا توجد بنود</div>'}
+    </div>
+    <div id="bpOneDet" style="display:none;margin-top:10px">
+      ${B.late.rows.length?`<div class="gray-note" style="margin-bottom:4px">تفاصيل الغرامات (${B.late.rows.length})</div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>القسط</th><th>تاريخ الاستحقاق</th>
+        <th>قيمة القسط</th><th>التأخير</th><th>الغرامة</th></tr></thead><tbody>${rowsL}</tbody></table></div>`:''}
+      ${B.early.rows.length?`<div class="gray-note" style="margin:8px 0 4px">تفاصيل البونص (${B.early.rows.length})</div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>القسط</th><th>تاريخ السداد</th>
+        <th>المبلغ</th><th>أيام محتسبة</th><th>البونص</th></tr></thead><tbody>${rowsE}</tbody></table></div>`:''}
+    </div>
+  </div>`;
+}
+function apBpToggle(){
+  const d=document.getElementById('bpOneDet'); if(!d) return;
+  d.style.display = d.style.display==='none' ? 'block' : 'none';
+}
+
+/* --- تبّ «ملفى» --- */
 function apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
   return `
   <h2 class="screen-title">ملفى — ${esc(s.customer.name)}</h2>
-  <div class="toolbar no-print">
-    <button class="btn aqua" onclick="cfShowSchedule()">📅 الأقساط المستحقة</button>
-    <button class="btn" onclick="cfShowPayments()">💰 الدفعات الفعلية (الإيصالات)</button>
-    <button class="btn ghost" onclick="printScreen()">🖨️ طباعة الملف</button>
-  </div>
+  ${apClientBpCard(s)}
   <div class="card"><h3>👤 بياناتى</h3><div class="grid g3">
     ${fld('👤','الاسم',esc(s.customer.name))}
     ${fld('📞','رقم الهاتف',esc(s.customer.phone))}
@@ -6660,7 +7257,6 @@ function apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
     ${fld('ℹ️','حالة الوحدة',statusAr(u.status||'sold'))}
     ${isFullFin(u)?fld('📦','باقة التشطيب',esc(pkgAr(salePkg(s,u)))):''}
   </div></div>
-  ${bonusPenaltyCard(s)}
   <div class="card"><h3>💳 بيانات الدفع</h3><div class="grid g4">
     ${fld('💵','سعر الوحدة (إجمالي)',fmtM(s.finalPrice),'money')}
     ${fld('🏦','وديعة الاستلام'+(s.depositPct?' ('+s.depositPct+'٪)':''),fmtM(s.deliveryDeposit),'money')}
@@ -6673,8 +7269,128 @@ function apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
       <span class="vl ${posCls}">${pos.label}${pos.diff?' — '+fmtN(Math.abs(pos.diff))+' ج.م':''}</span></div></div>
     <div class="field"><span class="ic">🏦</span><div><span class="lb">سداد دفعة الاستلام</span>
       <span class="vl ${depCls}">${depSt} — المسدد: ${fmtN(depPaid)} من ${fmtN(s.deliveryDeposit)}</span></div></div>
-  </div></div>
-  <div id="cfExtra"></div>`;
+  </div></div>`;
+}
+
+/* --- تبّ «الأقساط المستحقة»: أربعة أعمدة بلا إيصال --- */
+function apClientSchedHTML(s){
+  if(s.mode==='cash')
+    return `<h2 class="screen-title">الأقساط المستحقة</h2>
+      <div class="card"><p class="gray-note">بيع كاش — لا يوجد جدول أقساط.</p></div>`;
+  const rows=scheduleWithStatus(s);
+  const sum=(s.schedule||[]).reduce((a,i)=>a+Number(i.amount||0),0);
+  return `<h2 class="screen-title">الأقساط المستحقة</h2>
+  <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
+    <span class="gray-note" style="margin-inline-start:auto">إجمالي الجدول: ${fmtN(sum)} ج.م</span></div>
+  <div class="card"><div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
+    <th>#</th><th>تاريخ الاستحقاق</th><th>القيمة</th><th>الحالة</th>
+  </tr></thead><tbody>
+  ${rows.map(i=>`<tr>
+    <td>${i.no}</td><td>${fmtD(i.due)}</td><td><b>${fmtN(i.amount)}</b></td>
+    <td><span class="badge ${i.st==='محصل'?'av':i.st==='جزئي'?'res':i.st==='قادم'?'sold':'ret'}">${i.st}</span></td>
+  </tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+
+/* --- تبّ «الدفعات الفعلية»: أربعة أعمدة والطباعة فقط --- */
+function apClientPaysHTML(s){
+  const list=paymentsOf(s.id);
+  return `<h2 class="screen-title">الدفعات الفعلية</h2>
+  <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
+    <span class="gray-note" style="margin-inline-start:auto">عدد الإيصالات: ${fmtN(list.length)}</span></div>
+  <div class="card">${list.length?`<div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
+    <th>رقم الإيصال</th><th>القيمة</th><th>التاريخ</th><th class="no-print">إيصال</th>
+  </tr></thead><tbody>
+  ${list.map(p=>`<tr>
+    <td><b>${esc(p.receiptNo)}</b></td><td>${fmtM(p.amount)}</td><td>${fmtD(p.date)}</td>
+    <td class="no-print"><button class="btn sm ghost" title="طباعة الإيصال"
+        onclick="printReceipt('${p.id}')">🖨️</button></td>
+  </tr>`).join('')}
+  </tbody></table></div>`:'<p class="gray-note">لا توجد دفعات محصلة بعد.</p>'}</div>`;
+}
+
+/* ===================================================================
+   v61.19 — شاشة الترحيب المتحركة عند دخول العميل
+   شكلان مختلفان: بونص (أخضر واحتفالى) وغرامة (أحمر وهادئ)،
+   يُغلقان بعلامة ✕ أو بالضغط خارج الكارت. مرة واحدة فى الجلسة.
+   =================================================================== */
+function apGreet(sale){
+  try{
+    if(sessionStorage.getItem('apGreeted_'+sale.id)) return;
+    const B=bonusPenaltyNet(sale);
+    const net=Math.round(B.net);
+    if(!net) return;                       /* لا بونص ولا غرامة — لا نزعجه */
+    sessionStorage.setItem('apGreeted_'+sale.id,'1');
+    const good=net>0;
+    const a=apClientAlerts(sale);
+    const nxt=a.next?('أقرب قسط مستحق: <b>'+fmtD(a.next.due)+'</b> — <b>'+fmtN(a.next.amount)+' ج.م</b>'):'';
+    const box=document.createElement('div');
+    box.className='apGreet'+(good?' bon':' pen');
+    box.innerHTML=`<div class="gBox">
+      <button class="gX" onclick="apGreetClose()" aria-label="إغلاق">✕</button>
+      ${good?`<div class="gConf"></div><div class="gShine"></div>
+        <div class="gMedal"><div class="gRing"></div><div class="gCoin">🏅</div></div>
+        <div class="gTtl">مبروك! ليك بونص سداد مبكّر</div>
+        <p class="gSml">لأنك سدّدت قبل مواعيد الاستحقاق</p>`
+       :`<div class="gWarn"><div class="gPulse"></div>
+          <svg viewBox="0 0 100 100"><path class="gTri" d="M50 14 L90 84 L10 84 Z"/>
+          <g class="gBang" fill="#b3261e"><rect x="46" y="40" width="8" height="24" rx="4"/>
+          <circle cx="50" cy="72" r="4.6"/></g></svg></div>
+        <div class="gTtl">عليك غرامات تأخير</div>
+        <p class="gSml">نتيجة تأخّر سداد بعض الأقساط عن موعدها</p>`}
+      <div><span class="gAmt" id="gAmt">0</span><span class="gCur">ج.م</span></div>
+      ${(!good&&nxt)?'<div class="gDue">'+nxt+'</div>':''}
+      <button class="gGo" onclick="apGreetClose()">${good?'تمام 👌':'فهمت'}</button>
+    </div>`;
+    box.addEventListener('click',e=>{ if(e.target===box) apGreetClose(); });
+    document.body.appendChild(box);
+    if(good) apGreetConfetti(box.querySelector('.gConf'));
+    requestAnimationFrame(()=>box.classList.add('show'));
+    setTimeout(()=>apGreetCount(document.getElementById('gAmt'),Math.abs(net),1100),good?420:560);
+    window.__apGreetEsc=e=>{ if(e.key==='Escape') apGreetClose(); };
+    document.addEventListener('keydown',window.__apGreetEsc);
+  }catch(e){ console.warn('greet',e); }
+}
+function apGreetClose(){
+  const b=document.querySelector('.apGreet'); if(!b) return;
+  b.classList.remove('show');
+  if(window.__apGreetEsc) document.removeEventListener('keydown',window.__apGreetEsc);
+  setTimeout(()=>{ try{ b.remove(); }catch(e){} },260);
+}
+function apGreetConfetti(host){
+  if(!host) return;
+  const C=['#C9A227','#0FA3A3','#0f8f57','#ffd34d','#13a768','#7fd4c1'];
+  let h='';
+  for(let i=0;i<22;i++){
+    h+='<i style="inset-inline-start:'+(Math.random()*100).toFixed(1)+'%;background:'+C[i%C.length]
+      +';animation-delay:'+(Math.random()*0.75).toFixed(2)+'s;animation-duration:'
+      +(1.5+Math.random()*0.9).toFixed(2)+'s'+(i%3===0?';border-radius:50%':'')+'"></i>';
+  }
+  host.innerHTML=h;
+}
+function apGreetCount(el,target,ms){
+  if(!el) return;
+  let t0=null;
+  function step(t){
+    if(!t0) t0=t;
+    const k=Math.min(1,(t-t0)/ms), e=1-Math.pow(1-k,3);
+    el.textContent=Math.round(target*e).toLocaleString('en-US');
+    if(k<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* --- الموجّه بين التبّات --- */
+function apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
+  if(AP_CTAB==='sched') return apClientSchedHTML(s);
+  if(AP_CTAB==='pays')  return apClientPaysHTML(s);
+  return apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
+}
+function apClientGo(tab){
+  AP_CTAB=tab;
+  $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===tab));
+  renderCustomerFile(cfSaleId);
+  window.scrollTo({top:0});
 }
 function apUnitOptionsHTML(sel){
   return (DB.sales||[]).map(s=>{
@@ -6685,6 +7401,7 @@ function apUnitOptionsHTML(sel){
 }
 function apClientOpenFile(){
   const s=(DB.sales||[])[0]; if(!s) return;
+  AP_CTAB='file';
   nav('customerFile',s.id);
 }
 
@@ -6748,8 +7465,15 @@ window.apAdoptClientDB=function(obj,info){
     /* إخفاء كل ما لا يخصّ العميل */
     ['#btnBackup','#btnPortable'].forEach(sel=>{ const e2=$(sel); if(e2) e2.style.display='none'; });
     const hc=$('#hdrCompany'); if(hc) hc.textContent=S().companyName+' — '+S().projectName;
+    AP_CTAB='file';
+    try{ document.body.classList.add('ap-client'); }catch(e){}
     buildTabs();
-    if(s) nav('customerFile',s.id);
+    if(s){
+      nav('customerFile',s.id);
+      try{ apBellRender(s); }catch(e){}
+      /* شاشة البونص/الغرامة المتحركة — مرة واحدة فى الجلسة */
+      try{ setTimeout(()=>apGreet(s),700); }catch(e){}
+    }
     return true;
   }catch(e){ console.error('adoptClient',e); return false; }
 };
@@ -6776,6 +7500,8 @@ function renderCustomerFileEdit(s,u){
     ${fr('📄 رقم العقد','ceContract',s.contractNo)}
     ${fr('📅 تاريخ التعاقد','ceCDate',s.contractDate,'date')}
     ${fr('🏦 قيمة وديعة الاستلام','ceDep',s.deliveryDeposit,'number')}
+    ${isFullFin(u)?`<div class="form-row"><label>📦 باقة التشطيب</label>
+      <select id="cePkg">${FIN_CHOICES.map(f=>'<option value="'+f.k+'"'+((salePkg(s,u)||'luxury')===f.k?' selected':'')+'>'+f.ar+'</option>').join('')}</select></div>`:''}
   </div></div>
   <div class="card"><h3>💵 بيانات البيع <span class="gray-note" style="margin-inline-start:auto">مفتوحة للتعديل كأنك تسجّل بيعًا جديدًا</span></h3>
    <div class="grid g3">
@@ -6987,6 +7713,7 @@ function buildReceiptHTML(p){
         ${row('🔢','الوحدة',esc(u.unitNo))}
         ${row('📐','المساحة',fmtN(u.area)+' م²')}
         ${row('🎨','التشطيب',esc(u.finishing||'—'))}
+        ${isFullFin(u)?row('📦','باقة التشطيب',esc(pkgAr(salePkg(sale,u)))):''}
         ${row('🌅','الإطلالة',esc(u.view)||'—')}
       </div>
       <div class="rc2-card"><div class="hd">💳 بيانات الدفع</div>
@@ -7001,6 +7728,7 @@ function buildReceiptHTML(p){
         ${row('💳','طريقة السداد',esc(p.method))}
         ${isDep?'':row('⚖️','حالة العميل','<span style="color:'+posColor+'">'+pos.label+(pos.diff?' '+(pos.diff>0?'+':'-')+fmtN(Math.abs(pos.diff))+' جنيه':'')+'</span>')}
       </div>
+      ${bpReceiptCard(sale,row)}
     </div>
     <div class="rc2-success"><span class="ck">✔</span> ${isDep?'تم استلام دفعة الاستلام بنجاح':s.mode==='cash'?'تم استلام المبلغ بنجاح':'تم استلام مبلغ القسط بنجاح'}</div>
     <div class="rc2-legal">${isDep
@@ -9475,9 +10203,12 @@ function renderCashflow(){
   $('#scr-cashflow').innerHTML=`
    <h2 class="screen-title">📈 التدفقات النقدية</h2>
    ${toolbar}
-   <div class="card"><h3>🏢 العمارات ونِسَبها <span class="gray-note">(علّم واكتب النسبة — الاختيارات محفوظة ولا تتغير إلا بيدك)</span></h3>
-    <div>${bldRows}</div>
-   </div>
+   <!-- v61.19: قابلة للطى — مطوية على الموبايل ومفتوحة على الكمبيوتر -->
+   <div class="card apFold"><details ${window.innerWidth>760?'open':''}>
+     <summary><h3 style="display:inline-flex;margin:0">🏢 العمارات ونِسَبها
+       <span class="gray-note" style="font-weight:400">(علّم واكتب النسبة — محفوظة ولا تتغير إلا بيدك)</span></h3></summary>
+     <div style="margin-top:10px">${bldRows}</div>
+   </details></div>
    ${cards}
    ${netCards}
    <div class="card">
@@ -9600,7 +10331,7 @@ function cfExpensesHTML(months){
        <input value="${esc(rw.name||'')}" onchange="cfExpName('${rw.id}',this.value)" placeholder="اسم البند"
          class="no-print" style="width:140px;padding:3px 6px;font-weight:700">
        <span class="print-only" style="display:none">${esc(rw.name||'')}</span></td>
-     <td style="background:#F3F8FC"><b>${fmtN(cfExpRowTotal(rw.id))}</b></td>
+     <td style="background:#F3F8FC"><b id="expRT_${rw.id}">${fmtN(cfExpRowTotal(rw.id))}</b></td>
      ${months.map(m=>`<td><input type="number" step="0.01" min="0" value="${cfExpGet(rw.id,m.ym)||''}"
         onchange="cfExpSet('${rw.id}','${m.ym}',this.value)" class="no-print"
         style="width:96px;padding:3px 5px;text-align:center">
@@ -9608,13 +10339,13 @@ function cfExpensesHTML(months){
    </tr>`).join('')
    ||`<tr><td colspan="${months.length+2}" style="text-align:center;color:var(--muted)">لا توجد بنود مصروفات — أضف بندًا للبدء</td></tr>`;
   const foot=`<tr style="background:#FBF3D9"><td class="r" style="text-align:right"><b>إجمالي الشهر</b></td>
-     <td><b>${fmtN(cfExpGrand())}</b></td>
-     ${months.map(m=>`<td><b>${fmtN(cfExpMonthTotal(m.ym))}</b></td>`).join('')}</tr>`;
+     <td><b id="expGT">${fmtN(cfExpGrand())}</b></td>
+     ${months.map(m=>`<td><b id="expMT_${m.ym}">${fmtN(cfExpMonthTotal(m.ym))}</b></td>`).join('')}</tr>`;
   return `<div class="card allow-break">
    <h3>🧾 جدول المصروفات الشهري <span class="gray-note">(أعمدة الشهور تتبع الفترة المحددة — والقيم محفوظة)</span>
     <button class="btn sm green no-print" style="margin-inline-start:auto" onclick="cfExpAdd()">➕ إضافة بند</button>
     <button class="btn sm gold no-print" onclick="cfPrintExpenses()">🖨️ طباعة</button></h3>
-   <div class="tbl-wrap"><table class="tbl cfExpTbl" data-grid="cfExp" style="min-width:${Math.max(680,300+months.length*112)}px"><thead><tr>
+   <div class="tbl-wrap expWrap"><table class="tbl cfExpTbl" data-grid="cfExp" style="min-width:${Math.max(680,300+months.length*112)}px"><thead><tr>
      <th style="min-width:205px">البند</th><th style="min-width:95px">إجمالي البند</th>${head}
    </tr></thead><tbody>${body}${foot}</tbody></table></div>
    </div>`;
@@ -9638,11 +10369,27 @@ function cfExpName(id,v){
   const cfg=cfCfg();const rw=cfg.exp.rows.find(x=>x.id===id);if(!rw)return;
   rw.name=String(v||'').trim();save();
 }
+/* v61.19: تعديل رقم لا يعيد رسم الشاشة كلها.
+   كانت إعادة الرسم تفقد مكان السكرول الأفقى وتقفز بالصفحة مع كل رقم
+   تكتبه. الآن نحدّث الإجماليات الثلاثة فى مكانها فقط. */
 function cfExpSet(id,ym,v){
   const cfg=cfCfg();const num=Number(v);
   if(!v||isNaN(num)||num<=0)delete cfg.exp.v[cfExpKey(id,ym)];
   else cfg.exp.v[cfExpKey(id,ym)]=num;
-  save();cfKeepScroll(renderCashflow);
+  save();
+  const rt=document.getElementById('expRT_'+id);
+  if(rt) rt.textContent=fmtN(cfExpRowTotal(id));
+  const mt=document.getElementById('expMT_'+ym);
+  if(mt) mt.textContent=fmtN(cfExpMonthTotal(ym));
+  const gt=document.getElementById('expGT');
+  if(gt) gt.textContent=fmtN(cfExpGrand());
+  /* المنحنى وكروت الصافى تتبع المصروفات — تُحدَّث بهدوء بعد ما يسيب
+     الخانة، فلا يتحرك شىء تحت إصبعه وهو بيكتب. */
+  clearTimeout(window.__expRe);
+  window.__expRe=setTimeout(function(){
+    if(currentScreen==='cashflow'&&!document.querySelector('.cfExpTbl input:focus'))
+      cfKeepScroll(renderCashflow);
+  },2500);
 }
 function cfPrintExpenses(){
   const months=cfMonths(),cfg=cfCfg();
