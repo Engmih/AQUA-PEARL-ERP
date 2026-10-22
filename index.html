@@ -512,13 +512,26 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
 #custTbl th:nth-child(11),#custTbl td:nth-child(11){width:11%;white-space:nowrap}
 #custTbl td:nth-child(11)>*{vertical-align:middle}
 #custTbl .rowBtns{display:flex;gap:5px;justify-content:flex-end;align-items:center;flex-wrap:nowrap}
+
+/* ===================================================================
+   v61.18 — كروت البونص والغرامات + خانات الاحتساب لكل قسط
+   =================================================================== */
+.field.bpTile{cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.field.bpTile:hover{border-color:var(--aqua2,#0FA3A3);box-shadow:0 2px 10px rgba(15,163,163,.18)}
+.field.bpTile .bpHint{display:block;font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:600}
+.bpApply{display:flex;align-items:flex-start;gap:9px;cursor:pointer;margin:2px 0 10px;
+  padding:8px 11px;border:1px dashed var(--line);border-radius:11px;background:#fbfdfe;font-size:13px}
+.bpApply input[type=checkbox]{width:auto!important;flex:0 0 auto;margin-top:2px;transform:scale(1.1)}
+.bpApply.on{border-style:solid;border-color:var(--aqua2,#0FA3A3);background:#EAF7F5}
+table.tbl td.bpChk{text-align:center}
+table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2);cursor:pointer}
 </style>
 <style id="apMobCss">
 /* ===== v61.16: كل قواعد الموبايل هنا فى ورقة مستقلة =====
    تُعطَّل لحظة بناء ملف الـPDF ليخرج بتنسيق الكمبيوتر دائمًا. */
 /* v61.08: تخطيط الموبايل — الشريط العلوى سطر واحد مضغوط، والبوابات شريط
    أفقى يُسحب بالإصبع بدل أن تتكدّس وتأكل نصف الشاشة. */
-@media(max-width:760px){
+@media screen and (max-width:760px){
   .app-header{padding:5px 9px;gap:7px;flex-wrap:nowrap;align-items:center}
   .app-header img.logo{height:30px;width:30px;flex:0 0 auto;padding:2px;border-radius:7px}
   .app-header img.logo:last-of-type{display:none}   /* شعار واحد يكفى */
@@ -649,6 +662,44 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
   table.tbl tr{padding:6px 9px;margin-bottom:8px}
   table.tbl td{padding:4px 0;font-size:12.8px}
   table.tbl td::before{flex:0 0 38%;font-size:11px}
+
+  /* ===== v61.18: كروت الحقول اتنين فى الصف وأقصر =====
+     الصفحة بتقصر للنص تقريبًا. خانات الإدخال تفضل بعرض كامل
+     حتى لا تضيق على الأصابع. */
+  .grid,.grid.g2,.grid.g3,.grid.g4,.grid.gUnit{grid-template-columns:1fr 1fr!important;gap:7px!important}
+  .grid .form-row{grid-column:1 / -1}
+  .field{min-height:0!important;padding:6px 8px!important;gap:6px!important;border-radius:9px!important}
+  .field .ic{font-size:14px!important}
+  .field .lb{font-size:10px!important;line-height:1.3}
+  .field .vl{font-size:12.8px!important}
+  .field.bpTile .bpHint{font-size:9.5px;margin-top:1px}
+  .card{padding:9px 9px!important;margin-bottom:9px!important}
+  .card h3{font-size:14px!important}
+  .screen-title{margin-bottom:8px!important}
+  .toolbar{gap:6px!important}
+  /* خانة الاحتساب: الاسم والمربع على سطر واحد */
+  table.tbl td.bpChk{justify-content:space-between!important;align-items:center!important;
+    padding:3px 0!important}
+  table.tbl td.bpChk::before{flex:0 0 auto!important;margin-bottom:0!important}
+  table.tbl td.bpChk input[type=checkbox]{margin-inline-start:auto;transform:scale(1.25)}
+
+  /* ===== v61.18: لا سكرول أفقى عابر =====
+     لو ارتسم جدول بعرضه الكامل لجزء من الثانية قبل أن يتحوّل لكروت،
+     كانت الصفحة تنزلق يمينًا ثم تعود — نقصّ الزائد فلا يحدث ذلك.
+     نستعمل clip على المحتوى وحده حتى لا يتأثر الشريط العلوى الثابت. */
+  main,.screen{overflow-x:clip}
+  @supports not (overflow:clip){ main,.screen{overflow-x:hidden} }
+  nav.tabs button{scroll-margin-inline:10px}
+
+  /* ===== v61.18: لا عنصر يفرض عرضًا أكبر من الشاشة =====
+     قائمة اختيار الوحدة كانت تتمدّد بطول أطول اسم فيها (٥٥٠ بكسل)،
+     فيوسّع المتصفح الصفحة كلها ويصغّرها لتدخل — وده سبب أن شاشة
+     «عرض وحدة» كانت تبان مزحومة وخطّها صغير. */
+  select,textarea,input:not([type=checkbox]):not([type=radio]){
+    min-width:0!important;max-width:100%!important}
+  #uvSelect,.searchbar select,.searchbar input:not([type=checkbox]),
+  .toolbar select,.toolbar input:not([type=checkbox]),
+  .uvFinBar select{width:100%!important}
 }
 </style>
 
@@ -3616,7 +3667,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.17';
+const APP_VER  = 'v61.18';
 const APP_BUILD= '2026-10-22';
 window.APP_VER = APP_VER;
 const LS_KEY='aquaPearlERP_v1';
@@ -3751,7 +3802,10 @@ window.apAdoptDB=function(obj){
       if(u){ CURRENT_USER=u; const n=$('#curUserName'); if(n) n.textContent=u.name; }
     }
     $('#hdrCompany').textContent=S().companyName+' — '+S().projectName;
+    /* v61.18: التحديث من السحابة لا يرجّع الشاشة لفوق */
+    const sy=window.scrollY||window.pageYOffset||0;
     if(CURRENT_USER){ buildTabs(); nav(allowed(scr)?scr:'dashboard'); syncHeaderBtns(); }
+    if(sy>4) setTimeout(()=>{ try{ window.scrollTo(0,sy); }catch(e){} },30);
     return true;
   }catch(e){ console.error('adoptDB',e); if(window.toast) toast('تعذر تطبيق نسخة السحابة: '+e.message,'err'); return false; }
 };
@@ -5626,7 +5680,12 @@ function registerSale(){
   toast('تم تسجيل البيع وإنشاء ملف العميل ✔','ok');
   nav('customerFile',sale.id);
 }
-function saleRemaining(sale){return Math.max(0,Number(sale.finalPrice||0)-Number(sale.down||0)-collectedOf(sale.id))+0;}
+function saleRemaining(sale){
+  let r=Number(sale.finalPrice||0)-Number(sale.down||0)-collectedOf(sale.id);
+  /* v61.18: الصافى لا يدخل الحسبة إلا لو المدير فعّله لهذا العميل */
+  if(sale&&sale.bpApply){ try{ r-=bonusPenaltyNet(sale).net; }catch(e){} }
+  return Math.max(0,r)+0;
+}
 
 /* ---------- Share unit as PDF ---------- */
 async function shareUnitPdf(){
@@ -5743,7 +5802,9 @@ function dueToDate(sale,asOf){
 }
 function customerPosition(sale){
   const due=dueToDate(sale), col=collectedOf(sale.id);
-  const diff=col-due;
+  let diff=col-due;
+  /* v61.18: الصافى لا يدخل الحسبة إلا لو المدير فعّله لهذا العميل */
+  if(sale&&sale.bpApply){ try{ diff+=bonusPenaltyNet(sale).net; }catch(e){} }
   if(diff<-1)return {state:'debtor',label:'مدين',diff};
   if(diff>1)return {state:'creditor',label:'دائن',diff};
   return {state:'regular',label:'منتظم',diff:0};
@@ -5932,12 +5993,13 @@ function lateRows(sale){
   const today=todayISO();
   return scheduleWithStatus(sale).map(i=>{
     if(i.st==='محصل'||i.st==='قادم')return null;      // مسدَّد بالكامل أو لم يحن موعده
+    if(!bpIsOn(sale,'p',i.no))return null;             // v61.18: مستبعَد يدويًا
     const amount=Number(i.amount)||0;
     const paid=Number(i.paid)||0;
     const months=monthsElapsed(i.due,today);
     if(months<=0)return null;                          // لم يمضِ شهر كامل بعد
     const pct=months*LATE_MONTHLY_PCT;
-    return {due:i.due,amount,paid,rest:Math.max(0,amount-paid),st:i.st,
+    return {no:i.no,due:i.due,amount,paid,rest:Math.max(0,amount-paid),st:i.st,
       days:daysBetween(i.due,today),months,pct,penalty:amount*pct/100};
   }).filter(Boolean);
 }
@@ -6350,6 +6412,36 @@ function pkgSelectHTML(s,u){
 const EARLY_DAILY_PCT = 0.03;     /* % عن كل يوم بعد الشهر الأول */
 const EARLY_GRACE_DAYS = 30;      /* الشهر الأول لا بونص عنه */
 
+/* ===== v61.18: استبعاد أقساط بعينها من الحسبة =====
+   لكل قسط خانتان فى جدول الأقساط (بونص / غرامة) متعلّمتان افتراضيًا.
+   لا نخزّن إلا المستبعَد فقط، فلا يتغيّر أى بيان قائم. */
+function bpOffList(sale,kind){
+  const a = kind==='b' ? sale.bpOffB : sale.bpOffP;
+  return Array.isArray(a)?a:[];
+}
+function bpIsOn(sale,kind,no){ return bpOffList(sale,kind).indexOf(Number(no))<0; }
+function bpToggle(saleId,kind,no,on){
+  const s=saleById(saleId); if(!s) return;
+  if(!isAdmin()){toast('التعديل للمدير فقط 🔒','err');return;}
+  const key = kind==='b' ? 'bpOffB' : 'bpOffP';
+  let a=Array.isArray(s[key])?s[key].slice():[];
+  const n=Number(no);
+  if(on) a=a.filter(x=>Number(x)!==n);
+  else if(a.indexOf(n)<0) a.push(n);
+  if(a.length) s[key]=a; else delete s[key];
+  save();
+  renderCustomerFile(s.id);
+}
+/* المفتاح العام لهذا العميل: هل يدخل الصافى فى المتبقى وحالة العميل؟ */
+function bpApplyToggle(saleId,on){
+  const s=saleById(saleId); if(!s) return;
+  if(!isAdmin()){toast('التعديل للمدير فقط 🔒','err');return;}
+  if(on) s.bpApply=true; else delete s.bpApply;
+  save();
+  renderCustomerFile(s.id);
+  toast(on?'الصافى بقى داخل حساب المتبقى وحالة العميل ✔':'رجع عرضًا فقط — لا يدخل أى حسبة','ok');
+}
+
 /* صفوف البونص: كل دفعة سُدِّدت قبل استحقاقها بأكثر من شهر */
 function earlyRows(sale){
   if(!sale||sale.mode==='cash') return [];
@@ -6357,7 +6449,7 @@ function earlyRows(sale){
   try{ sched=scheduleWithStatus(sale)||[]; }catch(e){ return []; }
   /* ترتيب الأقساط بالتاريخ، والدفعات بالتاريخ، ثم توزيع كل دفعة على
      الأقساط بالترتيب — نفس منطق التحصيل المستعمل فى المتأخرات */
-  const inst=sched.map(i=>({due:i.due, amount:Number(i.amount)||0, left:Number(i.amount)||0}))
+  const inst=sched.map(i=>({no:i.no, due:i.due, amount:Number(i.amount)||0, left:Number(i.amount)||0}))
                   .sort((a,b)=>String(a.due).localeCompare(String(b.due)));
   const pays=instPaymentsOf(sale.id).slice()
             .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
@@ -6370,9 +6462,9 @@ function earlyRows(sale){
       const use=Math.min(amt,it.left);
       it.left-=use; amt-=use;
       const days=daysBetween(p.date,it.due);        /* موجب = دفع قبل الاستحقاق */
-      if(days>EARLY_GRACE_DAYS){
+      if(days>EARLY_GRACE_DAYS && bpIsOn(sale,'b',it.no)){
         const cnt=days-EARLY_GRACE_DAYS;
-        rows.push({date:p.date, due:it.due, receiptNo:p.receiptNo,
+        rows.push({no:it.no, date:p.date, due:it.due, receiptNo:p.receiptNo,
                    amount:use, days:days, countedDays:cnt,
                    bonus:use*EARLY_DAILY_PCT/100*cnt});
       }
@@ -6401,32 +6493,54 @@ function bonusPenaltyCard(sale){
   const arrow=good?'⬆️':'⬇️';
   const money=good?'💶':'💸';
   const label=good?'بونص مستحق للعميل':'غرامات مستحقة على العميل';
-  const rowsL=B.late.rows.map(r=>`<tr><td>${fmtD(r.due)}</td><td>${fmtM(Math.round(r.amount))}</td>
+  const rowsL=B.late.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.due)}</td><td>${fmtM(Math.round(r.amount))}</td>
       <td>${r.months} شهر</td><td>${r.pct.toFixed(1)}٪</td>
       <td style="color:var(--red);font-weight:800">${fmtM(Math.round(r.penalty))}</td></tr>`).join('');
-  const rowsE=B.early.rows.map(r=>`<tr><td>${fmtD(r.date)}</td><td>${fmtD(r.due)}</td>
+  const rowsE=B.early.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.date)}</td><td>${fmtD(r.due)}</td>
       <td>${fmtM(Math.round(r.amount))}</td><td>${r.countedDays} يوم</td>
       <td style="color:var(--green);font-weight:800">${fmtM(Math.round(r.bonus))}</td></tr>`).join('');
+  const on=!!sale.bpApply;
+  /* v61.18: الكروت نفسها تُضغط فتفتح تفاصيلها */
+  const tile=(ic,lb,val,color,target,n)=>
+    `<div class="field bpTile" ${n?`onclick="bpOpen('${target}')" title="اضغط لعرض التفاصيل"`:''}>
+       <span class="ic">${ic}</span><div><span class="lb">${lb}</span>
+       <span class="vl" style="color:${color}">${val}</span>
+       ${n?`<span class="bpHint">▾ ${n} بند — اضغط للتفاصيل</span>`:'<span class="bpHint">لا توجد بنود</span>'}</div></div>`;
   return `<div class="card"><h3>⚖️ البونص والغرامات</h3>
     <div class="grid g3" style="margin-bottom:10px">
-      ${fld('💸','إجمالي الغرامات (تأخير ١.٥٪ شهريًا)','<span style="color:var(--red)">'+fmtM(pen)+'</span>')}
-      ${fld('💶','إجمالي البونص (سداد مبكّر ٠.٠٣٪ يوميًا)','<span style="color:var(--green)">'+fmtM(bon)+'</span>')}
-      <div class="form-row"><label>${money} الصافي — ${label}</label>
-        <div style="padding:8px 10px;border:1.6px solid ${col};border-radius:10px;
-             background:${good?'#eefaf3':'#fdeeee'};font-weight:900;font-size:16px;color:${col}">
-          ${arrow} ${fmtM(Math.abs(net))}</div></div>
+      ${tile('💸','إجمالي الغرامات (تأخير ١.٥٪ شهريًا)',fmtM(pen),'var(--red)','bpDetL',B.late.rows.length)}
+      ${tile('💶','إجمالي البونص (سداد مبكّر ٠.٠٣٪ يوميًا)',fmtM(bon),'var(--green)','bpDetE',B.early.rows.length)}
+      <div class="field bpTile" onclick="bpOpen('both')" title="اضغط لعرض التفاصيل"
+           style="border-color:${col};background:${good?'#eefaf3':'#fdeeee'}">
+        <span class="ic">${money}</span><div><span class="lb">الصافي — ${label}</span>
+        <span class="vl" style="color:${col};font-size:17px">${arrow} ${fmtM(Math.abs(net))}</span>
+        <span class="bpHint">اضغط للتفاصيل</span></div></div>
     </div>
-    ${B.late.rows.length?`<details style="margin-bottom:8px"><summary class="gray-note" style="cursor:pointer">تفاصيل الغرامات (${B.late.rows.length})</summary>
+    <label class="no-print bpApply${on?' on':''}">
+      <input type="checkbox" ${on?'checked':''} ${isAdmin()?'':'disabled'}
+             onchange="bpApplyToggle('${sale.id}',this.checked)">
+      <span>احتساب الصافى ضمن <b>المتبقى</b> و<b>حالة العميل</b>
+        <span class="gray-note">— ${on?'مُفعَّل لهذا العميل':'مُطفأ: الأرقام للعرض والتفاوض فقط'}</span></span>
+    </label>
+    ${B.late.rows.length?`<details id="bpDetL" style="margin-bottom:8px"><summary class="gray-note" style="cursor:pointer">تفاصيل الغرامات (${B.late.rows.length})</summary>
       <div class="tbl-wrap" style="margin-top:7px"><table class="tbl"><thead><tr>
-        <th>تاريخ الاستحقاق</th><th>قيمة القسط</th><th>التأخير</th><th>النسبة</th><th>الغرامة</th>
+        <th>القسط</th><th>تاريخ الاستحقاق</th><th>قيمة القسط</th><th>التأخير</th><th>النسبة</th><th>الغرامة</th>
       </tr></thead><tbody>${rowsL}</tbody></table></div></details>`:''}
-    ${B.early.rows.length?`<details><summary class="gray-note" style="cursor:pointer">تفاصيل البونص (${B.early.rows.length})</summary>
+    ${B.early.rows.length?`<details id="bpDetE"><summary class="gray-note" style="cursor:pointer">تفاصيل البونص (${B.early.rows.length})</summary>
       <div class="tbl-wrap" style="margin-top:7px"><table class="tbl"><thead><tr>
-        <th>تاريخ السداد</th><th>تاريخ الاستحقاق</th><th>المبلغ</th><th>أيام محتسبة</th><th>البونص</th>
+        <th>القسط</th><th>تاريخ السداد</th><th>تاريخ الاستحقاق</th><th>المبلغ</th><th>أيام محتسبة</th><th>البونص</th>
       </tr></thead><tbody>${rowsE}</tbody></table></div></details>`:''}
     <p class="gray-note" style="margin-top:8px">البونص: ٠.٠٣٪ عن كل يوم سداد مبكّر بعد الشهر الأول.
-      الأرقام للعرض والتفاوض — لا تدخل حساب المتبقى ولا حالة العميل.</p>
+      لاستبعاد قسط بعينه، شيل علامة «بونص» أو «غرامة» جنبه فى جدول الأقساط بالأسفل.</p>
   </div>`;
+}
+/* فتح تفاصيل البونص/الغرامات والانتقال إليها */
+function bpOpen(which){
+  const ids = which==='both' ? ['bpDetL','bpDetE'] : [which];
+  let first=null;
+  ids.forEach(id=>{ const d=document.getElementById(id); if(d){ d.open=true; if(!first) first=d; } });
+  if(first) setTimeout(()=>first.scrollIntoView({block:'nearest',behavior:'smooth'}),60);
+  else toast('لا توجد بنود لعرضها','err');
 }
 
 function renderCustomerFile(saleId){
@@ -6757,8 +6871,10 @@ function cfShowSchedule(){
   if(s.mode==='cash'){box.innerHTML='<div class="card"><h3>📅 جدول الأقساط</h3><p class="gray-note">بيع كاش — لا يوجد جدول أقساط.</p></div><div class="card allow-break"><h3>💰 الدفعات الفعلية — الإيصالات</h3>'+paymentsTable(paymentsOf(s.id),{del:true})+'</div>';return;}
   const rows=scheduleWithStatus(s);
   const sum=(s.schedule||[]).reduce((a,i)=>a+Number(i.amount||0),0);
+  /* v61.18: خانتا البونص والغرامة — لا تظهران للعميل، وتُعطَّلان لغير المدير */
+  const BPC=!AP_CLIENT, BPE=isAdmin();
   box.innerHTML=`<div class="card pb-print allow-break"><h3>📅 جدول الأقساط <span class="gray-note" style="margin-inline-start:auto">🔒 الجدول مُثبت منذ التعاقد — إجمالي الجدول: ${fmtN(sum)}</span></h3>
-  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>تاريخ الاستحقاق</th><th>القيمة</th><th>المحصل منه</th><th>تاريخ التحصيل</th><th>الحالة</th><th>ملاحظات</th><th class="no-print">إيصال</th></tr></thead><tbody>
+  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>تاريخ الاستحقاق</th><th>القيمة</th><th>المحصل منه</th><th>تاريخ التحصيل</th><th>الحالة</th>${BPC?'<th class="no-print" title="احتساب البونص لهذا القسط">💶 بونص</th><th class="no-print" title="احتساب الغرامة لهذا القسط">💸 غرامة</th>':''}<th>ملاحظات</th><th class="no-print">إيصال</th></tr></thead><tbody>
   ${rows.map(i=>`<tr>
     <td>${i.no}</td>
     <td>${fmtD(i.due)}</td>
@@ -6766,6 +6882,8 @@ function cfShowSchedule(){
     <td>${fmtN(i.paid)}</td>
     <td>${i.collectedDate?fmtD(i.collectedDate):'—'}</td>
     <td><span class="badge ${i.st==='محصل'?'av':i.st==='جزئي'?'res':i.st==='قادم'?'sold':'ret'}">${i.st}</span></td>
+    ${BPC?`<td class="no-print bpChk" data-label="بونص"><input type="checkbox" ${bpIsOn(s,'b',i.no)?'checked':''} ${BPE?'':'disabled'} onchange="bpToggle('${s.id}','b',${Number(i.no)||0},this.checked)" title="احتساب البونص لهذا القسط"></td>
+    <td class="no-print bpChk" data-label="غرامة"><input type="checkbox" ${bpIsOn(s,'p',i.no)?'checked':''} ${BPE?'':'disabled'} onchange="bpToggle('${s.id}','p',${Number(i.no)||0},this.checked)" title="احتساب الغرامة لهذا القسط"></td>`:''}
     <td>${esc(i.notes)||'—'}</td>
     <td class="no-print">${i.lastPayId?`<button class="btn sm ghost" title="طباعة إيصال آخر دفعة سُدّد منها هذا القسط" onclick="printReceipt('${i.lastPayId}')">🖨️</button> <button class="btn sm aqua" title="مشاركة الإيصال PDF عبر التطبيقات" onclick="shareReceiptPdf('${i.lastPayId}')">📤</button> <button class="btn sm red" title="حذف الدفعة (بكلمة سر المدير)" onclick="deletePaymentGuarded('${i.lastPayId}')">🗑️</button>`:'—'}</td>
   </tr>`).join('')}
@@ -7014,6 +7132,21 @@ function printScreen(){
   window.print();
   if(uv) setTimeout(function(){ document.body.classList.remove('uvprint'); },600);
 }
+/* ===== v61.18: الطباعة بتنسيق الكمبيوتر دائمًا =====
+   ورقة الموبايل صارت screen-only، وهنا نعطّلها كذلك لحظة الطباعة
+   حتى لو طُبعت من الموبايل نفسه — فيخرج نفس الإخراج من أى جهاز. */
+(function(){
+  let wasOff=false;
+  function off(){ const m=document.getElementById('apMobCss');
+    if(m&&!m.disabled){ wasOff=true; m.disabled=true; } }
+  function on(){ const m=document.getElementById('apMobCss');
+    if(m&&wasOff){ m.disabled=false; wasOff=false; } }
+  window.addEventListener('beforeprint',off);
+  window.addEventListener('afterprint',on);
+  if(window.matchMedia){
+    try{ window.matchMedia('print').addEventListener('change',e=>{ e.matches?off():on(); }); }catch(e){}
+  }
+})();
 
 /* ================= Due installments ================= */
 function renderDue(){
@@ -7654,7 +7787,9 @@ async function boot(){
           const cells=[].slice.call(tr.children);
           const pick={};
           cells.forEach((td,i)=>{
-            if(td.classList.contains('no-print')||td.querySelector('button')) td.setAttribute('data-keep','act');
+            /* v61.18: خانتا البونص والغرامة تُطوى مع الباقى حتى لا يطول الكارت */
+            if((td.classList.contains('no-print')||td.querySelector('button'))
+               && !td.classList.contains('bpChk')) td.setAttribute('data-keep','act');
             else td.setAttribute('data-keep','more');
           });
           const body=cells.filter(td=>td.getAttribute('data-keep')!=='act'
@@ -10369,11 +10504,17 @@ function apSetAttUrl(key,url){
       }
       const payload = await gzPack(JSON.stringify(window.apGetDB()));
       const nextRev = curRev + 1;
-      await rtdb.ref('erp').update({
-        db: payload,
-        meta: { rev: nextRev, at: new Date().toISOString(), by: (cloudUser && cloudUser.email) || '', ver: (window.APP_VER || '') }
-      });
+      /* v61.18: نسجّل رقم نسختنا قبل الرفع. Firebase يبلّغ نفس الجهاز
+         فورًا بالكتابة، فلو سجّلناه بعدها يفتكر النظام أن جهازًا آخر
+         عدّل فينزّل النسخة ويعيد رسم الشاشة — وكان السكرول يقفز لفوق. */
+      const prevRev = myRev;
       myRev = nextRev;
+      try{
+        await rtdb.ref('erp').update({
+          db: payload,
+          meta: { rev: nextRev, at: new Date().toISOString(), by: (cloudUser && cloudUser.email) || '', ver: (window.APP_VER || '') }
+        });
+      }catch(err){ myRev = prevRev; throw err; }
       badge('on', '☁️ متصل', 'آخر رفع: ' + new Date().toLocaleTimeString('ar-EG'));
       /* v61.16: حدِّث مساحات العملاء بعد كل حفظ */
       syncAccess().catch(() => {});
