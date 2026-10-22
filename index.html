@@ -3952,7 +3952,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.21';
+const APP_VER  = 'v61.22';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -11797,8 +11797,19 @@ function apSetAttUrl(key,url){
   window.apPushRegister = async function () {
     const vk = vapidKey();
     if (!vk) throw new Error('مفتاح الإشعارات (VAPID) غير مضبوط');
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') throw new Error('لم تسمح بالإشعارات');
+
+    /* v61.22: رسائل واضحة بدل «لم تسمح بالإشعارات» المبهمة */
+    if (!('Notification' in window))
+      throw new Error('هذا المتصفح لا يدعم الإشعارات');
+    if (!('serviceWorker' in navigator) || !('PushManager' in window))
+      throw new Error('الإشعارات غير متاحة هنا — جرّب نافذة عادية (غير متخفية) أو ثبّت التطبيق');
+
+    const perm = Notification.permission === 'granted'
+      ? 'granted' : await Notification.requestPermission();
+    if (perm === 'denied')
+      throw new Error('الإشعارات محظورة لهذا الموقع — اضغط 🔒 بجوار العنوان ← الإشعارات ← السماح، ثم أعد المحاولة');
+    if (perm !== 'granted')
+      throw new Error('لم تظهر نافذة الإذن أو أُغلقت — اضغط 🔔 بجوار العنوان واسمح، أو استخدم نافذة عادية بدل المتخفية');
     const m = await loadMessaging();
     const reg = await navigator.serviceWorker.ready;
     const tok = await m.getToken({ vapidKey: vk, serviceWorkerRegistration: reg });
