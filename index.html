@@ -3952,7 +3952,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.23';
+const APP_VER  = 'v61.24';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -9064,7 +9064,12 @@ async function apPushAudit(){
   if(!r||r.err){ box.innerHTML='<p class="gray-note" style="color:#b91c1c">⛔ '+esc(r&&r.err||'تعذر الفحص')+'</p>'; return; }
   const expC=(DB.users||[]).filter(u=>u.client&&u.email).length;
   const expP=(DB.users||[]).filter(u=>u.partner&&u.email).length;
-  const expS=(DB.users||[]).filter(u=>!u.client&&!u.partner&&u.email).length+1;
+  /* v61.24: نفس حساب apAccessMaps بالضبط — مجموعة مفاتيح، فالمدير
+     سطر مستخدم أصلًا ولا يُعدّ مرتين */
+  const stK=new Set((DB.users||[]).filter(u=>!u.client&&!u.partner&&u.email).map(u=>apMailKey(u.email)));
+  try{ const cc=(typeof window.apCloudCfg==='function')?window.apCloudCfg():null;
+       if(cc&&cc.adminEmail) stK.add(apMailKey(cc.adminEmail)); }catch(e){}
+  const expS=stK.size;
   const rows=(arr,lbl)=>arr.length
     ? arr.map(x=>'<tr><td>'+esc(lbl)+'</td><td>'+esc(x.name||'—')+'</td><td style="direction:ltr">'+esc(x.k)+'</td><td>'+(x.slice?'✔':'✘')+'</td><td>'+x.toks+'</td></tr>').join('')
     : '<tr><td>'+esc(lbl)+'</td><td colspan="4" class="gray-note">لا يوجد</td></tr>';
