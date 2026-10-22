@@ -3952,7 +3952,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.22';
+const APP_VER  = 'v61.23';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -3976,6 +3976,7 @@ const LS_KEY='aquaPearlERP_v1';
 const LS_KEY_CLIENT='aquaPearlERP_client';
 let AP_CLIENT=false;                 /* هل الجلسة الحالية لعميل؟ */
 function apClientMode(){ return !!AP_CLIENT; }
+window.apClientMode=apClientMode;
 window.apClientMode=apClientMode;
 /* مفتاح آمن للبريد داخل Firebase (نفس التحويل مكتوب فى قواعد الأمان) */
 function apMailKey(em){
@@ -5049,8 +5050,11 @@ function pushCardHTML(){
     <div class="toolbar" style="margin-top:8px">
       <button class="btn" onclick="saveSettings()">💾 حفظ</button>
       <button class="btn aqua" ${ready?'':'disabled'} onclick="apPushTest()">📨 إرسال رسالة تجريبية</button>
+      <button class="btn" onclick="apPushAudit()">🩺 فحص السحابة</button>
+      <button class="btn" onclick="apRepublishAccess()">🔄 إعادة نشر العملاء والشركاء</button>
       <span class="gray-note">${ready?'جاهز — الإرسال يتم عبر Apps Script':'ينقص: '+(!st.gsUrl?'رابط Apps Script':'')+(!st.gsUrl&&!st.vapidKey?' و':'')+(!st.vapidKey?'مفتاح VAPID':'')}</span>
     </div>
+    <div id="apAuditOut" style="margin-top:8px"></div>
     <p class="gray-note" style="margin-top:7px">العميل أو الشريك بيسجّل موبايله مرة واحدة من زرار «تفعيل الإشعارات» عنده.
       الآيفون لازم يكون مثبّت التطبيق على الشاشة الرئيسية — ده شرط Apple مش شرط النظام.</p>
   </div>`;
@@ -9051,6 +9055,38 @@ async function apNotifyPayment(sale,pay){
       apAppUrl());
   }catch(e){}
 }
+/* v61.23: فحص ما هو موجود فعلًا فى السحابة — بدل التخمين */
+async function apPushAudit(){
+  const box=$('#apAuditOut'); if(box) box.innerHTML='<p class="gray-note">⏳ بيقرأ من السحابة...</p>';
+  if(typeof window.apAccessAudit!=='function'){ if(box) box.innerHTML='<p class="gray-note">السحابة غير مهيأة</p>'; return; }
+  const r=await window.apAccessAudit();
+  if(!box) return;
+  if(!r||r.err){ box.innerHTML='<p class="gray-note" style="color:#b91c1c">⛔ '+esc(r&&r.err||'تعذر الفحص')+'</p>'; return; }
+  const expC=(DB.users||[]).filter(u=>u.client&&u.email).length;
+  const expP=(DB.users||[]).filter(u=>u.partner&&u.email).length;
+  const expS=(DB.users||[]).filter(u=>!u.client&&!u.partner&&u.email).length+1;
+  const rows=(arr,lbl)=>arr.length
+    ? arr.map(x=>'<tr><td>'+esc(lbl)+'</td><td>'+esc(x.name||'—')+'</td><td style="direction:ltr">'+esc(x.k)+'</td><td>'+(x.slice?'✔':'✘')+'</td><td>'+x.toks+'</td></tr>').join('')
+    : '<tr><td>'+esc(lbl)+'</td><td colspan="4" class="gray-note">لا يوجد</td></tr>';
+  box.innerHTML='<table class="tbl" style="margin-top:4px"><thead><tr>'+
+    '<th>النوع</th><th>الاسم</th><th>المفتاح</th><th>بياناته</th><th>أجهزة</th></tr></thead><tbody>'+
+    rows(r.clients,'عميل')+rows(r.partners,'شريك')+'</tbody></table>'+
+    '<p class="gray-note" style="margin-top:6px">موظفون فى السحابة: '+r.staff.length+' (المتوقع '+expS+') · '+
+    'عملاء: '+r.clients.length+' (المتوقع '+expC+') · شركاء: '+r.partners.length+' (المتوقع '+expP+')'+
+    ((r.clients.length<expC||r.partners.length<expP||r.staff.length<expS)
+      ? ' — <b style="color:#b91c1c">ناقص: اضغط «إعادة نشر»</b>' : ' — <b style="color:#15803d">مطابق ✔</b>')+'</p>';
+}
+
+/* v61.23: إعادة نشر خرائط الصلاحيات ومساحات العملاء والشركاء */
+async function apRepublishAccess(){
+  if(AP_CLIENT||(typeof AP_PARTNER!=='undefined'&&AP_PARTNER)){ toast('متاح من حساب المدير فقط','err'); return; }
+  if(typeof window.apCloudSyncAccess!=='function'){ toast('السحابة غير مهيأة','err'); return; }
+  toast('⏳ بينشر...');
+  try{ await window.apCloudSyncAccess(); }catch(e){}
+  await apPushAudit();
+  toast('تم النشر — راجع جدول الفحص','ok');
+}
+
 /* اختبار من الإعدادات */
 async function apPushTest(){
   const st=S();
@@ -11526,6 +11562,16 @@ function apSetAttUrl(key,url){
   let accessBusy = false;
   async function syncAccess() {
     if (!rtdb || !isCloudAdmin() || accessBusy) return;
+    /* v61.23 — حارس حاسم:
+       لو الجلسة الحالية بوابة عميل أو شريك فنسخة البيانات مصغّرة وبلا
+       مستخدمين، وكان النشر وقتها يمسح staffmail ومساحات كل العملاء
+       والشركاء. لا ننشر إلا من نسخة المدير الكاملة. */
+    if ((window.apClientMode && window.apClientMode()) ||
+        (window.apPartnerMode && window.apPartnerMode())) return;
+    try {
+      const d = window.apGetDB && window.apGetDB();
+      if (!d || !Array.isArray(d.users) || !d.users.length) return;
+    } catch (e) { return; }
     if (typeof window.apAccessMaps !== 'function') return;
     accessBusy = true;
     try {
@@ -11830,6 +11876,11 @@ function apSetAttUrl(key,url){
   /* يحفظ رمز الجهاز داخل مساحة صاحبه فقط */
   window.apPushSaveToken = async function (tok) {
     if (!rtdb || !cloudUser || !cloudUser.email) throw new Error('غير متصل');
+    /* v61.23: لو البوابة لعميل/شريك بينما جلسة السحابة لحساب المدير،
+       فالتسجيل كان بيتكتب تحت بريد المدير. نرفض بدل الحفظ الخاطئ. */
+    if (isCloudAdmin() && ((window.apClientMode && window.apClientMode()) ||
+        (window.apPartnerMode && window.apPartnerMode())))
+      throw new Error('جلسة السحابة فى هذا المتصفح لحساب المدير — اخرج من السحابة وادخل ببريد العميل، أو استخدم متصفحًا آخر');
     const k = mailKey(cloudUser.email);
     const space = (window.apPartnerMode && window.apPartnerMode()) ? 'partners' : 'clients';
     await rtdb.ref(space + '/' + k + '/tok/' + tok.slice(-24)).set({
@@ -11853,6 +11904,27 @@ function apSetAttUrl(key,url){
     if (!rtdb || !isCloudAdmin()) return;
     try { await rtdb.ref(space + '/' + mailKey(mail) + '/tok/' + String(tok).slice(-24)).remove(); }
     catch (e) {}
+  };
+
+  /* v61.23: تقرير حقيقى عمّا فى السحابة — للمدير */
+  window.apAccessAudit = async function () {
+    if (!rtdb) return { err: 'غير متصل بالسحابة' };
+    if (!cloudUser) return { err: 'لم تسجّل دخول السحابة' };
+    if (!isCloudAdmin()) return { err: 'حساب السحابة الحالى (' + cloudUser.email + ') ليس حساب المدير' };
+    const out = { ok: true, staff: [], clients: [], partners: [] };
+    try { const sm = await rtdb.ref('staffmail').get(); out.staff = Object.keys(sm.val() || {}); }
+    catch (e) { out.staff = []; }
+    for (const sp of ['clients', 'partners']) {
+      try {
+        const sn = await rtdb.ref(sp).get(); const v = sn.val() || {};
+        out[sp] = Object.keys(v).map(k => ({
+          k: k, name: (v[k] && v[k].name) || '',
+          slice: !!(v[k] && v[k].payload),
+          toks: (v[k] && v[k].tok) ? Object.keys(v[k].tok).length : 0
+        }));
+      } catch (e) { out[sp] = []; }
+    }
+    return out;
   };
 
   /* ---------------- واجهة الإعدادات ---------------- */
