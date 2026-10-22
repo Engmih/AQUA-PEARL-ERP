@@ -117,11 +117,43 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .dash-col{display:flex;flex-direction:column;gap:10px;min-height:0}
 .dash-col .stat{flex:1;min-height:0}
 .dash-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.apVid.dash-hero{align-self:center;aspect-ratio:1024/510;max-height:100%;width:100%}
+/* v61.25: فيديو المشروع بدل صورة الرئيسية + شاشة العميل والشريك.
+   النسبة محفوظة بـ aspect-ratio ووحدات نسبية، فتظل صحيحة على أى مقاس
+   وأى نسبة تكبير فى المتصفح. */
+.apVid{position:relative;overflow:hidden;border-radius:var(--r);border:1px solid var(--line);
+  box-shadow:var(--shadow);background:#0b2a4a}
+.apVid video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.apVid .apVidCap{position:absolute;bottom:0;inset-inline:0;z-index:2;color:#fff;
+  background:linear-gradient(0deg,rgba(11,42,74,.86),transparent);
+  padding:2em 1.1em .8em;font-size:.95rem;letter-spacing:.4px}
+.apVid .apVidSnd{position:absolute;top:.7em;left:.7em;z-index:3;cursor:pointer;border:0;
+  width:2.4em;height:2.4em;border-radius:999px;font-size:1rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(7,36,63,.55);color:#fff;backdrop-filter:blur(6px);
+  transition:background .2s,transform .2s}
+.apVid .apVidSnd:hover{background:rgba(7,36,63,.8);transform:scale(1.06)}
+.apVid .apVidSnd.hint{background:#1d9bd1;animation:apSndPulse 1.8s ease-in-out infinite}
+@keyframes apSndPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,155,209,.6)}50%{box-shadow:0 0 0 .7em rgba(29,155,209,0)}}
+/* شاشة الرئيسية عند العميل/الشريك — الفيديو بنسبته كاملة */
+.apHome .apVid{aspect-ratio:1024/510}
+.apHome .apHomeTtl{margin:0 0 10px;font-size:1.15rem;color:var(--navy2);font-weight:700}
+.apHome .apHomeHint{margin:10px 2px 0;color:var(--muted);font-size:.9rem}
+/* v61.25: قفل البصمة لبوابة العميل/الشريك */
+body.apLocked{overflow:hidden}
+.apLock{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:rgba(8,28,48,.96);backdrop-filter:blur(8px);padding:18px}
+.apLock .apLockBox{background:#fff;border-radius:18px;padding:26px 22px;max-width:380px;width:100%;
+  text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.apLock .apLockIc{font-size:46px;line-height:1;margin-bottom:8px}
+.apLock h3{margin:0 0 6px;color:var(--navy2)}
+.apLock p{margin:0 0 14px;color:var(--muted);font-size:.92rem;min-height:2.6em}
+.apLock .btn{margin:0 4px}
 @media(max-width:1000px){
   .dash-wrap{grid-template-columns:1fr;height:auto}
   .dash-col{flex-direction:row;flex-wrap:wrap}
   .dash-col .stat{flex:1 1 45%}
-  .dash-hero{min-height:230px;order:-1}
+  .dash-hero{min-height:0;aspect-ratio:1024/510;order:-1}
 }
 
 /* ===== Tables ===== */
@@ -937,7 +969,7 @@ table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2
   .dash-wrap{display:grid!important;grid-template-columns:1fr 1fr!important;
     gap:8px!important;height:auto!important;max-height:none!important;min-height:0!important}
   .dash-col{display:contents!important}
-  .dash-hero{grid-column:1 / -1;order:0;min-height:160px!important}
+  .dash-hero{grid-column:1 / -1;order:0;min-height:0!important;aspect-ratio:1024/510}
   .dash-col .stat{flex:none!important;min-height:0!important;padding:7px 9px!important}
   .stat[data-k="total"]{order:1}      .stat[data-k="avail"]{order:2}
   .stat[data-k="sold"]{order:3}       .stat[data-k="ret"]{order:4}
@@ -1123,6 +1155,21 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <button class="btn gold" onclick="latePDF()">📄 حفظ PDF</button>
       <button class="btn aqua" onclick="lateCopy()">📋 نسخ النص</button>
       <button class="btn ghost" onclick="closeModal('lateModal')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- v61.25: دعوة العميل للتطبيق -->
+<div class="modal-back" id="apInvModal">
+  <div class="modal" style="max-width:720px">
+    <h3><span>✉️ دعوة العميل للتطبيق</span><button class="x" onclick="closeModal('apInvModal')">✕</button></h3>
+    <p id="apInvTo" class="gray-note" style="margin:2px 0 8px"></p>
+    <textarea id="apInvBody" rows="16" style="width:100%;line-height:1.7"></textarea>
+    <p class="gray-note" style="margin:6px 2px 0">تقدر تعدّل النص قبل الإرسال.</p>
+    <div class="actions">
+      <button class="btn green" id="apInvSend" onclick="apInviteSend()">💬 إرسال واتساب</button>
+      <button class="btn aqua" onclick="apInviteCopy()">📋 نسخ النص</button>
+      <button class="btn ghost" onclick="closeModal('apInvModal')">إغلاق</button>
     </div>
   </div>
 </div>
@@ -3952,7 +3999,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.24';
+const APP_VER  = 'v61.25';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4247,7 +4294,7 @@ function buildTabs(){
   /* v61.16: العميل — زر واحد لملفه */
   if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER){ apPartnerTabs(); return; }
   if(AP_CLIENT){
-    const T=[['file','📄 ملفى'],['sched','📅 الأقساط المستحقة'],['pays','💰 الدفعات الفعلية']];
+    const T=[['home','🏠 الرئيسية'],['file','📄 ملفى'],['sched','📅 الأقساط المستحقة'],['pays','💰 الدفعات الفعلية']];
     tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_CTAB===k?' class="active"':''} onclick="apClientGo('${k}')">${lb}</button>`).join('');
     return;
   }
@@ -4338,9 +4385,101 @@ async function apBioEnroll(user){
   if(!cred) throw new Error('لم يتم التسجيل');
   localStorage.setItem(BIO_KEY,JSON.stringify({
     credId:b64u(cred.rawId), userId:user.id, name:user.name, email:user.email||'',
+    kind:user.kind||'staff',          /* v61.25: staff | client | partner */
     at:new Date().toISOString()
   }));
   return true;
+}
+/* v61.25: العميل والشريك ليس لهما سجل مستخدم محلى — نربط البصمة ببريد
+   حساب السحابة. جلسة فايربيز نفسها محفوظة على الجهاز، فالبصمة هنا قفل
+   يحمى البيانات قبل عرضها، وليست بديلًا عن كلمة السر. */
+function apBioPortalEmail(){
+  try{ return (window.apCloudEmail&&window.apCloudEmail())||''; }catch(e){ return ''; }
+}
+function apBioIsPortal(){
+  return !!(AP_CLIENT||(typeof AP_PARTNER!=='undefined'&&AP_PARTNER));
+}
+function apBioPortalOn(){
+  const r=apBioGet();
+  const m=String(apBioPortalEmail()||'').toLowerCase();
+  return !!(r&&r.credId&&r.kind&&r.kind!=='staff'&&m&&String(r.email||'').toLowerCase()===m);
+}
+/* قفل الشاشة حتى تنجح البصمة */
+async function apBioGate(){
+  if(!apBioPortalOn()) return true;
+  document.body.classList.add('apLocked');
+  let ov=document.getElementById('apBioLock');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='apBioLock'; ov.className='apLock';
+    ov.innerHTML=`<div class="apLockBox">
+      <div class="apLockIc">🔐</div>
+      <h3>برجاء التحقق ببصمتك</h3>
+      <p id="apLockMsg">بياناتك محميّة — المس مستشعر البصمة للمتابعة.</p>
+      <button class="btn aqua" onclick="apBioGateRetry()">إعادة المحاولة</button>
+      <button class="btn ghost" onclick="apBioGateOut()">خروج</button>
+    </div>`;
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+  return apBioGateRetry();
+}
+async function apBioGateRetry(){
+  const msg=document.getElementById('apLockMsg');
+  try{
+    if(msg) msg.textContent='⏳ فى انتظار البصمة...';
+    await apBioVerify();
+    const ov=document.getElementById('apBioLock'); if(ov) ov.style.display='none';
+    document.body.classList.remove('apLocked');
+    return true;
+  }catch(e){
+    const no=e&&(e.name==='NotAllowedError'||e.name==='AbortError');
+    if(msg) msg.textContent=no?'اتلغى التحقق — اضغط «إعادة المحاولة».'
+                             :('تعذر التحقق: '+(e&&e.message||''));
+    return false;
+  }
+}
+function apBioGateOut(){
+  const ov=document.getElementById('apBioLock'); if(ov) ov.style.display='none';
+  document.body.classList.remove('apLocked');
+  try{ logout(); }catch(e){}
+}
+/* تفعيل/إلغاء البصمة من داخل بوابة العميل أو الشريك */
+function apBioPortalCard(){
+  if(!apBioIsPortal()) return '';
+  if(!apBioSupported()) return '';
+  const on=apBioPortalOn();
+  return `<div class="card"><h3>🔐 قفل بالبصمة على هذا الجهاز</h3>
+    <div class="toolbar">
+      ${on?`<button class="btn red" onclick="apBioPortalOff()">🔓 إلغاء البصمة</button>
+            <span class="gray-note">مفعّلة — بياناتك لا تظهر إلا بعد بصمتك</span>`
+          :`<button class="btn green" onclick="apBioPortalEnable()">🔐 تفعيل البصمة</button>
+            <span class="gray-note">غير مفعّلة على هذا الجهاز</span>`}
+    </div>
+    <p class="gray-note" style="margin-top:7px">البصمة محفوظة على جهازك وحده ولا تُرسل لأى مكان.
+      بعد تفعيلها لن تُعرض بياناتك على هذا الجهاز إلا بعد التحقق ببصمتك.</p>
+  </div>`;
+}
+async function apBioPortalEnable(){
+  const mail=apBioPortalEmail();
+  if(!mail){ toast('لم نتعرّف على بريد حسابك — أعد الدخول','err'); return; }
+  if(!apBioSupported()){ toast('البصمة تعمل من الرابط الأونلاين فقط (https)','err'); return; }
+  try{
+    await apBioEnroll({id:'portal',name:(CURRENT_USER&&CURRENT_USER.name)||mail,email:mail,
+                       kind:AP_CLIENT?'client':'partner'});
+    toast('تم تفعيل البصمة على هذا الجهاز ✔','ok');
+  }catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); return; }
+  apBioPortalRefresh();
+}
+function apBioPortalOff(){
+  apBioClear();
+  toast('تم إلغاء البصمة من هذا الجهاز','ok');
+  apBioPortalRefresh();
+}
+function apBioPortalRefresh(){
+  try{
+    if(AP_CLIENT) renderCustomerFile(cfSaleId);
+    else if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER) apPartnerRender();
+  }catch(e){}
 }
 /* التحقق بالبصمة */
 async function apBioVerify(){
@@ -4359,7 +4498,7 @@ async function apBioVerify(){
 function apBioMount(){
   const wrap=$('#bioWrap'); if(!wrap) return;
   const rec=apBioGet();
-  const ok=apBioSupported()&&apIsPhone()&&rec&&findUser(rec.userId);
+  const ok=apBioSupported()&&apIsPhone()&&rec&&(!rec.kind||rec.kind==='staff')&&findUser(rec.userId);
   wrap.style.display=ok?'block':'none';
   if(ok){
     const nm=$('#bioName'); if(nm) nm.textContent=rec.name||'';
@@ -4419,7 +4558,7 @@ function apBioDisable(){
 async function apBioEnableFromSettings(){
   if(!CURRENT_USER){ toast('سجّل الدخول أولًا','err'); return; }
   if(!apBioSupported()){ toast('البصمة تعمل من الرابط الأونلاين فقط (https)','err'); return; }
-  try{ await apBioEnroll(CURRENT_USER); toast('تم تفعيل البصمة على هذا الجهاز ✔','ok'); }
+  try{ await apBioEnroll(Object.assign({},CURRENT_USER,{kind:'staff'})); toast('تم تفعيل البصمة على هذا الجهاز ✔','ok'); }
   catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); }
   if(currentScreen==='settings') renderSettings();
 }
@@ -4602,9 +4741,12 @@ function renderDashboard(){
        <div class="stat red" data-k="ret" onclick="nav('returnedScr')"><span class="ic">🔄</span><div><div class="tt">المرتجعة</div><div class="nm">${fmtN(st.ret)}</div></div></div>
        <div class="stat gold" data-k="salesTotal" onclick="nav('reports')"><span class="ic">💵</span><div><div class="tt">إجمالي المبيعات</div><div class="nm">${fmtM(st.salesTotal)}</div></div></div>
      </div>
-     <div class="hero-banner dash-hero">
-       <img src="${window.ASSETS.hero}" alt="Aqua Pearl City">
-       <div class="hero-cap"><b>Aqua Pearl City</b> — City for elite life</div>
+     <div class="apVid dash-hero">
+       <video id="apVidEl" playsinline loop preload="auto" poster="${AP_VID_POSTER}"${apVidMuted()?' muted':''}>
+         <source src="${AP_VID}" type="video/mp4">
+         <source src="${AP_VID_WEBM}" type="video/webm"></video>
+       <button class="apVidSnd" id="apVidSnd" onclick="apVidToggle()" title="الصوت" aria-label="الصوت">${apVidMuted()?'🔇':'🔊'}</button>
+       <div class="apVidCap"><b>Aqua Pearl City</b> — City for elite life</div>
      </div>
      <div class="dash-col"${SH?'':' style="display:none"'}>
        <div class="stat" data-k="collected" onclick="nav('collected')"><span class="ic">💵</span><div><div class="tt">إجمالي المحصل</div><div class="nm">${fmtM(st.collected)}</div></div></div>
@@ -4614,6 +4756,7 @@ function renderDashboard(){
        <div class="stat green" data-k="inst" onclick="nav('sold')"><span class="ic">🗓️</span><div><div class="tt">مبيعات تقسيط</div><div class="nm">${fmtN(st.inst)}</div></div></div>
      </div>
    </div>`;
+  try{ apVidBoot(); }catch(e){}
 }
 
 /* =====================================================================
@@ -7160,6 +7303,7 @@ function renderCustomerFile(saleId){
   if(AP_CLIENT){
     el.innerHTML=apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
     try{ apBellRender(s); }catch(e){}
+    if(AP_CTAB==='home'){ try{ apVidBoot(); }catch(e){} }
     return;
   }
   el.innerHTML=`
@@ -7174,6 +7318,7 @@ function renderCustomerFile(saleId){
     <button class="btn ghost" onclick="openAttachModal({saleId:'${s.id}'})">📎 إضافة مرفقات</button>
     <button class="btn ghost" onclick="nav('attach','${s.id}')">🗂️ عرض المرفقات</button>
     <button class="btn ghost" onclick="printScreen()">🖨️ طباعة الملف</button>
+    <button class="btn aqua" onclick="apInviteOpen('${s.id}')" title="إرسال دعوة للعميل على واتساب">✉️ INVITATION</button>
     <button class="btn red" onclick="cancelSale('${s.id}')">↩️ فسخ بيع الوحدة</button>
   </div>
   <div class="card"><h3>👤 بيانات العميل</h3><div class="grid g3">
@@ -7237,7 +7382,7 @@ function renderCustomerFile(saleId){
    ثلاث تبّات: ملفى · الأقساط المستحقة · الدفعات الفعلية.
    كل شىء للقراءة فقط — لا حذف ولا مشاركة ولا تعديل.
    =================================================================== */
-let AP_CTAB='file';
+let AP_CTAB='home';
 
 /* --- تنبيهات العميل: المتأخر + أول قسط مستحق --- */
 function apClientAlerts(s){
@@ -7467,7 +7612,7 @@ function apClientPaysHTML(s){
    تعمل على «أرقام جاهزة» وصلت من المدير — لا تقرأ قاعدة بيانات.
    أربع تبّات للقراءة فقط.
    =================================================================== */
-let AP_PARTNER=null, AP_PTAB='sum';
+let AP_PARTNER=null, AP_PTAB='home';
 function apPartnerMode(){ return !!AP_PARTNER; }
 window.apPartnerMode=apPartnerMode;
 
@@ -7475,7 +7620,7 @@ window.apAdoptPartner=function(obj,info){
   try{
     AP_PARTNER=obj;
     AP_CLIENT=false;
-    AP_PTAB='sum';
+    AP_PTAB='home';
     try{ document.body.classList.add('ap-client'); }catch(e){}
     CURRENT_USER={id:'partner',name:(info&&info.name)||obj.name||'شريك',
                   admin:false,partner:true,perms:[]};
@@ -7487,12 +7632,13 @@ window.apAdoptPartner=function(obj,info){
     if(hc) hc.textContent=(obj.company||'')+(obj.project?(' — '+obj.project):'');
     apPartnerTabs();
     apPartnerRender();
+    try{ apBioGate(); }catch(e){}
     return true;
   }catch(e){ console.error('adoptPartner',e); return false; }
 };
 function apPartnerTabs(){
   const tabs=$('nav.tabs'); if(!tabs) return;
-  const T=[['sum','📊 ملخصى'],['blds','🏢 نصيبى بالعمارات'],
+  const T=[['home','🏠 الرئيسية'],['sum','📊 ملخصى'],['blds','🏢 نصيبى بالعمارات'],
            ['stmt','📄 كشف مفصّل'],['cap','💼 رأس المال والأرباح']];
   tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_PTAB===k?' class="active"':''} onclick="apPartnerGo('${k}')">${lb}</button>`).join('');
 }
@@ -7507,11 +7653,13 @@ function apPartnerRender(){
   $$('.screen').forEach(x=>x.classList.toggle('active',x.id==='scr-customerFile'));
   currentScreen='customerFile';
   const el=$('#scr-customerFile'); if(!el) return;
-  el.innerHTML = AP_PTAB==='blds' ? apPartnerBldsHTML(P)
+  el.innerHTML = AP_PTAB==='home' ? apHomeHTML()
+               : AP_PTAB==='blds' ? apPartnerBldsHTML(P)
                : AP_PTAB==='stmt' ? apPartnerStmtHTML(P)
                : AP_PTAB==='cap'  ? apPartnerCapHTML(P)
                :                    apPartnerSumHTML(P);
   const fab=$('#shareFab'); if(fab) fab.style.display='flex';
+  if(AP_PTAB==='home'){ try{ apVidBoot(); }catch(e){} }
 }
 function apPartnerSumHTML(P){
   const t=P.totals||{};
@@ -7635,6 +7783,12 @@ function apGreetClose(){
   b.classList.remove('show');
   if(window.__apGreetEsc) document.removeEventListener('keydown',window.__apGreetEsc);
   setTimeout(()=>{ try{ b.remove(); }catch(e){} },260);
+  /* v61.25: بعد ما يقفلها تظهر الرئيسية بالفيديو ويبدأ التشغيل */
+  try{
+    if(AP_CLIENT){ if(AP_CTAB!=='home') apClientGo('home'); else apVidBoot(); }
+    else if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER){
+      if(AP_PTAB!=='home') apPartnerGo('home'); else apVidBoot(); }
+  }catch(e){}
 }
 function apGreetConfetti(host){
   if(!host) return;
@@ -7660,7 +7814,138 @@ function apGreetCount(el,target,ms){
 }
 
 /* --- الموجّه بين التبّات --- */
+/* =====================================================================
+   v61.25: دعوة العميل للتطبيق على واتساب
+   تُفتح من ملف العميل عند الموظف أو المدير. الرسالة تشرح التثبيت
+   كتطبيق حقيقى (Add to Home screen) لا كاختصار جوجل، وتطلب منه
+   اختيار اسم مستخدم وكلمة سر، وتطلب بريدًا لو لم يكن مسجّلًا.
+   ===================================================================== */
+function apInviteHasMail(sale){
+  const m=String((sale.customer&&sale.customer.email)||'').trim();
+  if(m) return m;
+  const u=(DB.users||[]).find(x=>x.client&&x.unitId===sale.unitId&&x.email);
+  return u?String(u.email).trim():'';
+}
+function apInviteText(sale,mail){
+  const st=S(), u=unitById(sale.unitId)||{};
+  const url=apAppUrl();
+  const unit=[u.unitNo,u.building].filter(Boolean).join(' — ');
+  const L=[];
+  L.push('السلام عليكم أ/ '+((sale.customer&&sale.customer.name)||''));
+  L.push('');
+  L.push('سعداء بانضمامك لعملاء *'+(st.companyName||'')+'* — مشروع *'+(st.projectName||'')+'*.');
+  L.push('جهّزنا لك تطبيقًا تتابع منه وحدتك' + (unit?(' ('+unit+')'):'') +
+         ' وأقساطك وإيصالات السداد أولًا بأول، وتوصلك إشعارات فور تسجيل أى دفعة.');
+  L.push('');
+  L.push('*رابط التطبيق:*');
+  L.push(url);
+  L.push('');
+  L.push('*طريقة التثبيت على الموبايل:*');
+  L.push('١) افتح الرابط من متصفح الموبايل.');
+  L.push('٢) على أندرويد (Chrome): اضغط ⋮ فوق على اليمين ← «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».');
+  L.push('٣) على آيفون (Safari): اضغط زر المشاركة ⬆️ تحت ← «Add to Home Screen».');
+  L.push('٤) هيظهر التطبيق بأيقونته على شاشة موبايلك ويفتح زى أى تطبيق.');
+  L.push('');
+  L.push('*محتاجين منك:*');
+  L.push('• اسم المستخدم اللى تحب تدخل به (USER NAME).');
+  L.push('• كلمة السر اللى تختارها (PASSWORD).');
+  if(!mail) L.push('• بريد إلكترونى (E-mail) لأن الدخول للتطبيق بيتم به، ومش مسجّل عندنا بريد لحضرتك.');
+  else L.push('• الدخول هيكون بالبريد: '+mail+' (لو تحب تغيّره بلّغنا).');
+  L.push('');
+  L.push('ابعتلنا البيانات دى فى رسالة واحدة وهنفعّل الحساب ونبعتلك تأكيد. وأى استفسار إحنا تحت أمرك.');
+  return L.join('\n');
+}
+let apInvSaleId=null;
+function apInviteOpen(id){
+  const sale=saleById(id); if(!sale){ toast('لم يتم اختيار عميل','err'); return; }
+  apInvSaleId=id;
+  const mail=apInviteHasMail(sale);
+  const ph=waPhone(sale.customer&&sale.customer.phone);
+  const body=apInviteText(sale,mail);
+  const el=$('#apInvBody'); if(el) el.value=body;
+  const ttl=$('#apInvTo');
+  if(ttl) ttl.innerHTML = ph
+    ? ('📱 هتتبعت على: <b style="direction:ltr;display:inline-block">+'+ph+'</b>'+
+       (mail?'':' · <span style="color:#b45309">مفيش بريد مسجّل — الرسالة بتطلبه منه</span>'))
+    : '<span style="color:#b91c1c">⛔ مفيش رقم هاتف مسجّل لهذا العميل — سجّل رقمه من «تعديل البيانات» أولًا</span>';
+  const sb=$('#apInvSend'); if(sb) sb.disabled=!ph;
+  openModal('apInvModal');
+}
+function apInviteSend(){
+  const sale=saleById(apInvSaleId); if(!sale) return;
+  const ph=waPhone(sale.customer&&sale.customer.phone);
+  if(!ph){ toast('لا يوجد رقم هاتف مسجّل لهذا العميل','err'); return; }
+  const t=($('#apInvBody')&&$('#apInvBody').value)||apInviteText(sale,apInviteHasMail(sale));
+  window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(t),'_blank');
+  closeModal('apInvModal');
+}
+function apInviteCopy(){
+  const t=$('#apInvBody'); if(!t) return;
+  t.select();
+  try{ document.execCommand('copy'); toast('تم نسخ نص الدعوة','ok'); }
+  catch(e){ toast('تعذر النسخ','err'); }
+}
+
+/* =====================================================================
+   v61.25: فيديو المشروع
+   يحلّ محل صورة الرئيسية، وهو نفسه شاشة «الرئيسية» عند العميل والشريك.
+   يعمل بصوت ما سمح المتصفح، ولو منع التشغيل التلقائى بصوت يبدأ صامتًا
+   ويلمع زر الصوت ليضغطه المستخدم. ويفضل يتعاد ما دامت الشاشة مفتوحة.
+   ===================================================================== */
+const AP_VID='intro.mp4', AP_VID_WEBM='intro.webm', AP_VID_POSTER='intro.jpg';
+function apVidMuted(){ try{ return localStorage.getItem('apVidMuted')==='1'; }catch(e){ return false; } }
+function apVideoHTML(cap){
+  const m=apVidMuted();
+  return `<div class="apVid">
+    <video id="apVidEl" playsinline loop preload="auto" poster="${AP_VID_POSTER}"${m?' muted':''}>
+      <source src="${AP_VID}" type="video/mp4">
+      <source src="${AP_VID_WEBM}" type="video/webm"></video>
+    <button class="apVidSnd" id="apVidSnd" onclick="apVidToggle()"
+      title="الصوت" aria-label="الصوت">${m?'🔇':'🔊'}</button>
+    ${cap?`<div class="apVidCap">${cap}</div>`:''}
+  </div>`;
+}
+/* يبدأ التشغيل بعد رسم الشاشة، ويعالج منع التشغيل التلقائى بصوت */
+function apVidBoot(){
+  const v=document.getElementById('apVidEl'); if(!v) return;
+  const b=document.getElementById('apVidSnd');
+  v.loop=true; v.muted=apVidMuted();
+  const mark=()=>{ if(b){ b.textContent=v.muted?'🔇':'🔊'; b.classList.toggle('hint',v.muted&&!apVidMuted()); } };
+  v.play().then(mark).catch(()=>{
+    v.muted=true;                       /* المتصفح منع الصوت — نشغّل صامتًا */
+    mark();
+    v.play().catch(()=>{});
+  });
+  /* ضمان عدم التوقف: لو أوقفه المتصفح لأى سبب نعيد التشغيل */
+  if(!v.dataset.wired){
+    v.dataset.wired='1';
+    v.addEventListener('ended',()=>{ v.currentTime=0; v.play().catch(()=>{}); });
+    v.addEventListener('pause',()=>{ if(document.visibilityState==='visible'&&v.isConnected)
+      setTimeout(()=>{ if(v.paused&&v.isConnected) v.play().catch(()=>{}); },250); });
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){
+      const e2=document.getElementById('apVidEl'); if(e2&&e2.paused) e2.play().catch(()=>{}); } });
+  }
+}
+function apVidToggle(){
+  const v=document.getElementById('apVidEl'); if(!v) return;
+  v.muted=!v.muted;
+  try{ localStorage.setItem('apVidMuted',v.muted?'1':'0'); }catch(e){}
+  const b=document.getElementById('apVidSnd');
+  if(b){ b.textContent=v.muted?'🔇':'🔊'; b.classList.remove('hint'); }
+  if(v.paused) v.play().catch(()=>{});
+}
+/* شاشة «الرئيسية» للعميل والشريك */
+function apHomeHTML(title){
+  return `<div class="apHome">
+    <h2 class="screen-title">${esc(title||(S().projectName||'الرئيسية'))}</h2>
+    ${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''))}
+    <p class="apHomeHint">اختر من التابات بالأعلى لعرض تفاصيل حسابك.</p>
+    ${apBioPortalCard()}
+  </div>`;
+}
+
 function apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
+  if(AP_CTAB==='home')  return apHomeHTML();
   if(AP_CTAB==='sched') return apClientSchedHTML(s);
   if(AP_CTAB==='pays')  return apClientPaysHTML(s);
   return apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
@@ -7778,12 +8063,14 @@ window.apAdoptClientDB=function(obj,info){
     /* إخفاء كل ما لا يخصّ العميل */
     ['#btnBackup','#btnPortable'].forEach(sel=>{ const e2=$(sel); if(e2) e2.style.display='none'; });
     const hc=$('#hdrCompany'); if(hc) hc.textContent=S().companyName+' — '+S().projectName;
-    AP_CTAB='file';
+    AP_CTAB='home';
     try{ document.body.classList.add('ap-client'); }catch(e){}
     buildTabs();
     if(s){
       nav('customerFile',s.id);
       try{ apBellRender(s); }catch(e){}
+      /* v61.25: لو البصمة مفعّلة على هذا الجهاز نقفل العرض حتى يتحقق */
+      try{ apBioGate(); }catch(e){}
       /* شاشة البونص/الغرامة المتحركة — مرة واحدة فى الجلسة */
       try{ setTimeout(()=>apGreet(s),700); }catch(e){}
     }
@@ -11384,6 +11671,7 @@ function apSetAttUrl(key,url){
   }
   window.apIsCloudAdmin = isCloudAdmin;
   window.apCloudOn = () => !!(rtdb && cloudUser);
+  window.apCloudEmail = () => (cloudUser && cloudUser.email) || '';
 
   /* ---------------- شارة الحالة ---------------- */
   function badge(state, text, title) {

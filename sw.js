@@ -4,7 +4,7 @@
    استراتيجية: الشبكة أولًا للملف الرئيسى (ليصل التحديث فورًا) مع الرجوع
    للنسخة المخزّنة عند انقطاع الشبكة، والمخزّن أولًا للأيقونات.
    ===================================================================== */
-const CACHE = 'aqua-pearl-erp-v61.24';
+const CACHE = 'aqua-pearl-erp-v61.25';
 const CORE = [
   './',
   './index.html',
@@ -14,7 +14,10 @@ const CORE = [
   './icons/maskable-192.png',
   './icons/maskable-512.png',
   './icons/icon-180.png',
-  './icons/favicon.ico'
+  './icons/favicon.ico',
+  './intro.mp4',
+  './intro.webm',
+  './intro.jpg'
 ];
 
 self.addEventListener('install', e => {
