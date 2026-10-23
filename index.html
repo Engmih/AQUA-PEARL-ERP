@@ -83,7 +83,10 @@ a{color:var(--aqua)}
   .app-header .userbox{gap:4px;padding:2px 5px}
   .app-header .userbox button{padding:3px 6px}
   .app-header .userbox button .lbl{display:none}
-  .app-header .userbox button .ic{display:inline;font-style:normal;font-size:13px;line-height:1}
+  /* v61.33: أيقونة الخروج صارت SVG — رمز الباور النصى كان يظهر مربعًا
+     فارغًا على الأجهزة التى لا يحوى خطها ذلك الرمز. */
+  .app-header .userbox button .ic{display:inline-flex;align-items:center;font-style:normal;line-height:1}
+  .app-header .userbox button .ic svg{width:15px;height:15px;display:block}
   #apWalChip{padding:2px 7px 2px 5px;font-size:11px;gap:4px}
   #apWalChip svg{width:15px;height:15px}
   #apWalChip span{display:none}
@@ -314,13 +317,19 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .usRow.col .btn{margin-top:9px}
 .usRow b{font-size:.96rem;color:var(--navy2)}
 .usRow .gray-note{margin:3px 0 0}
-.apHomeIcons{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+/* v61.33: الفيديو يفضل ثابت تحت الهيدر والأيقونات تعدّى من تحته */
+.apHome .apVidStick{position:sticky;top:var(--hdrH,0px);z-index:20;
+  background:var(--bg);padding:4px 0 9px;margin-top:-4px}
+/* v61.33: اتنين فى الصف — بارتفاع موحّد حتى لو اتلف اسم سطرين */
+.apHomeIcons{display:grid!important;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
 .apHomeIcons .svcTile{flex-direction:row;justify-content:flex-start;align-items:center;
-  gap:13px;padding:10px 13px;border-radius:14px;text-align:start;width:100%}
-.apHomeIcons .svcIc{width:46px;height:46px;border-radius:13px}
-.apHomeIcons .svcIc svg{width:31px;height:31px}
-.apHomeIcons .svcLb{font-size:.94rem;flex:1}
-.apHomeIcons .svcTile::after{content:'‹';color:var(--muted);font-size:1.5rem;line-height:1;opacity:.6}
+  gap:10px;padding:10px 11px;border-radius:14px;text-align:start;width:100%;
+  min-height:68px;box-sizing:border-box}
+.apHomeIcons .svcTile:only-child{grid-column:1/-1}   /* الموظف/الشريك: الإعدادات وحدها بعرض كامل */
+.apHomeIcons .svcIc{width:42px;height:42px;border-radius:12px;flex:0 0 auto}
+.apHomeIcons .svcIc svg{width:28px;height:28px}
+.apHomeIcons .svcLb{font-size:.9rem;flex:1;line-height:1.25}
+.apHomeIcons .svcTile::after{content:'‹';color:var(--muted);font-size:1.35rem;line-height:1;opacity:.55;flex:0 0 auto}
 .apHomeIcons .svcTile:hover{transform:none;box-shadow:0 6px 16px rgba(11,42,74,.12)}
 /* v61.25: قفل البصمة لبوابة العميل/الشريك */
 body.apLocked{overflow:hidden}
@@ -827,6 +836,19 @@ html,body{forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-
 @keyframes gShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2.5px)}75%{transform:translateX(2.5px)}}
 .apGreet .gPulse{position:absolute;inset:4px;border-radius:50%;border:2.5px solid rgba(179,38,30,.3)}
 .apGreet.show .gPulse{animation:gHalo 1.9s ease-out .9s infinite}
+/* v61.33: الحالة المحايدة — لا غرامات ولا بونص. هادئة بلا احتفال. */
+.apGreet.nut .gBox{background:linear-gradient(170deg,#f1fbfb 0%,#ffffff 52%)}
+.apGreet.nut .gTtl{color:#0f7f8f}
+.apGreet.nut .gGo{background:linear-gradient(135deg,#17a2b8,#0f7f8f);box-shadow:0 6px 16px rgba(15,127,143,.28)}
+.apGreet .gOk{width:86px;height:86px;margin:0 auto;position:relative;display:grid;place-items:center}
+.apGreet.show .gOk{animation:gRise .5s cubic-bezier(.2,1.2,.4,1) .06s both}
+.apGreet .gOk svg{width:86px;height:86px;overflow:visible}
+.apGreet .gOkC{fill:none;stroke:rgba(15,127,143,.3);stroke-width:5}
+.apGreet .gOkV{fill:none;stroke:#0f7f8f;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:62;stroke-dashoffset:62}
+.apGreet.show .gOkV{animation:gDraw .7s cubic-bezier(.4,0,.2,1) .25s forwards}
+.apGreet .gNeutral{font-size:15.5px;font-weight:800;color:#0f7f8f;line-height:1.7}
+.apGreet .gDue.nut{border-color:#bfe6ec;color:#15616d}
 @media print{.apGreet,#apBell{display:none!important}}
 
 /* ===================================================================
@@ -905,7 +927,9 @@ table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2
   main{padding:10px 8px;max-width:100%}
   .screen{max-width:100%;overflow-x:hidden}
 
-  html,body{overflow-x:hidden;max-width:100%}
+  /* v61.33: كان overflow-x:hidden هنا يجعل الـbody حاوية تمرير، فيبطل
+     position:sticky للشريط العلوى على الموبايل. clip يقصّ بلا حاوية تمرير. */
+  html,body{overflow-x:clip;max-width:100%}
   .screen,.card,.toolbar,.tbl-wrap{max-width:100%}
   /* ===== v61.14: الجداول تتحوّل إلى كروت على الموبايل =====
      كل صف يصير بطاقة بسطور «العنوان: القيمة»، فلا شىء يُقصّ ولا تمدّد
@@ -1217,7 +1241,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     <div class="sub" id="hdrCompany">Trust Group — Aqua Pearl City</div>
   </div>
   <div class="hdrSide">
-    <div class="userbox no-print" id="userBox" style="display:none"><span>👤 <b id="curUserName"></b></span><button onclick="logout()" title="خروج" aria-label="خروج"><span class="lbl">خروج</span><i class="ic">⏻</i></button></div>
+    <div class="userbox no-print" id="userBox" style="display:none"><span>👤 <b id="curUserName"></b></span><button onclick="logout()" title="خروج" aria-label="خروج"><span class="lbl">خروج</span><i class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 3.2v8.3"/><path d="M7.4 6.1a7.4 7.4 0 1 0 9.2 0"/></svg></i></button></div>
     <button class="hdr-backup no-print" id="btnBackup" onclick="exportBackup()" title="تنزيل نسخة احتياطية كاملة JSON" style="display:none">💾 نسخة احتياطية</button>
     <button class="hdr-backup hdr-portable no-print" id="btnPortable" onclick="exportPortable()" title="حفظ نسخة من ملف النظام والبيانات مدمجة بداخله — للنقل أو الإرسال أو الفتح من أي متصفح" style="display:none">🧷 نسخة محمولة</button>
     <div class="clock" id="clock"></div>
@@ -4202,7 +4226,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.32';
+const APP_VER  = 'v61.33';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -7843,13 +7867,17 @@ function apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
 
 /* --- تبّ «الأقساط المستحقة»: أربعة أعمدة بلا إيصال --- */
 function apClientSchedHTML(s){
+  /* v61.33: زرار البونص والغرامات جنب الطباعة — يفتح نفس شاشة الدخول */
+  const bpBtn='<button class="btn ghost" onclick="apGreetOpen()">⚖️ البونص والغرامات</button>';
   if(s.mode==='cash')
-    return `<h2 class="screen-title">الأقساط المستحقة</h2>
+    return `<h2 class="screen-title">أقساطى</h2>
+      <div class="toolbar no-print">${bpBtn}</div>
       <div class="card"><p class="gray-note">بيع كاش — لا يوجد جدول أقساط.</p></div>`;
   const rows=scheduleWithStatus(s);
   const sum=(s.schedule||[]).reduce((a,i)=>a+Number(i.amount||0),0);
-  return `<h2 class="screen-title">الأقساط المستحقة</h2>
+  return `<h2 class="screen-title">أقساطى</h2>
   <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
+    ${bpBtn}
     <span class="gray-note" style="margin-inline-start:auto">إجمالي الجدول: ${fmtN(sum)} ج.م</span></div>
   <div class="card"><div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
     <th>#</th><th>تاريخ الاستحقاق</th><th>القيمة</th><th>الحالة</th>
@@ -7864,7 +7892,7 @@ function apClientSchedHTML(s){
 /* --- تبّ «الدفعات الفعلية»: أربعة أعمدة والطباعة فقط --- */
 function apClientPaysHTML(s){
   const list=paymentsOf(s.id);
-  return `<h2 class="screen-title">الدفعات الفعلية</h2>
+  return `<h2 class="screen-title">إيصالاتى</h2>
   <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
     <span class="gray-note" style="margin-inline-start:auto">عدد الإيصالات: ${fmtN(list.length)}</span></div>
   <div class="card">${list.length?`<div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
@@ -8009,24 +8037,34 @@ function apPartnerCapHTML(P){
 
 /* ===================================================================
    v61.19 — شاشة الترحيب المتحركة عند دخول العميل
-   شكلان مختلفان: بونص (أخضر واحتفالى) وغرامة (أحمر وهادئ)،
-   يُغلقان بعلامة ✕ أو بالضغط خارج الكارت. مرة واحدة فى الجلسة.
+   ثلاثة أشكال: بونص (أخضر واحتفالى) · غرامة (أحمر وهادئ) ·
+   محايد (تركوازى هادئ) حين لا غرامة ولا بونص.
+   تُغلق بعلامة ✕ أو بالضغط خارجها أو بـEsc.
+   v61.33: تظهر عند كل دخول — لا حدّ «مرة واحدة فى الجلسة» —
+   وتظهر أيضًا حين يكون الصافى صفرًا، وله شكله المحايد.
    =================================================================== */
-function apGreet(sale){
+function apGreet(sale,manual){
   try{
-    if(sessionStorage.getItem('apGreeted_'+sale.id)) return;
+    if(!sale) return;
+    if(document.querySelector('.apGreet')) return;   /* واحدة فقط فى الشاشة */
+    AP_GREET_MANUAL=!!manual;
     const B=bonusPenaltyNet(sale);
     const net=Math.round(B.net);
-    if(!net) return;                       /* لا بونص ولا غرامة — لا نزعجه */
-    sessionStorage.setItem('apGreeted_'+sale.id,'1');
+    const zero=!net;
     const good=net>0;
     const a=apClientAlerts(sale);
     const nxt=a.next?('أقرب قسط مستحق: <b>'+fmtD(a.next.due)+'</b> — <b>'+fmtN(a.next.amount)+' ج.م</b>'):'';
     const box=document.createElement('div');
-    box.className='apGreet'+(good?' bon':' pen');
+    box.className='apGreet'+(zero?' nut':good?' bon':' pen');
     box.innerHTML=`<div class="gBox">
       <button class="gX" onclick="apGreetClose()" aria-label="إغلاق">✕</button>
-      ${good?`<div class="gConf"></div><div class="gShine"></div>
+      ${zero?`<div class="gOk"><svg viewBox="0 0 100 100">
+          <circle class="gOkC" cx="50" cy="50" r="40"/>
+          <path class="gOkV" d="M31 52 L44 65 L70 37"/></svg></div>
+        <div class="gTtl">سدادك منتظم</div>
+        <p class="gSml">لا غرامات تأخير ولا بونص سداد مبكّر حتى الآن</p>
+        <div class="gNeutral">كله تمام ✔</div>`
+       :good?`<div class="gConf"></div><div class="gShine"></div>
         <div class="gMedal"><div class="gRing"></div><div class="gCoin">🏅</div></div>
         <div class="gTtl">مبروك! ليك بونص سداد مبكّر</div>
         <p class="gSml">لأنك سدّدت قبل مواعيد الاستحقاق</p>`
@@ -8036,24 +8074,27 @@ function apGreet(sale){
           <circle cx="50" cy="72" r="4.6"/></g></svg></div>
         <div class="gTtl">عليك غرامات تأخير</div>
         <p class="gSml">نتيجة تأخّر سداد بعض الأقساط عن موعدها</p>`}
-      <div><span class="gAmt" id="gAmt">0</span><span class="gCur">ج.م</span></div>
-      ${(!good&&nxt)?'<div class="gDue">'+nxt+'</div>':''}
-      <button class="gGo" onclick="apGreetClose()">${good?'تمام 👌':'فهمت'}</button>
+      ${zero?'':'<div><span class="gAmt" id="gAmt">0</span><span class="gCur">ج.م</span></div>'}
+      ${((!good||zero)&&nxt)?'<div class="gDue'+(zero?' nut':'')+'">'+nxt+'</div>':''}
+      <button class="gGo" onclick="apGreetClose()">${zero?'تمام':good?'تمام 👌':'فهمت'}</button>
     </div>`;
     box.addEventListener('click',e=>{ if(e.target===box) apGreetClose(); });
     document.body.appendChild(box);
-    if(good) apGreetConfetti(box.querySelector('.gConf'));
+    if(good&&!zero) apGreetConfetti(box.querySelector('.gConf'));
     requestAnimationFrame(()=>box.classList.add('show'));
-    setTimeout(()=>apGreetCount(document.getElementById('gAmt'),Math.abs(net),1100),good?420:560);
+    if(!zero) setTimeout(()=>apGreetCount(document.getElementById('gAmt'),Math.abs(net),1100),good?420:560);
     window.__apGreetEsc=e=>{ if(e.key==='Escape') apGreetClose(); };
     document.addEventListener('keydown',window.__apGreetEsc);
   }catch(e){ console.warn('greet',e); }
 }
+let AP_GREET_MANUAL=false;
 function apGreetClose(){
   const b=document.querySelector('.apGreet'); if(!b) return;
   b.classList.remove('show');
   if(window.__apGreetEsc) document.removeEventListener('keydown',window.__apGreetEsc);
   setTimeout(()=>{ try{ b.remove(); }catch(e){} },260);
+  /* v61.33: لو فتحها بإيده من «أقساطى» نسيبه مكانه؛ لا نرجّعه للرئيسية */
+  if(AP_GREET_MANUAL){ AP_GREET_MANUAL=false; return; }
   /* v61.25: بعد ما يقفلها تظهر الرئيسية بالفيديو ويبدأ التشغيل */
   try{
     if(AP_CLIENT){ if(AP_CTAB!=='home') apClientGo('home'); else apVidBoot(); }
@@ -8061,6 +8102,15 @@ function apGreetClose(){
       if(AP_PTAB!=='home') apPartnerGo('home'); else apVidBoot(); }
   }catch(e){}
 }
+/* v61.33: فتح شاشة البونص/الغرامة يدويًا من شاشة «أقساطى» */
+function apGreetOpen(){
+  try{
+    const s=(typeof cfSaleId!=='undefined'&&cfSaleId)? saleById(cfSaleId) : (apGetDB().sales||[])[0];
+    if(!s){ toast('لا يوجد ملف','err'); return; }
+    apGreet(s,true);
+  }catch(e){ console.warn('greetOpen',e); }
+}
+window.apGreetOpen=apGreetOpen;
 function apGreetConfetti(host){
   if(!host) return;
   const C=['#C9A227','#0FA3A3','#0f8f57','#ffd34d','#13a768','#7fd4c1'];
@@ -8631,6 +8681,19 @@ homeserv:`<path d="M24 5 4 21h5v18a2 2 0 0 0 2 2h26a2 2 0 0 0 2-2V21h5z" fill="#
 <path d="M11 21h26v18H11z" fill="#eef3f7"/>
 <path d="M18.5 24.5c-2.4 2.4-2.4 6.2 0 8.6a6.1 6.1 0 0 0 7 1.1l5.5 5.5a2.4 2.4 0 0 0 3.4-3.4l-5.5-5.5a6.1 6.1 0 0 0-1.1-7c-2-2-5-2.4-7.3-1.1l4 4-2.2 2.2-4-4a6 6 0 0 0 .2.6z" fill="#5b6773"/>
 <path d="M18.5 24.5c2.3-1.3 5.3-.9 7.3 1.1l-4-4c-1.3.6-2.5 1.6-3.3 2.9z" fill="#8795a1"/>`,
+/* v61.33: جليسة أطفال */
+sitter:`<path d="M6 42v-9.5C6 26.7 10.4 22 16 22h3c5.6 0 10 4.7 10 10.5V42z" fill="#d1688f"/>
+<path d="M6 42v-9.5C6 27.6 9 23.5 13.2 22.3V42z" fill="#b8537a"/>
+<circle cx="17.5" cy="13" r="7.2" fill="#f5cda8"/>
+<path d="M10.3 13.6C10 8.6 13.4 5 17.8 5c4.4 0 7.3 3.3 6.9 8.3-.6-2.6-1.6-4-3.2-4.7-2.3-1-4.6 1.2-7.1.7-1.5-.3-2.6 1.4-4.1 4.3z" fill="#4a3226"/>
+<path d="M27 25.8c2.6-2.1 6-2.3 8.8-.4" stroke="#d1688f" stroke-width="5.2" stroke-linecap="round" fill="none"/>
+<g transform="rotate(-14 36.5 31)"><ellipse cx="36.5" cy="31" rx="9.4" ry="6.5" fill="#f2c14e"/>
+<path d="M27.1 31a9.4 6.5 0 0 1 18.8 0z" fill="#f7d476"/>
+<ellipse cx="36.5" cy="31" rx="9.4" ry="6.5" fill="none" stroke="#dba82f" stroke-width="1.1"/></g>
+<circle cx="41.3" cy="26.6" r="5" fill="#f8d9b8"/>
+<path d="M36.4 26.3a5 5 0 0 1 9.8-1.2c-1.5-1.6-3.4-2.3-5.7-2-1.9.3-3.2 1.3-4.1 3.2z" fill="#c98a4b"/>
+<circle cx="39.7" cy="27.1" r=".85" fill="#4a3226"/><circle cx="43" cy="27.1" r=".85" fill="#4a3226"/>
+<path d="M40.4 29.5c.8.6 1.7.6 2.5 0" stroke="#c9795a" stroke-width="1.1" stroke-linecap="round" fill="none"/>`,
 kids:`<rect x="5" y="26" width="15" height="15" rx="3" fill="#e05151"/>
 <rect x="5" y="26" width="15" height="5" rx="2.5" fill="#f07b7b"/>
 <rect x="22" y="26" width="15" height="15" rx="3" fill="#2b8fd0"/>
@@ -8682,6 +8745,7 @@ const AP_SVC_SETS = {
        ['market','ماركت','#e8c05a','market'],['gym','الجيم','#4a5560','gym'],
        ['spa','السبا','#1e9e6a','spa'],['homeserv','خدمة منزلية','#3f6c96','homeserv'],
        ['kids','كيدز إيريا / حضانة','#e8b23a','kids'],
+       ['sitter','جليسة أطفال','#d1688f','sitter'],
        ['pharm','صيدلية','#1e9e6a','pharm'],['doctor','طبيب طوارئ منزلى','#2f5675','doctor'],
        ['drycl','دراى كلين','#1195b2','drycl'],['hall','دار المناسبات','#8a5fa8','hall'],
        ['tech','طلب فنى صيانة','#d64545','tech']],
@@ -8771,18 +8835,19 @@ function apRole(){
 }
 const AP_GUIDE={
  client:{t:'دليل العميل',s:[
-  ['🏠 الرئيسية','كل حاجة بتبدأ من هنا. تحت الفيديو هتلاقى قائمة بكل الأقسام — اضغط على أى واحد يفتح، ومن جوّه اضغط «↩️ الرئيسية» ترجع.'],
+  ['🏠 الرئيسية','كل حاجة بتبدأ من هنا. الفيديو بيفضل ثابت فوق والأيقونات بتعدّى من تحته اتنين فى الصف — اضغط على أى واحدة تفتح، ومن جوّه اضغط «↩️ الرئيسية» ترجع.'],
   ['📄 ملفى','بياناتك وبيانات وحدتك والتعاقد، وكارت البونص والغرامات. اضغط على الكارت تشوف تفاصيل كل بند.'],
-  ['📅 الأقساط المستحقة','جدول أقساطك: رقم القسط وتاريخ استحقاقه وقيمته وحالته.'],
-  ['💰 الدفعات الفعلية','كل إيصال اتسجّل لك، ومعاه زرار طباعة الإيصال.'],
+  ['📅 أقساطى','جدول أقساطك: رقم القسط وتاريخ استحقاقه وقيمته وحالته. وجنب زرار الطباعة هتلاقى «⚖️ البونص والغرامات» بيفتح لك نفس الشاشة اللى بتظهر أول ما تدخل.'],
+  ['⚖️ البونص والغرامات','بتظهر لك وحدها كل ما تدخل، وتقفلها بعلامة ✕. بتقولك عليك غرامة تأخير ولا ليك بونص سداد مبكّر — ولو سدادك منتظم بتقولك كده. وتقدر تفتحها وقت ما تحب من جوّه «أقساطى».'],
+  ['💰 إيصالاتى','كل إيصال اتسجّل لك، ومعاه زرار طباعة الإيصال.'],
   ['💳 المدفوعات','رصيد محفظتك، وشحن الكهرباء والمياه والتكييف والغاز والتليفون الأرضى والإنترنت، وحجز الجراج.'],
   ['🅿️ حجز الجراج','اختر الدور، كبّر البلان بإصبعين، واضغط على السيارة تشوف رقم المكان وسعره السنوى.'],
-  ['🛍️ مشتريات','مطاعم وكافيهات · المول · ماركت · الجيم · السبا · خدمة منزلية · كيدز إيريا/حضانة · صيدلية · طبيب طوارئ منزلى · دراى كلين · دار المناسبات.'],
+  ['🛍️ مشتريات','مطاعم وكافيهات · المول · ماركت · الجيم · السبا · خدمة منزلية · كيدز إيريا/حضانة · جليسة أطفال · صيدلية · طبيب طوارئ منزلى · دراى كلين · دار المناسبات.'],
   ['🧰 طلب فنى صيانة','من داخل «مشتريات». اختر التخصص (كهربائى · سبّاك · نقّاش · IT · تليفونات · مصاعد) والوقت المناسب، واكتب العطل، وابعت.'],
   ['🚌 مواصلات','الباص والسيارة الخاصة والدليفرى والجولف كار والسكوتر والبيتش باجى.'],
-  ['🏛️ حساب اتحاد الملاك','إيرادات الاتحاد ومدفوعاته — للاطلاع.'],
+  ['🏛️ اتحاد ملاك','إيرادات الاتحاد ومدفوعاته — للاطلاع.'],
   ['🚶 تصريح زائر','اكتب بيانات زائرك فيتولّد تصريح برمز QR تبعته له على الواتساب. التصريح ليوم الزيارة ولمرة واحدة.'],
-  ['📣 شكاوى ومقترحات','اكتب شكواك أو مقترحك وابعته، وهنرد على رقمك المسجّل.'],
+  ['📣 شكاوى','اكتب شكواك أو مقترحك وابعته، وهنرد على رقمك المسجّل.'],
   ['🔔 الجرس','بيوريك الأقساط المتأخرة وأقرب قسط مستحق وأى دفعة جديدة اتسجّلت لك.'],
   ['⚙️ الإعدادات','غيّر كلمة سرك، فعّل الدخول بالبصمة على موبايلك، واتحكم فى موسيقى الخلفية.']
  ]},
@@ -9164,14 +9229,14 @@ function apIsClientSession(){ return !!AP_CLIENT; }
 const AP_CLIENT_MENU=[
   ['cog','الإعدادات','#4a5560',"apUserSettings()"],
   ['doc','ملفى','#1195b2',"apClientGo('file')"],
-  ['cal','الأقساط المستحقة','#d64545',"apClientGo('sched')"],
-  ['receipt','الدفعات الفعلية','#1e9e6a',"apClientGo('pays')"],
+  ['cal','أقساطى','#d64545',"apClientGo('sched')"],
+  ['receipt','إيصالاتى','#1e9e6a',"apClientGo('pays')"],
   ['card','المدفوعات','#2f5675',"apClientGo('pay')"],
   ['bag','مشتريات','#d8a257',"apClientGo('buy')"],
   ['bus','مواصلات','#e8b23a',"apClientGo('move')"],
-  ['union','حساب اتحاد الملاك','#157a8c',"apClientGo('union')"],
+  ['union','اتحاد ملاك','#157a8c',"apClientGo('union')"],
   ['guest','تصريح زائر','#2f5675',"apClientGo('guest')"],
-  ['voice','شكاوى ومقترحات','#1195b2',"apClientGo('voice')"]
+  ['voice','شكاوى','#1195b2',"apClientGo('voice')"]
 ];
 function apHomeIconsHTML(){
   const isAdminHere = !!(CURRENT_USER && CURRENT_USER.admin);
@@ -9283,7 +9348,7 @@ function apWalChipRender(){
 function apHomeHTML(title){
   return `<div class="apHome">
     <h2 class="screen-title">${esc(title||(S().projectName||'الرئيسية'))}</h2>
-    ${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''))}
+    <div class="apVidStick">${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''))}</div>
     ${apHomeIconsHTML()}
   </div>`;
 }
