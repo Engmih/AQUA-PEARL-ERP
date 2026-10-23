@@ -118,6 +118,10 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .dash-col .stat{flex:1;min-height:0}
 .dash-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .apVid.dash-hero{align-self:center;aspect-ratio:1024/510;max-height:100%;width:100%}
+/* v61.26: بدون صلاحية «أرقام لوحة التحكم» تُخفى الأعمدة فى كل المقاسات.
+   تنسيق الموبايل يستخدم display:contents!important فكان يُلغى الإخفاء
+   المكتوب على العنصر نفسه، فالأرقام كانت تظهر للموظف على الموبايل. */
+.dash-wrap.dash-nostats .dash-col{display:none!important}
 /* v61.25: فيديو المشروع بدل صورة الرئيسية + شاشة العميل والشريك.
    النسبة محفوظة بـ aspect-ratio ووحدات نسبية، فتظل صحيحة على أى مقاس
    وأى نسبة تكبير فى المتصفح. */
@@ -139,6 +143,44 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .apHome .apVid{aspect-ratio:1024/510}
 .apHome .apHomeTtl{margin:0 0 10px;font-size:1.15rem;color:var(--navy2);font-weight:700}
 .apHome .apHomeHint{margin:10px 2px 0;color:var(--muted);font-size:.9rem}
+/* v61.26: شبكات خدمات العميل */
+.svcGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.svcTile{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:14px 7px 11px;border-radius:17px;cursor:pointer;text-align:center;min-width:0;
+  border:1px solid var(--line);background:var(--card);font:inherit;color:inherit;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.svcTile:hover{transform:translateY(-3px);box-shadow:0 11px 24px rgba(11,42,74,.14);border-color:#c7dbea}
+.svcTile:active{transform:translateY(-1px)}
+.svcTile:focus-visible{outline:2px solid var(--aqua);outline-offset:2px}
+.svcIc{width:56px;height:56px;border-radius:17px;display:grid;place-items:center;position:relative;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 20%,#fff) 0%,color-mix(in srgb,var(--c) 9%,#fff) 100%);
+  box-shadow:inset 0 1px 0 #fff,0 2px 6px color-mix(in srgb,var(--c) 22%,transparent);
+  transition:transform .16s ease}
+.svcIc::after{content:"";position:absolute;inset:0;border-radius:17px;pointer-events:none;
+  background:radial-gradient(110% 62% at 70% 2%,rgba(255,255,255,.75),transparent 62%)}
+.svcTile:hover .svcIc{transform:scale(1.07)}
+.svcIc svg{width:39px;height:39px;display:block;position:relative;z-index:1}
+.svcTile .svcLb{font-size:.83rem;line-height:1.35;font-weight:600}
+/* المحفظة */
+.walBal{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  border-radius:16px;padding:18px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#123e63 0%,#0b2a4a 60%,#123a52 100%)}
+.walBal::after{content:"";position:absolute;inset-inline-start:-40px;top:-60px;width:220px;height:220px;
+  border-radius:50%;background:radial-gradient(circle,rgba(200,162,75,.28),transparent 68%)}
+.walBal .t{font-size:.84rem;color:#b9d3e6;margin-bottom:4px}
+.walBal .n{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums}
+.walBal .n i{font-size:.95rem;font-weight:600;font-style:normal;color:#cfe3f1;margin-inline-start:6px}
+.walBal .chip{position:relative;z-index:1;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:7px 14px;font-size:.82rem;color:#eaf4fb}
+.walRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:620px){.walRow{grid-template-columns:1fr}}
+.walLog{border:1px solid var(--line);border-radius:var(--r);padding:12px 13px;background:var(--card);min-width:0}
+.walLog h4{margin:0 0 8px;font-size:.9rem;color:var(--navy2)}
+.svcEmpty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 10px;
+  color:var(--muted);font-size:.84rem;text-align:center;
+  border:1px dashed #cfdfea;border-radius:11px;background:#fbfdff}
+.svcEmpty svg{width:30px;height:30px}
+.svcBack{display:inline-flex;align-items:center;gap:6px;margin-bottom:10px}
 /* v61.25: قفل البصمة لبوابة العميل/الشريك */
 body.apLocked{overflow:hidden}
 .apLock{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
@@ -3999,7 +4041,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.25';
+const APP_VER  = 'v61.26';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4294,7 +4336,8 @@ function buildTabs(){
   /* v61.16: العميل — زر واحد لملفه */
   if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER){ apPartnerTabs(); return; }
   if(AP_CLIENT){
-    const T=[['home','🏠 الرئيسية'],['file','📄 ملفى'],['sched','📅 الأقساط المستحقة'],['pays','💰 الدفعات الفعلية']];
+    const T=[['home','🏠 الرئيسية'],['file','📄 ملفى'],['sched','📅 الأقساط المستحقة'],
+             ['pays','💰 الدفعات الفعلية'],['pay','💳 المدفوعات'],['buy','🛍️ مشتريات'],['move','🚌 مواصلات']];
     tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_CTAB===k?' class="active"':''} onclick="apClientGo('${k}')">${lb}</button>`).join('');
     return;
   }
@@ -7934,6 +7977,233 @@ function apVidToggle(){
   if(b){ b.textContent=v.muted?'🔇':'🔊'; b.classList.remove('hint'); }
   if(v.paused) v.play().catch(()=>{});
 }
+/* =====================================================================
+   v61.26: خدمات العميل — المدفوعات والمشتريات والمواصلات
+   الأيقونات رسم SVG بالكامل فلا تختلف من جهاز لآخر ولا تتكسر بالتكبير.
+   المحفظة رصيد واحد تُخصم منه كل الخدمات ما عدا أقساط الشقة، وتبدأ صفرًا
+   عند الجميع. لا شىء هنا يكتب فى البيانات — القراءة فقط لحين ضبط الشحن.
+   ===================================================================== */
+const AP_SVC = {
+wallet:`<path d="M13 9h22a3 3 0 0 1 3 3v6H13z" fill="#d8a93f"/>
+<rect x="4" y="13" width="40" height="27" rx="6" fill="#9a6433"/>
+<path d="M4 19h40v4H4z" fill="#85542a" opacity=".5"/>
+<rect x="4" y="13" width="40" height="7" rx="5" fill="#b0763c"/>
+<rect x="27" y="23" width="17" height="11" rx="5" fill="#6f4524"/>
+<circle cx="33.5" cy="28.5" r="3.4" fill="#e3c164"/><circle cx="33.5" cy="28.5" r="1.5" fill="#a9822f"/>`,
+
+bolt:`<path d="M30 3 11 28h9.5L17 45 37 19h-9.8L30 3z" fill="#e39200"/>
+<path d="M28 4 12 27h9l-3 15L35.5 19h-9.3L28 4z" fill="#ffc62e"/>
+<path d="M26.6 7.5 16.5 22.5h4.3l-1.3 7.6" stroke="#fff3bf" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".85"/>`,
+
+drop:`<path d="M24 4c9 11 14 16.5 14 23.5A14 14 0 0 1 10 27.5C10 20.5 15 15 24 4z" fill="#1a86bd"/>
+<path d="M24 4c9 11 14 16.5 14 23.5a14 14 0 0 1-7.8 12.5c3.2-3.4 4.6-7.1 4.6-11.6C34.8 21 30.6 15 24 4z" fill="#0f6b9c"/>
+<ellipse cx="18.5" cy="29" rx="3.6" ry="5.4" fill="#fff" opacity=".45" transform="rotate(-18 18.5 29)"/>`,
+
+ac:`<rect x="3" y="8" width="42" height="17" rx="5" fill="#f4f8fb"/>
+<path d="M3 18h42v2.2a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V18z" fill="#d7e4ee"/>
+<rect x="8" y="20" width="32" height="3" rx="1.5" fill="#9fb8c9"/>
+<circle cx="39" cy="13" r="1.7" fill="#5ab0d6"/>
+<path d="M12 30c0 3 3.2 3 3.2 6.2M24 30c0 3.4 3.2 3.4 3.2 7M36 30c0 3-3.2 3-3.2 6.2"
+  stroke="#4aa8d8" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+<path d="M24 41.5v4M22 42.6l2 1.2 2-1.2M22 44.6l2-1.2 2 1.2" stroke="#4aa8d8" stroke-width="1.6" fill="none" stroke-linecap="round"/>`,
+
+flame:`<path d="M24 3c9 9 15 14 15 22.5A15 15 0 0 1 9 25.5C9 20 11.6 16.2 14.6 13.4c.7 3.9 2.6 6.3 4.6 6.3 1.9 0 3-2 3-5C22.2 9.4 21 5.8 24 3z" fill="#ef5223"/>
+<path d="M24.5 17c4.6 4.8 7.6 7.7 7.6 12.3A8.1 8.1 0 0 1 16 29.3c0-3.3 1.6-5.4 3.4-7 .3 2.1 1.3 3.4 2.4 3.4 1 0 1.6-1.1 1.6-2.7 0-2.8-.6-4.6 1.1-6z" fill="#ffa62b"/>
+<path d="M24.6 26c2 2.1 3.3 3.4 3.3 5.4a3.5 3.5 0 0 1-7 0c0-1.5.7-2.4 1.5-3.1.2.9.6 1.5 1.1 1.5.4 0 .7-.5.7-1.2 0-1.2-.3-2 .4-2.6z" fill="#ffe08a"/>`,
+
+garage:`<path d="M24 5 3 20h42L24 5z" fill="#2f5675"/><path d="M24 8.6 9.2 19.2h29.6L24 8.6z" fill="#3c6a8d"/>
+<path d="M6 20h36v23H6z" fill="#eef4f8"/><path d="M6 20h36v3H6z" fill="#dae6ee"/>
+<path d="M11 25h26v18H11z" fill="#52708a"/><path d="M11 25h26v3H11zM11 30h26v3H11z" fill="#44607a"/>
+<path d="M13.5 43v-5.4a3 3 0 0 1 2.6-3l1.6-3.4a2.4 2.4 0 0 1 2.2-1.4h8.2a2.4 2.4 0 0 1 2.2 1.4l1.6 3.4a3 3 0 0 1 2.6 3V43z" fill="#1d4e78"/>
+<path d="M18.4 34.5l1.1-2.4h9l1.1 2.4z" fill="#bfe3f2"/>
+<circle cx="17.4" cy="42.4" r="2.3" fill="#2f3a45"/><circle cx="30.6" cy="42.4" r="2.3" fill="#2f3a45"/>`,
+
+dine:`<circle cx="24" cy="24" r="11.4" fill="#e7eef4"/><circle cx="24" cy="24" r="8.6" fill="#fff"/>
+<circle cx="24" cy="24" r="8.6" fill="none" stroke="#d8ab52" stroke-width="1.5"/>
+<circle cx="24" cy="24" r="4.2" fill="#f0c98a"/>
+<rect x="4.2" y="5" width="2.2" height="11" rx="1.1" fill="#8d9aa6"/>
+<rect x="7.9" y="5" width="2.2" height="11" rx="1.1" fill="#8d9aa6"/>
+<rect x="11.6" y="5" width="2.2" height="11" rx="1.1" fill="#8d9aa6"/>
+<rect x="4.2" y="12.5" width="9.6" height="4.4" rx="2.2" fill="#8d9aa6"/>
+<rect x="6.6" y="15" width="4.8" height="27" rx="2.4" fill="#8d9aa6"/>
+<rect x="6.6" y="15" width="1.8" height="27" rx=".9" fill="#aab6bd"/>
+<path d="M38.4 5c2.7 3.2 3.8 7.3 3.8 11.4 0 3.1-1.1 5.2-2.8 6.1h-2c-1.7-.9-2.8-3-2.8-6.1C34.6 12.3 35.7 8.2 38.4 5z" fill="#8d9aa6"/>
+<rect x="36" y="21" width="4.8" height="21" rx="2.4" fill="#8d9aa6"/>
+<path d="M37.6 7.6c-1.3 2.6-1.8 5.6-1.8 8.8" stroke="#b6c0c8" stroke-width="1.3" fill="none" stroke-linecap="round"/>`,
+
+bag:`<path d="M6 17h20l-1.6 24a3 3 0 0 1-3 2.8H10.6a3 3 0 0 1-3-2.8z" fill="#1195b2"/>
+<path d="M6 17h20l-.4 5.4H6.3z" fill="#0b7f99"/>
+<path d="M11.4 17v-2.6a4.6 4.6 0 0 1 9.2 0V17" stroke="#0b6e85" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+<path d="M23 20h19l-1.5 21.4a3 3 0 0 1-3 2.6H27.5a3 3 0 0 1-3-2.6z" fill="#d8ab52"/>
+<path d="M23 20h19l-.4 5H23.4z" fill="#c0912f"/>
+<path d="M28.2 20v-2.4a4.4 4.4 0 0 1 8.8 0V20" stroke="#a87f28" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+
+gym:`<rect x="13" y="21" width="22" height="6" rx="3" fill="#9aa7b2"/>
+<rect x="13" y="21" width="22" height="2.6" rx="1.3" fill="#c3ccd4"/>
+<rect x="6" y="14" width="8" height="20" rx="3" fill="#36414c"/>
+<rect x="34" y="14" width="8" height="20" rx="3" fill="#36414c"/>
+<rect x="2.5" y="18" width="5" height="12" rx="2.4" fill="#232c35"/>
+<rect x="40.5" y="18" width="5" height="12" rx="2.4" fill="#232c35"/>
+<rect x="7.4" y="16" width="2" height="16" rx="1" fill="#5b6773"/>
+<rect x="38.6" y="16" width="2" height="16" rx="1" fill="#5b6773"/>`,
+
+spa:`<ellipse cx="24" cy="39" rx="13" ry="4.6" fill="#8b98a1"/>
+<ellipse cx="24" cy="36.4" rx="13" ry="4.6" fill="#a6b2ba"/>
+<ellipse cx="24" cy="30.6" rx="10" ry="4" fill="#7e8b94"/>
+<ellipse cx="24" cy="28.4" rx="10" ry="4" fill="#9aa7b0"/>
+<ellipse cx="24" cy="23.4" rx="7" ry="3.2" fill="#73808a"/>
+<ellipse cx="24" cy="21.6" rx="7" ry="3.2" fill="#8d9aa3"/>
+<path d="M24 19C24 11 29 5.5 37 4c1 8-3.4 14.2-13 15z" fill="#1e9e6a"/>
+<path d="M24 19C24 11 29 5.5 37 4c-6 4-9.6 9-13 15z" fill="#17865a"/>
+<path d="M22.6 18.6C20.4 13 16.6 9.6 11 9c0 6.6 4.4 10.4 11.6 9.6z" fill="#34b57f"/>`,
+
+bus:`<rect x="5" y="7" width="38" height="28" rx="6" fill="#e8b23a"/>
+<path d="M5 13h38v2H5z" fill="#d49c28" opacity=".6"/>
+<rect x="8.5" y="12" width="31" height="10" rx="2.6" fill="#bfe3f2"/>
+<path d="M18.6 12v10M29.4 12v10" stroke="#e8b23a" stroke-width="2.4"/>
+<rect x="5" y="26" width="38" height="4" fill="#d49c28"/>
+<circle cx="11" cy="31.5" r="2.2" fill="#fff6d6"/><circle cx="37" cy="31.5" r="2.2" fill="#fff6d6"/>
+<rect x="7" y="34" width="34" height="3" rx="1.5" fill="#b8841f"/>
+<circle cx="14" cy="38.5" r="5" fill="#2f3a45"/><circle cx="14" cy="38.5" r="2.1" fill="#9aa7b2"/>
+<circle cx="34" cy="38.5" r="5" fill="#2f3a45"/><circle cx="34" cy="38.5" r="2.1" fill="#9aa7b2"/>`,
+
+car:`<path d="M4 31l4.4-10.6A6 6 0 0 1 14 16.6h20a6 6 0 0 1 5.6 3.8L44 31z" fill="#1d4e78"/>
+<path d="M12.6 20.6 10 28h28l-2.6-7.4a2.6 2.6 0 0 0-2.4-1.7H15a2.6 2.6 0 0 0-2.4 1.7z" fill="#bfe3f2"/>
+<path d="M23.4 18.9V28" stroke="#1d4e78" stroke-width="2"/>
+<rect x="3" y="29.5" width="42" height="7.5" rx="3.2" fill="#174166"/>
+<rect x="3" y="29.5" width="42" height="3" rx="1.6" fill="#2b6392"/>
+<rect x="4" y="32" width="5" height="3" rx="1.5" fill="#ffe08a"/>
+<rect x="39" y="32" width="5" height="3" rx="1.5" fill="#ff9d8a"/>
+<circle cx="13" cy="37.5" r="5" fill="#2f3a45"/><circle cx="13" cy="37.5" r="2.1" fill="#9aa7b2"/>
+<circle cx="35" cy="37.5" r="5" fill="#2f3a45"/><circle cx="35" cy="37.5" r="2.1" fill="#9aa7b2"/>`,
+
+delivery:`<rect x="28" y="6" width="16" height="13" rx="2.6" fill="#d64545"/>
+<rect x="28" y="6" width="16" height="4" rx="2" fill="#ef6a6a"/>
+<rect x="30.6" y="12.2" width="10.8" height="2.4" rx="1.2" fill="#fff" opacity=".92"/>
+<rect x="33.2" y="15.6" width="5.6" height="2" rx="1" fill="#fff" opacity=".7"/>
+<path d="M14 32l5-14h7l-2.6 7.4H31l3 6.6z" fill="#e05151"/>
+<path d="M19 18h8.6" stroke="#9aa7b2" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M26.4 18.4 22 13" stroke="#49555f" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M19.4 12.6h5.4" stroke="#49555f" stroke-width="2.6" stroke-linecap="round"/>
+<rect x="21" y="25" width="12" height="4" rx="2" fill="#36414c"/>
+<circle cx="12" cy="35" r="7" fill="#2f3a45"/><circle cx="12" cy="35" r="3" fill="#9aa7b2"/>
+<circle cx="37" cy="35" r="7" fill="#2f3a45"/><circle cx="37" cy="35" r="3" fill="#9aa7b2"/>`,
+
+golf:`<path d="M37.4 16.5 36.6 5M41 16.5 42.4 4.2" stroke="#8d9aa6" stroke-width="1.7" stroke-linecap="round"/>
+<circle cx="36.5" cy="5.4" r="1.9" fill="#5b6773"/><circle cx="42.5" cy="4.6" r="1.9" fill="#5b6773"/>
+<rect x="34.6" y="15" width="8.6" height="14" rx="3.6" fill="#17865a"/>
+<rect x="34.6" y="15" width="3.4" height="14" rx="1.7" fill="#23a872"/>
+<rect x="4" y="6" width="29" height="3.6" rx="1.8" fill="#1e9e6a"/>
+<rect x="4" y="6" width="29" height="1.4" rx=".7" fill="#49c795"/>
+<rect x="6.2" y="9" width="2.4" height="13" rx="1.2" fill="#aab6bd"/>
+<rect x="28.4" y="9" width="2.4" height="15" rx="1.2" fill="#aab6bd"/>
+<rect x="10" y="12" width="4.4" height="13" rx="2.2" fill="#36414c"/>
+<rect x="10" y="21" width="14.5" height="4.4" rx="2.2" fill="#36414c"/>
+<path d="M4 25.5h30a3 3 0 0 1 3 3V34H4a3 3 0 0 1-3-3v-2.5a3 3 0 0 1 3-3z" fill="#f1f5f8"/>
+<path d="M1 30h36v2.2H1z" fill="#d7e2ea"/>
+<circle cx="10.5" cy="37" r="5" fill="#2f3a45"/><circle cx="10.5" cy="37" r="2.1" fill="#c3ccd4"/>
+<circle cx="29.5" cy="37" r="5" fill="#2f3a45"/><circle cx="29.5" cy="37" r="2.1" fill="#c3ccd4"/>`,
+
+scooter:`<rect x="8" y="30" width="23" height="4.6" rx="2.3" fill="#1195b2"/>
+<rect x="8" y="30" width="23" height="1.8" rx=".9" fill="#49bcd8"/>
+<path d="M29.5 32 36 10" stroke="#49555f" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+<path d="M30.5 10.6h9" stroke="#49555f" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+<circle cx="30.5" cy="10.6" r="2" fill="#2f3a45"/><circle cx="39.5" cy="10.6" r="2" fill="#2f3a45"/>
+<circle cx="10.5" cy="37" r="6" fill="#2f3a45"/><circle cx="10.5" cy="37" r="2.5" fill="#c3ccd4"/>
+<circle cx="36.5" cy="37" r="6" fill="#2f3a45"/><circle cx="36.5" cy="37" r="2.5" fill="#c3ccd4"/>`,
+
+buggy:`<path d="M11 24c1-9 5-13 13-13s12 4 13 13" stroke="#d1691a" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+<path d="M17 24c.6-6 3-9 7-9" stroke="#e8731f" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+<path d="M24 11v13" stroke="#d1691a" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M6 30a3 3 0 0 1 3-3h30a3 3 0 0 1 3 3v4H6z" fill="#f0821f"/>
+<path d="M6 30a3 3 0 0 1 3-3h30a3 3 0 0 1 3 3H6z" fill="#ff9b40"/>
+<path d="M15 27v-5h7v5zM26 27v-5h7v5z" fill="#3b4650"/>
+<circle cx="13" cy="36" r="8" fill="#2f3a45"/><circle cx="13" cy="36" r="3.4" fill="#8d9aa6"/>
+<circle cx="35" cy="36" r="8" fill="#2f3a45"/><circle cx="35" cy="36" r="3.4" fill="#8d9aa6"/>`,
+
+topup:`<rect x="5" y="12" width="38" height="26" rx="5" fill="#dce7ef"/><path d="M5 19h38v4H5z" fill="#b9cbd9"/>
+<circle cx="34" cy="31" r="8" fill="#1e9e6a"/><path d="M34 27v8M30 31h8" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`,
+spend:`<path d="M9 13h30l-2.2 26a3 3 0 0 1-3 2.8H14.2a3 3 0 0 1-3-2.8z" fill="#dce7ef"/>
+<path d="M9 13h30l-.4 5H9.4z" fill="#b9cbd9"/>
+<path d="M17.6 13v-2.6a6.4 6.4 0 0 1 12.8 0V13" stroke="#9fb8c9" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
+};
+const AP_SVC_SETS = {
+  pay:[['wallet','الرصيد','#c8a24b','bal'],['bolt','شحن كهرباء','#e8a51c','power'],
+       ['drop','شحن مياه','#1a86bd','water'],['ac','شحن تكييف','#4aa8d8','ac'],
+       ['flame','شحن الغاز','#ef5223','gas'],['garage','حجز جراجات','#2f5675','park']],
+  buy:[['dine','مطاعم وكافيهات','#d8a257','dine'],['bag','المول','#1195b2','mall'],
+       ['gym','الجيم','#4a5560','gym'],['spa','السبا','#1e9e6a','spa']],
+  move:[['bus','باص','#e8b23a','bus'],['car','سيارة خاصة','#1d4e78','car'],
+        ['delivery','دليفرى','#d64545','deliv'],['golf','جولف كار','#1e9e6a','golf'],
+        ['scooter','سكوتر','#1195b2','scoot'],['buggy','بيتش باجى','#f0821f','buggy']]
+};
+const AP_SVC_TITLES = {pay:'💳 المدفوعات',buy:'🛍️ مشتريات',move:'🚌 مواصلات'};
+let AP_SVCSUB=null;                      /* الخدمة المفتوحة داخل التاب */
+
+function svcIconHTML(key,color,size){
+  return '<span class="svcIc" style="--c:'+color+(size?';width:'+size+'px;height:'+size+'px':'')+'">'+
+         '<svg viewBox="0 0 48 48" aria-hidden="true">'+(AP_SVC[key]||'')+'</svg></span>';
+}
+function svcGridHTML(group){
+  return '<div class="svcGrid">'+(AP_SVC_SETS[group]||[]).map(([k,lb,c,id])=>
+    '<button class="svcTile" style="--c:'+c+'" onclick="apSvcOpen(\''+group+'\',\''+id+'\')">'+
+    svcIconHTML(k,c)+'<span class="svcLb">'+esc(lb)+'</span></button>').join('')+'</div>';
+}
+function svcFind(group,id){
+  return (AP_SVC_SETS[group]||[]).find(x=>x[3]===id);
+}
+function apSvcOpen(group,id){ AP_SVCSUB=group+':'+id; renderCustomerFile(cfSaleId); window.scrollTo({top:0}); }
+function apSvcBack(){ AP_SVCSUB=null; renderCustomerFile(cfSaleId); window.scrollTo({top:0}); }
+
+/* ---- المحفظة: قراءة فقط، والافتراضى صفر ---- */
+function apWallet(sale){
+  const w=(sale&&sale.wallet)||{};
+  return { balance:Number(w.balance)||0,
+           topups:Array.isArray(w.topups)?w.topups:[],
+           spends:Array.isArray(w.spends)?w.spends:[] };
+}
+function apWalletHTML(sale){
+  const w=apWallet(sale);
+  const rows=(list,kind)=> list.length
+    ? '<table class="tbl apCliTbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead><tbody>'+
+      list.map(r=>'<tr><td>'+esc(fmtD(r.date))+'</td><td>'+esc(r.note||'—')+'</td><td>'+
+        fmtN(Number(r.amount)||0)+' ج.م</td></tr>').join('')+'</tbody></table>'
+    : '<div class="svcEmpty"><svg viewBox="0 0 48 48">'+AP_SVC[kind]+'</svg>'+
+      (kind==='topup'?'لسه مفيش عمليات شحن':'لسه مفيش مصروفات')+'</div>';
+  return `
+    <div class="walBal">
+      <div><div class="t">رصيدك الحالى</div>
+        <div class="n">${fmtN(w.balance)}<i>ج.م</i></div></div>
+      <div class="chip">الرصيد بيغطى كل الخدمات ما عدا أقساط الشقة</div>
+    </div>
+    <div class="walRow">
+      <div class="walLog"><h4>سجل تغذية الرصيد</h4>${rows(w.topups,'topup')}</div>
+      <div class="walLog"><h4>سجل المصروفات</h4>${rows(w.spends,'spend')}</div>
+    </div>`;
+}
+/* شاشة خدمة لم يُضبط عملها بعد */
+function apSvcSoonHTML(key,lb,color){
+  return `<div class="card" style="text-align:center;padding:26px 16px">
+    ${svcIconHTML(key,color,72)}
+    <h3 style="margin:12px 0 6px;color:var(--navy2)">${esc(lb)}</h3>
+    <p class="gray-note" style="margin:0">الخدمة دى هتتفعّل قريبًا. هيتم خصم قيمتها من رصيدك.</p>
+  </div>`;
+}
+function apSvcHTML(group,sale){
+  const title=AP_SVC_TITLES[group]||'';
+  if(!AP_SVCSUB || AP_SVCSUB.split(':')[0]!==group){
+    return `<h2 class="screen-title">${title}</h2>${svcGridHTML(group)}`;
+  }
+  const id=AP_SVCSUB.split(':')[1];
+  const it=svcFind(group,id);
+  if(!it){ AP_SVCSUB=null; return `<h2 class="screen-title">${title}</h2>${svcGridHTML(group)}`; }
+  const [k,lb,c]=it;
+  const body = (id==='bal') ? apWalletHTML(sale) : apSvcSoonHTML(k,lb,c);
+  return `<h2 class="screen-title">${esc(lb)}</h2>
+    <div class="toolbar no-print svcBack"><button class="btn ghost" onclick="apSvcBack()">↩️ رجوع إلى ${title}</button></div>
+    ${body}`;
+}
+
 /* شاشة «الرئيسية» للعميل والشريك */
 function apHomeHTML(title){
   return `<div class="apHome">
@@ -7946,11 +8216,13 @@ function apHomeHTML(title){
 
 function apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
   if(AP_CTAB==='home')  return apHomeHTML();
+  if(AP_CTAB==='pay'||AP_CTAB==='buy'||AP_CTAB==='move') return apSvcHTML(AP_CTAB,s);
   if(AP_CTAB==='sched') return apClientSchedHTML(s);
   if(AP_CTAB==='pays')  return apClientPaysHTML(s);
   return apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
 }
 function apClientGo(tab){
+  if(AP_CTAB!==tab) AP_SVCSUB=null;
   AP_CTAB=tab;
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===tab));
   renderCustomerFile(cfSaleId);
