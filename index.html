@@ -229,6 +229,25 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   border:1px dashed #cfdfea;border-radius:11px;background:#fbfdff}
 .svcEmpty svg{width:30px;height:30px}
 .svcBack{display:inline-flex;align-items:center;gap:6px;margin-bottom:10px}
+.gpPass{border:2px solid var(--navy2)}
+.gpHead{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border-bottom:1px dashed var(--line);padding-bottom:8px;margin-bottom:10px}
+.gpHead b{color:var(--navy2);font-size:1.02rem}
+.gpOnce{background:#fdecec;color:#b3261e;border:1px solid #f3c2c2;border-radius:999px;
+  padding:3px 11px;font-size:.78rem;font-weight:700}
+.gpBody{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.gpQr{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;line-height:0;text-align:center}
+.gpId{direction:ltr;font-size:.78rem;color:var(--muted);line-height:1.6;margin-top:4px;letter-spacing:.5px}
+.gpInfo{flex:1;min-width:210px;display:flex;flex-direction:column;gap:7px}
+.gpInfo div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.gpInfo span{color:var(--muted);font-size:.86rem}
+.gdRow{padding:10px 2px;border-bottom:1px dashed var(--line)}
+.gdRow:last-child{border-bottom:0}
+.gdRow b{color:var(--navy2);font-size:.95rem}
+.gdRow p{margin:4px 0 0;color:var(--muted);font-size:.89rem;line-height:1.75}
+.unTot{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;margin:2px 0 10px}
+.unTot small{font-size:.8rem;font-weight:600;color:var(--muted)}
+.unTot.in{color:var(--green)} .unTot.out{color:var(--navy2)}
 /* v61.29: شاشة حجز الجراج */
 .pkTabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:9px;-webkit-overflow-scrolling:touch}
 .pkTab{flex:none;border:1px solid var(--line);background:var(--card);color:var(--navy2);
@@ -1322,6 +1341,15 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <button class="btn aqua" onclick="lateCopy()">📋 نسخ النص</button>
       <button class="btn ghost" onclick="closeModal('lateModal')">إغلاق</button>
     </div>
+  </div>
+</div>
+
+<!-- v61.31: دليل البرنامج -->
+<div class="modal-back" id="apGdModal">
+  <div class="modal" style="max-width:680px">
+    <h3><span>📖 دليل البرنامج</span><button class="x" onclick="closeModal('apGdModal')">✕</button></h3>
+    <div id="apGdBody"></div>
+    <div class="actions"><button class="btn ghost" onclick="closeModal('apGdModal')">إغلاق</button></div>
   </div>
 </div>
 
@@ -4174,7 +4202,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.30';
+const APP_VER  = 'v61.32';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4469,11 +4497,10 @@ function buildTabs(){
   /* v61.16: العميل — زر واحد لملفه */
   if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER){ apPartnerTabs(); return; }
   if(AP_CLIENT){
-    const T=[['home','🏠 الرئيسية'],['file','📄 ملفى'],['sched','📅 الأقساط المستحقة'],
-             ['pays','💰 الدفعات الفعلية'],['pay','💳 المدفوعات'],['buy','🛍️ مشتريات'],['move','🚌 مواصلات']];
-    tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_CTAB===k?' class="active"':''} onclick="apClientGo('${k}')">${lb}</button>`).join('');
+    tabs.innerHTML=''; tabs.style.display='none';   /* القائمة كلها فى الرئيسية */
     return;
   }
+  tabs.style.display='';
   tabs.innerHTML=SCREENS.filter(([id])=>allowed(id)).map(([id,lb])=>`<button data-s="${id}" onclick="nav('${id}')">${lb}</button>`).join('');
 }
 function showLogin(){
@@ -5224,6 +5251,8 @@ function renderSettings(){
   ${cloudCardHTML()}
   ${qrCardHTML()}
   ${pushCardHTML()}
+  ${guideCardHTML()}
+  ${supportCardHTML()}
   ${musicCardHTML()}
   ${bioCardHTML()}
   <div class="card"><h3>👥 المستخدمون والصلاحيات</h3>
@@ -5381,6 +5410,21 @@ function pushCardHTML(){
 }
 /* v61.19: بطاقة الدخول بالبصمة فى الإعدادات */
 /* v61.28: موسيقى الخلفية — كانت تحت الفيديو، ومكانها هنا عند المدير */
+function guideCardHTML(){
+  return `<div class="card"><h3>📖 دليل البرنامج</h3>
+    <div class="toolbar"><button class="btn aqua" onclick="apGuideOpen()">افتح الدليل</button>
+      <span class="gray-note">كل مستخدم بيشوف القسم اللى يخصّه: المدير والموظف والعميل والشريك.</span></div>
+  </div>`;
+}
+function supportCardHTML(){
+  const v=esc(String(S().supportWa||''));
+  return `<div class="card"><h3>📣 شكاوى ومقترحات العملاء</h3>
+    <div class="form-row" style="max-width:320px"><label>رقم واتساب الدعم</label>
+      <input id="stSupportWa" style="direction:ltr" value="${v}" placeholder="01xxxxxxxxx"></div>
+    <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="saveSettings()">💾 حفظ</button>
+      <span class="gray-note">شكاوى العملاء ومقترحاتهم هتتبعت على الرقم ده من داخل التطبيق.</span></div>
+  </div>`;
+}
 function musicCardHTML(){
   const on=apMusicOn();
   return `<div class="card"><h3>🎵 موسيقى الخلفية</h3>
@@ -5508,6 +5552,7 @@ function saveSettings(){
   if(au&&/^https?:\/\//i.test(au)) s.appUrl=au;
   /* v61.20: إعدادات الإشعارات */
   const vk=$('#stVapid'); if(vk) s.vapidKey=(vk.value||'').trim();
+  const sw=$('#stSupportWa'); if(sw) s.supportWa=(sw.value||'').trim();
   const po=$('#stPushOn'); if(po) s.pushOn=(po.value==='1');
   const seq=Math.max(0,Math.floor(Number($('#stSeq').value)||0));DB.seq.counter=seq;
   save();toast('تم حفظ الإعدادات','ok');
@@ -7523,7 +7568,9 @@ function renderCustomerFile(saleId){
   if(cfEdit&&!AP_CLIENT){renderCustomerFileEdit(s,u);return;}
   /* v61.16: العميل يرى ملفه للقراءة فقط — بلا أزرار تعديل أو قبض */
   if(AP_CLIENT){
-    el.innerHTML=apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
+    const back = AP_CTAB==='home' ? '' :
+      '<div class="toolbar no-print svcBack"><button class="btn ghost" onclick="apClientGo(\'home\')">↩️ الرئيسية</button></div>';
+    el.innerHTML=back+apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
     try{ apBellRender(s); }catch(e){}
     if(AP_CTAB==='home'){ try{ apVidBoot(); }catch(e){} }
     if(AP_SVCSUB==='pay:park'){ try{ pkMount(); }catch(e){} }
@@ -8481,6 +8528,133 @@ buggy:`<path d="M11 24c1-9 5-13 13-13s12 4 13 13" stroke="#d1691a" stroke-width=
 <circle cx="13" cy="36" r="8" fill="#2f3a45"/><circle cx="13" cy="36" r="3.4" fill="#8d9aa6"/>
 <circle cx="35" cy="36" r="8" fill="#2f3a45"/><circle cx="35" cy="36" r="3.4" fill="#8d9aa6"/>`,
 
+guest:`<circle cx="18" cy="15" r="7.5" fill="#f0c98a"/>
+<path d="M18 7.5a7.5 7.5 0 0 1 0 15z" fill="#e0b273"/>
+<path d="M4 42v-3.5C4 32.7 10.3 28 18 28s14 4.7 14 10.5V42z" fill="#2f5675"/>
+<path d="M18 28c7.7 0 14 4.7 14 10.5V42h-7v-3.5C25 33.6 22 29.8 18 28z" fill="#24455e"/>
+<rect x="29" y="24" width="16" height="16" rx="3" fill="#fff" stroke="#1e3f58" stroke-width="1.6"/>
+<g fill="#1e3f58"><rect x="32" y="27" width="4" height="4"/><rect x="38" y="27" width="4" height="4"/>
+<rect x="32" y="33" width="4" height="4"/><rect x="38.5" y="33.5" width="1.6" height="1.6"/>
+<rect x="41.4" y="33.5" width="1.6" height="1.6"/><rect x="38.5" y="36.4" width="1.6" height="1.6"/>
+<rect x="41.4" y="36.4" width="1.6" height="1.6"/></g>`,
+hall:`<path d="M5 20 24 9l19 11v22a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z" fill="#eef3f7"/>
+<path d="M5 20 24 9l19 11z" fill="#8a5fa8"/>
+<path d="M24 12.6 8.6 21.4h30.8z" fill="#a177c0"/>
+<path d="M17 44V32a7 7 0 0 1 14 0v12z" fill="#6f4a8e"/>
+<path d="M17 34a7 7 0 0 1 14 0z" fill="#8a5fa8"/>
+<circle cx="24" cy="38" r="1.3" fill="#e8c05a"/>
+<g fill="#cfe0ec"><rect x="8" y="27" width="6" height="7" rx="1.4"/><rect x="34" y="27" width="6" height="7" rx="1.4"/></g>
+<path d="M4 24c6 3 12 4.4 20 4.4S38 27 44 24" stroke="#d8a257" stroke-width="1.4" fill="none"/>
+<g fill="#e05151"><path d="M9 24.6l2.6.9-1.3 2.6z"/><path d="M19 26.6l2.6.7-1.4 2.6z"/></g>
+<g fill="#43bd8a"><path d="M14 25.8l2.6.8-1.3 2.6z"/><path d="M24 27l2.6.7-1.3 2.6z"/></g>
+<g fill="#e8c05a"><path d="M29 26.6l2.6.7-1.4 2.6z"/><path d="M34 25.6l2.6.8-1.3 2.6z"/></g>`,
+drycl:`<path d="M19 7h10l11 6-3.4 6-4.6-2.4V41a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V16.6L11.4 19 8 13z" fill="#eef3f7"/>
+<path d="M19 7h10l-1.4 2.4a4.4 4.4 0 0 1-7.2 0z" fill="#c3d3de"/>
+<path d="M16 24h16v17a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2z" fill="#d7e4ee"/>
+<circle cx="24" cy="31" r="5.6" fill="#1195b2"/>
+<path d="M24 25.4a5.6 5.6 0 0 1 0 11.2" fill="#0b7f99"/>
+<path d="M21.4 31h5.2M24 28.4v5.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>`,
+tech:`<path d="M6 17h36a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V20a3 3 0 0 1 3-3z" fill="#d64545"/>
+<path d="M6 17h36a3 3 0 0 1 3 3v3H3v-3a3 3 0 0 1 3-3z" fill="#ef6a6a"/>
+<path d="M17 17v-3a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v3" stroke="#8795a1" stroke-width="3" fill="none" stroke-linecap="round"/>
+<rect x="18" y="24" width="12" height="7" rx="2" fill="#2f3a45"/>
+<path d="M33 27.5l5 5a2.2 2.2 0 0 1-3.1 3.1l-5-5a4.6 4.6 0 0 1-5.4-6.6l2.9 2.9 2-2-2.9-2.9a4.6 4.6 0 0 1 6.5 5.5z" fill="#c3ccd4"/>`,
+pharm:`<rect x="6" y="6" width="36" height="12" rx="3" fill="#1e9e6a"/>
+<rect x="6" y="6" width="36" height="4.5" rx="2.2" fill="#43bd8a"/>
+<path d="M10 18h28v20a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4z" fill="#eef3f7"/>
+<path d="M10 18h28v4H10z" fill="#d7e2ea"/>
+<path d="M21.4 24h5.2v4.4H31v5.2h-4.4V38h-5.2v-4.4H17v-5.2h4.4z" fill="#d64545"/>`,
+doctor:`<path d="M9 18h30a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V22a4 4 0 0 1 4-4z" fill="#2f5675"/>
+<path d="M9 18h30a4 4 0 0 1 4 4H5a4 4 0 0 1 4-4z" fill="#3f6c96"/>
+<path d="M18 18v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3" stroke="#8fa7bb" stroke-width="3" fill="none" stroke-linecap="round"/>
+<rect x="15" y="22" width="18" height="14" rx="2" fill="#eef3f7"/>
+<path d="M21.6 25.4h4.8v3.1H30v4.8h-3.6v3.1h-4.8v-3.1H18v-4.8h3.6z" fill="#d64545"/>`,
+book:`<path d="M6 9a4 4 0 0 1 4-4h12a5 5 0 0 1 5 5v31a4 4 0 0 0-4-4H10a4 4 0 0 1-4-4z" fill="#2f5675"/>
+<path d="M42 9a4 4 0 0 0-4-4H26a5 5 0 0 0-5 5v31a4 4 0 0 1 4-4h13a4 4 0 0 0 4-4z" fill="#3f6c96"/>
+<path d="M24 10v31" stroke="#1e3f58" stroke-width="2.4"/>
+<g fill="#cfe0ec" opacity=".85"><rect x="9" y="13" width="11" height="2.2" rx="1.1"/>
+<rect x="9" y="19" width="11" height="2.2" rx="1.1"/><rect x="9" y="25" width="8" height="2.2" rx="1.1"/>
+<rect x="28" y="13" width="11" height="2.2" rx="1.1"/><rect x="28" y="19" width="11" height="2.2" rx="1.1"/>
+<rect x="28" y="25" width="8" height="2.2" rx="1.1"/></g>`,
+voice:`<path d="M5 12a5 5 0 0 1 5-5h22a5 5 0 0 1 5 5v13a5 5 0 0 1-5 5H18l-9 7v-7a5 5 0 0 1-4-5z" fill="#1195b2"/>
+<path d="M5 12a5 5 0 0 1 5-5h22a5 5 0 0 1 5 5v3H5z" fill="#3fb6d3"/>
+<g fill="#fff" opacity=".92"><rect x="11" y="16" width="20" height="2.6" rx="1.3"/>
+<rect x="11" y="22" width="13" height="2.6" rx="1.3"/></g>
+<path d="M26 22a4 4 0 0 1 4-4h11a4 4 0 0 1 4 4v9a4 4 0 0 1-4 4h-3l-6 5v-5a4 4 0 0 1-2-4z" fill="#e8c05a"/>
+<path d="M26 22a4 4 0 0 1 4-4h11a4 4 0 0 1 4 4v2H26z" fill="#f2d888"/>
+<g fill="#8a6a1e"><circle cx="32" cy="29" r="1.5"/><circle cx="36" cy="29" r="1.5"/><circle cx="40" cy="29" r="1.5"/></g>`,
+union:`<path d="M6 42V14l13-7 13 7v28z" fill="#2f5675"/>
+<path d="M6 14 19 7l13 7z" fill="#3f6c96"/>
+<g fill="#cfe0ec"><rect x="10" y="18" width="5" height="5" rx="1"/><rect x="17" y="18" width="5" height="5" rx="1"/>
+<rect x="24" y="18" width="5" height="5" rx="1"/><rect x="10" y="26" width="5" height="5" rx="1"/>
+<rect x="24" y="26" width="5" height="5" rx="1"/></g>
+<rect x="16" y="26" width="7" height="16" rx="1.5" fill="#1e3f58"/>
+<ellipse cx="37" cy="39" rx="9" ry="3.4" fill="#a97f28"/>
+<path d="M28 33v6c0 1.9 4 3.4 9 3.4s9-1.5 9-3.4v-6z" fill="#c69a35"/>
+<ellipse cx="37" cy="33" rx="9" ry="3.4" fill="#e8c05a"/>
+<path d="M30 28v4c0 1.6 3.1 2.8 7 2.8s7-1.2 7-2.8v-4z" fill="#c69a35"/>
+<ellipse cx="37" cy="28" rx="7" ry="2.8" fill="#f0cf6e"/>`,
+doc:`<path d="M10 4h18l10 10v30a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#eef3f7"/>
+<path d="M28 4l10 10H30a2 2 0 0 1-2-2z" fill="#c3d3de"/>
+<g fill="#8fa7bb"><rect x="14" y="20" width="20" height="2.6" rx="1.3"/>
+<rect x="14" y="26" width="20" height="2.6" rx="1.3"/><rect x="14" y="32" width="13" height="2.6" rx="1.3"/></g>
+<circle cx="33" cy="35" r="7" fill="#1195b2"/><path d="M30 35l2.2 2.2 4-4.4" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+cal:`<rect x="5" y="9" width="38" height="34" rx="4" fill="#eef3f7"/>
+<path d="M5 13a4 4 0 0 1 4-4h30a4 4 0 0 1 4 4v6H5z" fill="#d64545"/>
+<rect x="13" y="4" width="4" height="10" rx="2" fill="#9aa7b2"/><rect x="31" y="4" width="4" height="10" rx="2" fill="#9aa7b2"/>
+<g fill="#b9cbd9"><rect x="11" y="24" width="6" height="5" rx="1.4"/><rect x="21" y="24" width="6" height="5" rx="1.4"/>
+<rect x="31" y="24" width="6" height="5" rx="1.4"/><rect x="11" y="33" width="6" height="5" rx="1.4"/></g>
+<rect x="21" y="33" width="6" height="5" rx="1.4" fill="#e8a51c"/>
+<rect x="31" y="33" width="6" height="5" rx="1.4" fill="#b9cbd9"/>`,
+receipt:`<path d="M10 4h28v38l-4.7-3.2L28.7 42l-4.7-3.2L19.3 42l-4.6-3.2L10 42z" fill="#eef3f7"/>
+<g fill="#8fa7bb"><rect x="15" y="12" width="18" height="2.6" rx="1.3"/>
+<rect x="15" y="19" width="18" height="2.6" rx="1.3"/><rect x="15" y="26" width="11" height="2.6" rx="1.3"/></g>
+<circle cx="33" cy="29" r="7.5" fill="#1e9e6a"/>
+<path d="M33 24.5v9M30.4 26.6h4.3a1.9 1.9 0 0 1 0 3.8h-3.4a1.9 1.9 0 0 0 0 3.8h4.3"
+ stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/>`,
+card:`<rect x="4" y="11" width="40" height="27" rx="5" fill="#2f5675"/>
+<rect x="4" y="11" width="40" height="27" rx="5" fill="none"/>
+<rect x="4" y="17" width="40" height="6" fill="#1e3f58"/>
+<rect x="9" y="28" width="13" height="4" rx="2" fill="#8fa7bb"/>
+<circle cx="33" cy="30" r="5.2" fill="#e8c05a" opacity=".95"/>
+<circle cx="38" cy="30" r="5.2" fill="#d6a23f" opacity=".85"/>`,
+market:`<path d="M12 16h27l-3 14H16z" fill="#e8c05a"/>
+<path d="M12 16h27l-.7 3.2H12.7z" fill="#f2d888"/>
+<circle cx="20" cy="12.5" r="3.4" fill="#d64545"/><circle cx="27" cy="12.8" r="3" fill="#43bd8a"/>
+<circle cx="33" cy="13.4" r="2.6" fill="#e07a3c"/>
+<path d="M4 8h4.6a2 2 0 0 1 1.95 1.55L16 32.5h21" stroke="#4a5560" stroke-width="3.2"
+ fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="19" cy="39" r="3.2" fill="#36414c"/><circle cx="34" cy="39" r="3.2" fill="#36414c"/>
+<circle cx="19" cy="39" r="1.2" fill="#9aa7b2"/><circle cx="34" cy="39" r="1.2" fill="#9aa7b2"/>`,
+homeserv:`<path d="M24 5 4 21h5v18a2 2 0 0 0 2 2h26a2 2 0 0 0 2-2V21h5z" fill="#2f5675"/>
+<path d="M24 5 4 21h5l15-12 15 12h5z" fill="#3f6c96"/>
+<path d="M11 21h26v18H11z" fill="#eef3f7"/>
+<path d="M18.5 24.5c-2.4 2.4-2.4 6.2 0 8.6a6.1 6.1 0 0 0 7 1.1l5.5 5.5a2.4 2.4 0 0 0 3.4-3.4l-5.5-5.5a6.1 6.1 0 0 0-1.1-7c-2-2-5-2.4-7.3-1.1l4 4-2.2 2.2-4-4a6 6 0 0 0 .2.6z" fill="#5b6773"/>
+<path d="M18.5 24.5c2.3-1.3 5.3-.9 7.3 1.1l-4-4c-1.3.6-2.5 1.6-3.3 2.9z" fill="#8795a1"/>`,
+kids:`<rect x="5" y="26" width="15" height="15" rx="3" fill="#e05151"/>
+<rect x="5" y="26" width="15" height="5" rx="2.5" fill="#f07b7b"/>
+<rect x="22" y="26" width="15" height="15" rx="3" fill="#2b8fd0"/>
+<rect x="22" y="26" width="15" height="5" rx="2.5" fill="#5bb3e8"/>
+<rect x="13.5" y="10" width="15" height="15" rx="3" fill="#e8b23a"/>
+<rect x="13.5" y="10" width="15" height="5" rx="2.5" fill="#f2cd70"/>
+<circle cx="38.5" cy="16" r="6.5" fill="#43bd8a"/>
+<path d="M38.5 9.5a6.5 6.5 0 0 1 0 13" fill="#2aa070"/>
+<path d="M32.4 13.8h12.2M32.4 18.2h12.2" stroke="#fff" stroke-width="1.5" opacity=".75"/>`,
+landline:`<path d="M10 20h28a5 5 0 0 1 5 5v9a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-9a5 5 0 0 1 5-5z" fill="#2f4a63"/>
+<path d="M10 20h28a5 5 0 0 1 5 5H5a5 5 0 0 1 5-5z" fill="#3f6c96"/>
+<rect x="9" y="26" width="15" height="9" rx="2" fill="#1e3448"/>
+<g fill="#8fa7bb"><circle cx="29" cy="28.5" r="1.5"/><circle cx="34" cy="28.5" r="1.5"/><circle cx="39" cy="28.5" r="1.5"/>
+<circle cx="29" cy="33.5" r="1.5"/><circle cx="34" cy="33.5" r="1.5"/><circle cx="39" cy="33.5" r="1.5"/></g>
+<path d="M12 10h24a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3a2.5 2.5 0 0 1-2.5-2.5V16h-13v.5A2.5 2.5 0 0 1 15 19h-3a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3z" fill="#eef3f7"/>
+<path d="M12 10h24a3 3 0 0 1 3 3H9a3 3 0 0 1 3-3z" fill="#fff"/>`,
+wifi:`<path d="M9 30h30a4 4 0 0 1 4 4v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-4a4 4 0 0 1 4-4z" fill="#1d4e78"/>
+<path d="M9 30h30a4 4 0 0 1 4 4H5a4 4 0 0 1 4-4z" fill="#2b6392"/>
+<circle cx="12" cy="36" r="1.8" fill="#43bd8a"/><circle cx="18" cy="36" r="1.8" fill="#e8c05a"/>
+<path d="M24 25.5a3 3 0 0 1 0 0" fill="none"/>
+<circle cx="24" cy="25" r="2.6" fill="#1195b2"/>
+<path d="M18.2 20.4a8.2 8.2 0 0 1 11.6 0" stroke="#1195b2" stroke-width="3" fill="none" stroke-linecap="round"/>
+<path d="M13.6 15.4a14.7 14.7 0 0 1 20.8 0" stroke="#49bcd8" stroke-width="3" fill="none" stroke-linecap="round"/>
+<path d="M9.2 10.6a21 21 0 0 1 29.6 0" stroke="#8fd7e8" stroke-width="3" fill="none" stroke-linecap="round"/>`,
 cog:`<path d="M24 3.5c1.5 0 2.9.15 4.3.45l.9 4.5a16 16 0 0 1 3.7 2.15l4.3-1.5a20.6 20.6 0 0 1 4.3 7.4l-3.4 3a16 16 0 0 1 0 4.3l3.4 3a20.6 20.6 0 0 1-4.3 7.4l-4.3-1.5a16 16 0 0 1-3.7 2.15l-.9 4.5a20.8 20.8 0 0 1-8.6 0l-.9-4.5a16 16 0 0 1-3.7-2.15l-4.3 1.5a20.6 20.6 0 0 1-4.3-7.4l3.4-3a16 16 0 0 1 0-4.3l-3.4-3a20.6 20.6 0 0 1 4.3-7.4l4.3 1.5a16 16 0 0 1 3.7-2.15l.9-4.5c1.4-.3 2.8-.45 4.3-.45z" fill="#6b7a87"/>
 <path d="M24 3.5c1.5 0 2.9.15 4.3.45l.9 4.5a16 16 0 0 1 3.7 2.15l4.3-1.5a20.6 20.6 0 0 1 2.4 3.3L12.6 38.9a20.6 20.6 0 0 1-3.2-6l3.4-3a16 16 0 0 1 0-4.3l-3.4-3a20.6 20.6 0 0 1 4.3-7.4l4.3 1.5a16 16 0 0 1 3.7-2.15l.9-4.5c1.4-.3 2.8-.45 4.3-.45z" fill="#8795a1"/>
 <circle cx="24" cy="24" r="8.4" fill="#eef3f7"/><circle cx="24" cy="24" r="5" fill="#4a5560"/>`,
@@ -8502,9 +8676,15 @@ spend:`<path d="M9 13h30l-2.2 26a3 3 0 0 1-3 2.8H14.2a3 3 0 0 1-3-2.8z" fill="#d
 const AP_SVC_SETS = {
   pay:[['wallet','الرصيد','#c8a24b','bal'],['bolt','شحن كهرباء','#e8a51c','power'],
        ['drop','شحن مياه','#1a86bd','water'],['ac','شحن تكييف','#4aa8d8','ac'],
-       ['flame','شحن الغاز','#ef5223','gas'],['garage','حجز جراجات','#2f5675','park']],
+       ['flame','شحن الغاز','#ef5223','gas'],['landline','شحن التليفون الأرضى','#3f6c96','phone'],
+       ['wifi','شحن إنترنت','#1195b2','net'],['garage','حجز جراجات','#2f5675','park']],
   buy:[['dine','مطاعم وكافيهات','#d8a257','dine'],['bag','المول','#1195b2','mall'],
-       ['gym','الجيم','#4a5560','gym'],['spa','السبا','#1e9e6a','spa']],
+       ['market','ماركت','#e8c05a','market'],['gym','الجيم','#4a5560','gym'],
+       ['spa','السبا','#1e9e6a','spa'],['homeserv','خدمة منزلية','#3f6c96','homeserv'],
+       ['kids','كيدز إيريا / حضانة','#e8b23a','kids'],
+       ['pharm','صيدلية','#1e9e6a','pharm'],['doctor','طبيب طوارئ منزلى','#2f5675','doctor'],
+       ['drycl','دراى كلين','#1195b2','drycl'],['hall','دار المناسبات','#8a5fa8','hall'],
+       ['tech','طلب فنى صيانة','#d64545','tech']],
   move:[['bus','باص','#e8b23a','bus'],['car','سيارة خاصة','#1d4e78','car'],
         ['delivery','دليفرى','#d64545','deliv'],['golf','جولف كار','#1e9e6a','golf'],
         ['scooter','سكوتر','#1195b2','scoot'],['buggy','بيتش باجى','#f0821f','buggy']]
@@ -8553,6 +8733,299 @@ function apWalletHTML(sale){
       <div class="walLog"><h4>سجل المصروفات</h4>${rows(w.spends,'spend')}</div>
     </div>`;
 }
+/* v61.31: حساب اتحاد الملاك — إيراد ومدفوع، قراءة فقط لحين ضبط الإدخال */
+function apUnion(sale){
+  const u=(sale&&sale.union)||{};
+  const arr=x=>Array.isArray(x)?x:[];
+  return { income:arr(u.income), paid:arr(u.paid) };
+}
+function apUnionHTML(sale){
+  const U=apUnion(sale);
+  const sum=a=>a.reduce((t,r)=>t+(Number(r.amount)||0),0);
+  const inc=sum(U.income), pd=sum(U.paid);
+  const tbl=(list,kind)=> list.length
+    ? '<table class="tbl apCliTbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead><tbody>'+
+      list.map(r=>'<tr><td>'+esc(fmtD(r.date))+'</td><td>'+esc(r.note||'—')+'</td><td>'+
+        fmtN(Number(r.amount)||0)+' ج.م</td></tr>').join('')+'</tbody></table>'
+    : '<div class="svcEmpty"><svg viewBox="0 0 48 48">'+AP_SVC[kind==='in'?'topup':'spend']+'</svg>'+
+      (kind==='in'?'لسه مفيش إيرادات مسجّلة':'لسه مفيش مدفوعات مسجّلة')+'</div>';
+  return `<h2 class="screen-title">🏛️ حساب اتحاد الملاك</h2>
+    <div class="walRow">
+      <div class="walLog"><h4>💰 إيراد</h4>
+        <div class="unTot in">${fmtN(inc)} <small>ج.م</small></div>${tbl(U.income,'in')}</div>
+      <div class="walLog"><h4>🧾 مدفوع</h4>
+        <div class="unTot out">${fmtN(pd)} <small>ج.م</small></div>${tbl(U.paid,'out')}</div>
+    </div>
+    <p class="gray-note" style="margin-top:9px">الأرقام دى بتتسجّل من إدارة الاتحاد، والعرض هنا للاطلاع فقط.</p>`;
+}
+/* =====================================================================
+   v61.31: دليل البرنامج
+   كل مستخدم يرى القسم الذى يخصّه فقط — العميل لا يرى شرح شاشات المدير،
+   والموظف لا يرى ما ليس له صلاحية عليه.
+   ===================================================================== */
+function apRole(){
+  if(apIsClientSession()) return 'client';
+  if(typeof AP_PARTNER!=='undefined' && AP_PARTNER) return 'partner';
+  if(CURRENT_USER && CURRENT_USER.admin) return 'admin';
+  return 'staff';
+}
+const AP_GUIDE={
+ client:{t:'دليل العميل',s:[
+  ['🏠 الرئيسية','كل حاجة بتبدأ من هنا. تحت الفيديو هتلاقى قائمة بكل الأقسام — اضغط على أى واحد يفتح، ومن جوّه اضغط «↩️ الرئيسية» ترجع.'],
+  ['📄 ملفى','بياناتك وبيانات وحدتك والتعاقد، وكارت البونص والغرامات. اضغط على الكارت تشوف تفاصيل كل بند.'],
+  ['📅 الأقساط المستحقة','جدول أقساطك: رقم القسط وتاريخ استحقاقه وقيمته وحالته.'],
+  ['💰 الدفعات الفعلية','كل إيصال اتسجّل لك، ومعاه زرار طباعة الإيصال.'],
+  ['💳 المدفوعات','رصيد محفظتك، وشحن الكهرباء والمياه والتكييف والغاز والتليفون الأرضى والإنترنت، وحجز الجراج.'],
+  ['🅿️ حجز الجراج','اختر الدور، كبّر البلان بإصبعين، واضغط على السيارة تشوف رقم المكان وسعره السنوى.'],
+  ['🛍️ مشتريات','مطاعم وكافيهات · المول · ماركت · الجيم · السبا · خدمة منزلية · كيدز إيريا/حضانة · صيدلية · طبيب طوارئ منزلى · دراى كلين · دار المناسبات.'],
+  ['🧰 طلب فنى صيانة','من داخل «مشتريات». اختر التخصص (كهربائى · سبّاك · نقّاش · IT · تليفونات · مصاعد) والوقت المناسب، واكتب العطل، وابعت.'],
+  ['🚌 مواصلات','الباص والسيارة الخاصة والدليفرى والجولف كار والسكوتر والبيتش باجى.'],
+  ['🏛️ حساب اتحاد الملاك','إيرادات الاتحاد ومدفوعاته — للاطلاع.'],
+  ['🚶 تصريح زائر','اكتب بيانات زائرك فيتولّد تصريح برمز QR تبعته له على الواتساب. التصريح ليوم الزيارة ولمرة واحدة.'],
+  ['📣 شكاوى ومقترحات','اكتب شكواك أو مقترحك وابعته، وهنرد على رقمك المسجّل.'],
+  ['🔔 الجرس','بيوريك الأقساط المتأخرة وأقرب قسط مستحق وأى دفعة جديدة اتسجّلت لك.'],
+  ['⚙️ الإعدادات','غيّر كلمة سرك، فعّل الدخول بالبصمة على موبايلك، واتحكم فى موسيقى الخلفية.']
+ ]},
+ partner:{t:'دليل الشريك',s:[
+  ['📊 ملخصى','رصيدك الإجمالى ونصيبك من المشروع.'],
+  ['🏢 نصيبى بالعمارات','توزيع نصيبك على كل عمارة.'],
+  ['📄 كشف مفصّل','كل وحدة ونصيبك منها وما تم تحصيله.'],
+  ['💼 رأس المال والأرباح','ما دفعته وما استحقّ لك.'],
+  ['⚙️ الإعدادات','كلمة السر والبصمة وموسيقى الخلفية.']
+ ]},
+ staff:{t:'دليل الموظف',s:[
+  ['🏠 الرئيسية','أرقام المشروع تظهر لك فقط لو عندك صلاحية «أرقام لوحة التحكم».'],
+  ['الشاشات المتاحة','بتشوف الشاشات اللى المدير سمح لك بيها بس — أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
+  ['👥 قاعدة العملاء','ابحث بالاسم أو الهاتف أو رقم العقد. البحث بيتجاهل فروق الهمزة والتاء المربوطة وصيغة رقم الموبايل.'],
+  ['📄 ملف العميل','بياناته وأقساطه ودفعاته، وزرار ✉️ INVITATION بيبعتله دعوة التطبيق على الواتساب.'],
+  ['⚙️ الإعدادات','من أيقونة الإعدادات فى الرئيسية: كلمة سرك والبصمة والموسيقى.']
+ ]},
+ admin:{t:'دليل المدير',s:[
+  ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
+  ['👥 المستخدمون','تضيف موظف أو عميل أو شريك. لو السحابة متصلة الحساب بيتعمل على Firebase تلقائيًا، و«📨 إرسال رابط» بيخلّى المستخدم يحط كلمة سره بنفسه.'],
+  ['🔔 الإشعارات','مفتاح VAPID ورابط Apps Script. «🩺 فحص السحابة» بيوريك مين مسجّل جهازه، و«🔄 إعادة نشر» بتعيد رفع بيانات العملاء والشركاء.'],
+  ['💾 النسخ','«نسخة احتياطية» ملف JSON، و«نسخة محمولة» ملف HTML بالبيانات جواه.'],
+  ['📣 شكاوى ومقترحات','حطّ رقم واتساب الدعم هنا عشان شكاوى العملاء توصلك.'],
+  ['🅿️ الجراج','أماكن الجراج معايَرة على البلانات. المكان اللى مش متحقَّق منه مش بيتعرض للحجز.'],
+  ['🔐 البصمة','تتفعّل لكل جهاز على حدة من شاشة الإعدادات.']
+ ]}
+};
+function apGuideOpen(){
+  const g=AP_GUIDE[apRole()]||AP_GUIDE.staff;
+  const b=$('#apGdBody'); if(!b) return;
+  /* رقم الإصدار داخل الدليل: الدليل يُحدَّث مع كل تحديث، والرقم هنا
+     يخلّيك تتأكد إنه يطابق النسخة اللى بتشغّلها. */
+  b.innerHTML='<h3 style="margin:0 0 2px;color:var(--navy2)">'+esc(g.t)+'</h3>'+
+    '<p class="gray-note" style="margin:0 0 10px">نسخة الدليل: '+APP_VER+' · '+APP_BUILD+'</p>'+
+    g.s.map(([h,t])=>'<div class="gdRow"><b>'+esc(h)+'</b><p>'+esc(t)+'</p></div>').join('');
+  openModal('apGdModal');
+}
+
+/* =====================================================================
+   v61.32: تصريح زائر
+   العميل يكتب بيانات زائره فيتولّد تصريح برمز QR صالح لمرة واحدة ليوم
+   محدَّد. الرمز يحمل رقم التصريح والوحدة والتاريخ وبصمة تحقق قصيرة،
+   فالبوابة تقرأ البيانات من الرمز نفسه بلا إنترنت.
+   ملاحظة صريحة: «مرة واحدة» هنا مكتوبة على التصريح وتُسجَّل على جهاز
+   العميل؛ منعها تقنيًا من الاستخدام مرتين يحتاج شاشة مسح عند البوابة
+   تسجّل المستخدَم — وهى خطوة لم تُبنَ بعد.
+   ===================================================================== */
+const GUEST_KEY='apGuestPasses';
+function gpLoad(){ try{ return JSON.parse(localStorage.getItem(GUEST_KEY)||'[]'); }catch(e){ return []; } }
+function gpSave(a){ try{ localStorage.setItem(GUEST_KEY, JSON.stringify(a.slice(0,40))); }catch(e){} }
+function gpSig(str){
+  let a=5381,b=52711; const t='APG¤'+str;
+  for(let i=0;i<t.length;i++){ const c=t.charCodeAt(i); a=((a*33)^c)>>>0; b=((b*31)+c)>>>0; }
+  return (a.toString(36)+b.toString(36)).slice(0,6).toUpperCase();
+}
+/* كل بيانات التصريح داخل الرمز نفسه، فالبوابة تقرأها بلا إنترنت.
+   لو الاسم طويل وتعدّى سعة الرمز نقصّره بدل ما يفشل التوليد. */
+function gpCode(p,shortName){
+  const nm=shortName? String(p.name||'').slice(0,shortName) : String(p.name||'');
+  const core=[p.id,p.unit,p.date,p.count,p.car||'',nm,p.host||''].join('|');
+  return 'APG|'+core+'|'+gpSig(core);
+}
+function gpCodeFit(p){
+  let txt=gpCode(p);
+  let cap=0;
+  try{ cap=(window.APQR&&APQR.capacityBytes)?APQR.capacityBytes(10):0; }catch(e){ cap=0; }
+  if(!cap) return txt;
+  const bytes=t=>new TextEncoder().encode(t).length;
+  let n=40;
+  while(bytes(txt)>cap && n>6){ txt=gpCode(p,n); n-=4; }
+  return txt;
+}
+function apGuestHTML(sale){
+  const u=sale?unitById(sale.unitId):null;
+  const unit=u?[u.unitNo,u.building].filter(Boolean).join('-'):'—';
+  const today=new Date().toISOString().slice(0,10);
+  const list=gpLoad();
+  return `<h2 class="screen-title">🚶 تصريح زائر</h2>
+  <div class="card">
+    <div class="grid g2">
+      <div class="form-row"><label>اسم الزائر</label><input id="gpName" placeholder="الاسم بالكامل"></div>
+      <div class="form-row"><label>رقم الموبايل</label><input id="gpPhone" style="direction:ltr" placeholder="01xxxxxxxxx"></div>
+      <div class="form-row"><label>تاريخ الزيارة</label><input id="gpDate" type="date" value="${today}"></div>
+      <div class="form-row"><label>عدد الأفراد</label><input id="gpCount" type="number" min="1" value="1"></div>
+      <div class="form-row"><label>رقم السيارة <span class="gray-note">(اختيارى)</span></label><input id="gpCar" placeholder="لو جاى بسيارة"></div>
+      <div class="form-row"><label>الوحدة</label><input value="${esc(unit)}" disabled></div>
+    </div>
+    <div class="toolbar" style="margin-top:9px">
+      <button class="btn green" onclick="apGuestMake()">🎫 توليد التصريح</button>
+    </div>
+    <p class="gray-note" style="margin-top:7px">التصريح صالح <b>ليوم الزيارة فقط</b> و<b>لمرة واحدة</b>، وبيتسجّل على جهازك.</p>
+  </div>
+  <div id="gpOut"></div>
+  ${list.length?`<div class="card"><h3>🎟️ تصاريح سابقة</h3>${gpListHTML(list)}</div>`:''}`;
+}
+function gpListHTML(list){
+  return '<table class="tbl apCliTbl"><thead><tr><th>الزائر</th><th>التاريخ</th><th>الرقم</th><th></th></tr></thead><tbody>'+
+    list.map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+esc(p.date)+'</td><td style="direction:ltr">'+esc(p.id)+'</td>'+
+      '<td><button class="btn sm ghost" onclick="apGuestShow(\''+p.id+'\')">عرض</button></td></tr>').join('')+
+    '</tbody></table>';
+}
+function apGuestMake(){
+  const name=(($('#gpName')&&$('#gpName').value)||'').trim();
+  if(name.length<3){ toast('اكتب اسم الزائر','err'); return; }
+  const sale=saleById(cfSaleId)||(DB.sales||[])[0];
+  const u=sale?unitById(sale.unitId):null;
+  const p={ id:'G'+Date.now().toString(36).toUpperCase().slice(-6)+Math.floor(Math.random()*90+10),
+            name, phone:(($('#gpPhone')&&$('#gpPhone').value)||'').trim(),
+            date:(($('#gpDate')&&$('#gpDate').value)||'').trim(),
+            count:Number(($('#gpCount')&&$('#gpCount').value)||1)||1,
+            car:(($('#gpCar')&&$('#gpCar').value)||'').trim(),
+            unit:u?[u.unitNo,u.building].filter(Boolean).join('-'):'',
+            host:sale&&sale.customer?sale.customer.name:'', at:new Date().toISOString() };
+  const all=gpLoad(); all.unshift(p); gpSave(all);
+  apGuestShow(p.id);
+}
+function apGuestShow(id){
+  const p=gpLoad().find(x=>x.id===id); if(!p) return;
+  const box=$('#gpOut'); if(!box) return;
+  let svg='';
+  try{ svg=window.APQR?APQR.svg(gpCodeFit(p),220):''; }
+  catch(e){ svg='<div class="gray-note">تعذر توليد الرمز</div>'; }
+  box.innerHTML=`<div class="card gpPass" id="gpPass">
+    <div class="gpHead"><b>تصريح دخول زائر</b><span class="gpOnce">لمرة واحدة</span></div>
+    <div class="gpBody">
+      <div class="gpQr">${svg}<div class="gpId" dir="ltr">${esc(p.id)}</div></div>
+      <div class="gpInfo">
+        <div><span>الزائر</span><b>${esc(p.name)}</b></div>
+        <div><span>التاريخ</span><b>${esc(p.date)}</b></div>
+        <div><span>عدد الأفراد</span><b>${p.count}</b></div>
+        ${p.car?`<div><span>رقم السيارة</span><b dir="ltr">${esc(p.car)}</b></div>`:''}
+        <div><span>الوحدة</span><b dir="ltr">${esc(p.unit)}</b></div>
+        <div><span>صاحب الدعوة</span><b>${esc(p.host)}</b></div>
+      </div>
+    </div>
+    <div class="toolbar no-print" style="margin-top:10px">
+      <button class="btn green" onclick="apGuestWA('${p.id}')">💬 إرسال للزائر</button>
+      <button class="btn" onclick="printScreen()">🖨️ طباعة</button>
+    </div>
+  </div>`;
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function apGuestWA(id){
+  const p=gpLoad().find(x=>x.id===id); if(!p) return;
+  const t=['تصريح دخول — '+(S().projectName||''),'','الزائر: '+p.name,'التاريخ: '+p.date,
+           'عدد الأفراد: '+p.count, p.car?('رقم السيارة: '+p.car):'', 'الوحدة: '+p.unit,
+           'رقم التصريح: '+p.id,'','التصريح لمرة واحدة وليوم الزيارة فقط.',
+           'اعرض الرمز عند البوابة.'].filter(Boolean).join('\n');
+  const ph=waPhone(p.phone);
+  window.open('https://wa.me/'+(ph||'')+'?text='+encodeURIComponent(t),'_blank');
+}
+
+/* v61.31: شكاوى ومقترحات — تُرسل على واتساب الدعم المحفوظ فى الإعدادات */
+function apVoiceHTML(sale){
+  const wa=String((S().supportWa)||'').trim();
+  return `<h2 class="screen-title">📣 شكاوى ومقترحات</h2>
+  <div class="card">
+    <div class="grid g2">
+      <div class="form-row"><label>النوع</label>
+        <select id="vcKind"><option value="شكوى">شكوى</option><option value="مقترح">مقترح</option></select></div>
+      <div class="form-row"><label>الموضوع</label><input id="vcSub" placeholder="مثال: إضاءة الجراج"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px"><label>التفاصيل</label>
+      <textarea id="vcBody" rows="6" placeholder="اكتب تفاصيل الشكوى أو المقترح..."></textarea></div>
+    <div class="toolbar" style="margin-top:9px">
+      <button class="btn green" onclick="apVoiceSend()">💬 إرسال</button>
+      <button class="btn aqua" onclick="apVoiceCopy()">📋 نسخ النص</button>
+      ${wa?'':'<span class="gray-note">رقم الدعم مش مضبوط — النص هيتنسخ وتبعته بنفسك.</span>'}
+    </div>
+    <p class="gray-note" style="margin-top:7px">بنقرأ كل رسالة، وبنرد على رقمك المسجّل عندنا.</p>
+  </div>`;
+}
+function apVoiceText(){
+  const s=saleById(cfSaleId)||(DB.sales||[])[0];
+  const u=s?unitById(s.unitId):null;
+  const k=($('#vcKind')&&$('#vcKind').value)||'شكوى';
+  const sub=(($('#vcSub')&&$('#vcSub').value)||'').trim();
+  const body=(($('#vcBody')&&$('#vcBody').value)||'').trim();
+  const who=s&&s.customer?s.customer.name:'';
+  const unit=u?[u.unitNo,u.building].filter(Boolean).join(' — '):'';
+  return [k+': '+(sub||'بدون عنوان'), '', body, '', '— '+who+(unit?(' · وحدة '+unit):'')].join('\n');
+}
+function apVoiceValid(){
+  const body=(($('#vcBody')&&$('#vcBody').value)||'').trim();
+  if(body.length<5){ toast('اكتب التفاصيل الأول','err'); return false; }
+  return true;
+}
+function apVoiceSend(){
+  if(!apVoiceValid()) return;
+  const wa=waPhone(String((S().supportWa)||''));
+  const t=apVoiceText();
+  if(!wa){ apVoiceCopy(); toast('رقم الدعم مش مضبوط — النص اتنسخ','err'); return; }
+  window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(t),'_blank');
+}
+function apVoiceCopy(){
+  const t=apVoiceText();
+  const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta);
+  ta.select(); try{ document.execCommand('copy'); toast('تم نسخ النص','ok'); }
+  catch(e){ toast('تعذر النسخ','err'); } finally{ ta.remove(); }
+}
+/* v61.31: طلب فنى صيانة — التخصص من قائمة، والطلب يروح على واتساب الدعم */
+const AP_TRADES=['كهربائى','سبّاك','نقّاش','IT','تليفونات','مصاعد'];
+function apTechHTML(title){
+  return `<h2 class="screen-title">🧰 طلب فنى صيانة</h2>
+  <div class="toolbar no-print svcBack"><button class="btn ghost" onclick="apSvcBack()">↩️ رجوع إلى ${title}</button></div>
+  <div class="card">
+    <div class="grid g2">
+      <div class="form-row"><label>التخصص</label>
+        <select id="tkTrade">${AP_TRADES.map(t=>'<option>'+esc(t)+'</option>').join('')}</select></div>
+      <div class="form-row"><label>الوقت المناسب</label>
+        <select id="tkWhen"><option>فى أقرب وقت</option><option>صباحًا</option><option>بعد الظهر</option><option>مساءً</option></select></div>
+    </div>
+    <div class="form-row" style="margin-top:8px"><label>وصف العطل</label>
+      <textarea id="tkBody" rows="5" placeholder="اكتب العطل بالتفصيل..."></textarea></div>
+    <div class="toolbar" style="margin-top:9px">
+      <button class="btn green" onclick="apTechSend()">💬 إرسال الطلب</button>
+      <button class="btn aqua" onclick="apTechCopy()">📋 نسخ النص</button>
+    </div>
+    <p class="gray-note" style="margin-top:7px">هنتواصل معاك على رقمك المسجّل لتأكيد الميعاد.</p>
+  </div>`;
+}
+function apTechText(){
+  const s=saleById(cfSaleId)||(DB.sales||[])[0];
+  const u=s?unitById(s.unitId):null;
+  const tr=($('#tkTrade')&&$('#tkTrade').value)||'';
+  const wn=($('#tkWhen')&&$('#tkWhen').value)||'';
+  const bd=(($('#tkBody')&&$('#tkBody').value)||'').trim();
+  const who=s&&s.customer?s.customer.name:'';
+  const unit=u?[u.unitNo,u.building].filter(Boolean).join(' — '):'';
+  return ['طلب فنى صيانة: '+tr,'الوقت المناسب: '+wn,'','العطل: '+bd,'','— '+who+(unit?(' · وحدة '+unit):'')].join('\n');
+}
+function apTechSend(){
+  const bd=(($('#tkBody')&&$('#tkBody').value)||'').trim();
+  if(bd.length<5){ toast('اكتب وصف العطل الأول','err'); return; }
+  const wa=waPhone(String((S().supportWa)||''));
+  if(!wa){ apTechCopy(); toast('رقم الدعم مش مضبوط — النص اتنسخ','err'); return; }
+  window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(apTechText()),'_blank');
+}
+function apTechCopy(){
+  const ta=document.createElement('textarea'); ta.value=apTechText(); document.body.appendChild(ta);
+  ta.select(); try{ document.execCommand('copy'); toast('تم نسخ النص','ok'); }
+  catch(e){ toast('تعذر النسخ','err'); } finally{ ta.remove(); }
+}
 /* شاشة خدمة لم يُضبط عملها بعد */
 function apSvcSoonHTML(key,lb,color){
   return `<div class="card" style="text-align:center;padding:26px 16px">
@@ -8571,6 +9044,7 @@ function apSvcHTML(group,sale){
   if(!it){ AP_SVCSUB=null; return `<h2 class="screen-title">${title}</h2>${svcGridHTML(group)}`; }
   const [k,lb,c]=it;
   if(id==='park') return pkHTML();
+  if(id==='tech') return apTechHTML(title);
   const body = (id==='bal') ? apWalletHTML(sale) : apSvcSoonHTML(k,lb,c);
   return `<h2 class="screen-title">${esc(lb)}</h2>
     <div class="toolbar no-print svcBack"><button class="btn ghost" onclick="apSvcBack()">↩️ رجوع إلى ${title}</button></div>
@@ -8685,17 +9159,32 @@ function apSwitchHTML(id, on, onclick){
     (on?'true':'false')+'" onclick="'+onclick+'"><span></span></button>';
 }
 function apIsClientSession(){ return !!AP_CLIENT; }
+/* v61.31: الرئيسية عند العميل صارت القائمة الوحيدة — التابات العلوية
+   نزلت هنا كصفوف مستطيلة، فالشريط العلوى كان طويلًا ويحتاج سحبًا. */
+const AP_CLIENT_MENU=[
+  ['cog','الإعدادات','#4a5560',"apUserSettings()"],
+  ['doc','ملفى','#1195b2',"apClientGo('file')"],
+  ['cal','الأقساط المستحقة','#d64545',"apClientGo('sched')"],
+  ['receipt','الدفعات الفعلية','#1e9e6a',"apClientGo('pays')"],
+  ['card','المدفوعات','#2f5675',"apClientGo('pay')"],
+  ['bag','مشتريات','#d8a257',"apClientGo('buy')"],
+  ['bus','مواصلات','#e8b23a',"apClientGo('move')"],
+  ['union','حساب اتحاد الملاك','#157a8c',"apClientGo('union')"],
+  ['guest','تصريح زائر','#2f5675',"apClientGo('guest')"],
+  ['voice','شكاوى ومقترحات','#1195b2',"apClientGo('voice')"]
+];
 function apHomeIconsHTML(){
-  /* v61.30: المدير عنده شاشة إعدادات كاملة فلا يحتاجها هنا.
-     الموظف قد لا يملك صلاحية تلك الشاشة، فبدونها لا يجد مكانًا يغيّر
-     منه كلمة سره أو يفعّل البصمة. */
   const isAdminHere = !!(CURRENT_USER && CURRENT_USER.admin);
-  if(isAdminHere && !apIsClientSession()) return '';
-  const cards=[['cog','الإعدادات','#4a5560','apUserSettings()']];
-  if(apIsClientSession()) cards.push(['wallet','شحن رصيد','#c8a24b','apTopUpOpen()']);
-  return '<div class="svcGrid apHomeIcons">'+cards.map(([k,lb,c,fn])=>
-    '<button class="svcTile" style="--c:'+c+'" onclick="'+fn+'">'+
-    svcIconHTML(k,c)+'<span class="svcLb">'+esc(lb)+'</span></button>').join('')+'</div>';
+  if(apIsClientSession()){
+    return '<div class="svcGrid apHomeIcons">'+AP_CLIENT_MENU.map(([k,lb,c,fn])=>
+      '<button class="svcTile" style="--c:'+c+'" onclick="'+fn+'">'+
+      svcIconHTML(k,c)+'<span class="svcLb">'+esc(lb)+'</span></button>').join('')+'</div>';
+  }
+  /* المدير عنده شاشة إعدادات كاملة؛ الموظف قد لا يملكها فيحتاج المدخل هنا */
+  if(isAdminHere) return '';
+  return '<div class="svcGrid apHomeIcons">'+
+    '<button class="svcTile" style="--c:#4a5560" onclick="apUserSettings()">'+
+    svcIconHTML('cog','#4a5560')+'<span class="svcLb">الإعدادات</span></button></div>';
 }
 function apTopUpOpen(){
   if(apIsClientSession()){ AP_CTAB='pay'; AP_SVCSUB='pay:bal'; buildTabs(); renderCustomerFile(cfSaleId); window.scrollTo({top:0}); }
@@ -8733,7 +9222,11 @@ function apUserSettings(){
     <div class="usRow">
       <div><b>👨‍👩‍👦 إضافة تابع</b><p class="gray-note">حساب فرعى لأحد أفراد أسرتك مرتبط بحسابك.</p></div>
       <button class="btn ghost" disabled>قريبًا</button>
-    </div>`:''}`;
+    </div>`:''}
+    <div class="usRow">
+      <div><b>📖 دليل البرنامج</b><p class="gray-note">شرح الشاشات اللى تخصّك خطوة بخطوة.</p></div>
+      <button class="btn aqua" onclick="closeModal('apUsModal');apGuideOpen()">افتح الدليل</button>
+    </div>`;
   openModal('apUsModal');
 }
 async function apBioSwitch(on){
@@ -8797,6 +9290,9 @@ function apHomeHTML(title){
 
 function apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
   if(AP_CTAB==='home')  return apHomeHTML();
+  if(AP_CTAB==='union') return apUnionHTML(s);
+  if(AP_CTAB==='voice') return apVoiceHTML(s);
+  if(AP_CTAB==='guest') return apGuestHTML(s);
   if(AP_CTAB==='pay'||AP_CTAB==='buy'||AP_CTAB==='move') return apSvcHTML(AP_CTAB,s);
   if(AP_CTAB==='sched') return apClientSchedHTML(s);
   if(AP_CTAB==='pays')  return apClientPaysHTML(s);
