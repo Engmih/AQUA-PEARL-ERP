@@ -915,6 +915,11 @@ table.cfExpTbl thead th:first-child{z-index:4;inset-inline-start:0;position:stic
 .stat .ghostDot{display:inline-block;margin-inline-start:6px;background:#fdeaea;color:#b3261e;
   border:1px solid #f3c2c2;border-radius:999px;padding:0 6px;font-size:10px;font-weight:800;cursor:pointer}
 .stat .ghostDot:hover{background:#f8d7d7}
+/* v61.35: قائمة الشريك سطر لكل أيقونة · ومنحنى التدفقات */
+.apHomeIcons.apOneCol{grid-template-columns:1fr!important}
+.pfChart{width:100%;overflow:hidden}
+.pfChart svg{display:block}
+.pfDot:hover{stroke-width:3.4}
 /* v61.34: أيقونتا السحابة والدعوة داخل صف العميل */
 .rowBtns .rowIco{position:relative;display:inline-grid;place-items:center;width:26px;height:26px;
   border-radius:8px;font-size:14px;line-height:1;flex:none;border:1px solid var(--line);background:#fff}
@@ -4291,7 +4296,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.34';
+const APP_VER  = 'v61.35';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5444,12 +5449,13 @@ function renderSettings(){
       </div>
     </div>
     <div class="grid g3" style="margin-bottom:8px">
-      <div class="form-row"><label>👤 اسم المستخدم</label><input id="nuName"></div>
+      <div class="form-row"><label>🆔 اسم المستخدم (USER NAME)</label>
+        <input id="nuName" placeholder="MOHAMED_HASSAN" maxlength="20" spellcheck="false"
+               style="direction:ltr;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        <span class="gray-note">حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة — بيدخل بيه وبيظهر بيه.</span></div>
       <div class="form-row"><label>🔑 كلمة السر</label><input id="nuPass" type="password"></div>
       <div class="form-row"><label>📧 البريد (للدخول السحابى)</label><input id="nuMail" type="email" placeholder="name@example.com">
         <span class="gray-note">لو كتبت بريدًا، يُنشأ حساب السحابة تلقائيًا بنفس كلمة السر (٦ أحرف على الأقل).</span></div>
-      <div class="form-row"><label>🆔 اسم المستخدم (USER NAME)</label><input id="nuUname" placeholder="MOHAMED_HASSAN" maxlength="20" spellcheck="false" style="direction:ltr;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-        <span class="gray-note">اختيارى — حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة. يقدر يدخل بيه بدل البريد.</span></div>
       <div class="form-row"><label>&nbsp;</label><button class="btn green" onclick="addUser()">➕ إضافة المستخدم</button></div>
     </div>
     <div id="nuPermsWrap">
@@ -5717,7 +5723,7 @@ function apPartnerOptionsHTML(sel){
 async function addUser(){
   const name=$('#nuName').value.trim(), pass=$('#nuPass').value;
   if(!name||!pass){toast('أدخل اسم المستخدم وكلمة السر','err');return;}
-  if((DB.users||[]).some(u=>u.name.toLowerCase()===name.toLowerCase())){toast('اسم المستخدم موجود بالفعل','err');return;}
+  if((DB.users||[]).some(u=>String(u.name||'').toLowerCase()===name.toLowerCase())){toast('اسم المستخدم موجود بالفعل','err');return;}
   let perms=$$('#nuPerms input:checked').map(c=>c.value);
   const mail=(($('#nuMail')&&$('#nuMail').value)||'').trim();
   /* v61.20: نوع الحساب */
@@ -5753,20 +5759,16 @@ async function addUser(){
       }
     }
   }
-  /* v61.34: اسم المستخدم الإنجليزى — يُتحقَّق ويُحجز على الفهرس قبل الإنشاء */
-  const un=(typeof unameNorm==='function')?unameNorm(($('#nuUname')&&$('#nuUname').value)||''):'';
-  if(un){
-    const why=unameWhy(un);
-    if(why){ toast('اسم المستخدم: '+why,'err'); return; }
-    if((DB.users||[]).some(u=>unameNorm(u.uname||'')===un)){ toast('اسم المستخدم ده محجوز','err'); return; }
-    if(!mail){ toast('اسم المستخدم محتاج بريد عشان الدخول بيه','err'); return; }
-    if(typeof window.apUnameClaim==='function'){
-      const r=await window.apUnameClaim(un,mail,'');
-      if(!r||!r.ok){ toast(r&&r.err?r.err:'تعذر حجز اسم المستخدم','err'); return; }
-    }
+  /* v61.35: الاسم واسم الدخول بقوا خانة واحدة — تُتحقَّق وتُحجز على الفهرس */
+  const un=unameNorm(name);
+  const why=unameWhy(un);
+  if(why){ toast('اسم المستخدم: '+why,'err'); return; }
+  if((DB.users||[]).some(u=>unameNorm(u.uname||u.name||'')===un)){ toast('اسم المستخدم ده محجوز','err'); return; }
+  if(mail && typeof window.apUnameClaim==='function'){
+    const r=await window.apUnameClaim(un,mail,'');
+    if(!r||!r.ok){ toast(r&&r.err?r.err:'تعذر حجز اسم المستخدم','err'); return; }
   }
-  const rec={id:uid(),name,pass:pHash(pass),pPlain:pass,email:mail,admin:false,perms};
-  if(un) rec.uname=un;
+  const rec={id:uid(),name:un,uname:un,pass:pHash(pass),pPlain:pass,email:mail,admin:false,perms};
   if(isClient){ rec.client=true; rec.unitId=cUnit; }
   if(isPartner){ rec.partner=true; rec.partnerId=cPartner; }
   DB.users.push(rec);
@@ -8298,11 +8300,29 @@ window.apAdoptPartner=function(obj,info){
     return true;
   }catch(e){ console.error('adoptPartner',e); return false; }
 };
+/* v61.35: شريط الشريط العلوى اختفى — القائمة نزلت تحت الفيديو
+   صفوفًا مستطيلة، واحدة فى كل سطر. */
+const AP_PARTNER_MENU=[
+  ['cog','الإعدادات','#4a5560',"apUserSettings()"],
+  ['doc','ملخصى','#1195b2',"apPartnerGo('sum')"],
+  ['union','الوحدات المباعة','#1e9e6a',"apPartnerGo('blds')"],
+  ['garage','الوحدات المتاحة','#2f5675',"apPartnerGo('avail')"],
+  ['receipt','كشف مفصّل','#d8a257',"apPartnerGo('stmt')"],
+  ['coins','التدفقات النقدية','#157a8c',"apPartnerGo('flow')"],
+  ['wallet','الأرباح','#c8a24b',"apPartnerGo('cap')"]
+];
 function apPartnerTabs(){
   const tabs=$('nav.tabs'); if(!tabs) return;
-  const T=[['home','🏠 الرئيسية'],['sum','📊 ملخصى'],['blds','🏢 نصيبى بالعمارات'],
-           ['stmt','📄 كشف مفصّل'],['cap','💼 رأس المال والأرباح']];
-  tabs.innerHTML=T.map(([k,lb])=>`<button data-s="${k}"${AP_PTAB===k?' class="active"':''} onclick="apPartnerGo('${k}')">${lb}</button>`).join('');
+  tabs.innerHTML=''; tabs.style.display='none';
+}
+function apPartnerMenuHTML(){
+  return '<div class="svcGrid apHomeIcons apOneCol">'+AP_PARTNER_MENU.map(([k,lb,c,fn])=>
+    '<button class="svcTile" style="--c:'+c+'" onclick="'+fn+'">'+
+    svcIconHTML(k,c)+'<span class="svcLb">'+esc(lb)+'</span></button>').join('')+'</div>';
+}
+/* زرار الرجوع أعلى كل شاشة داخلية عند الشريك */
+function apPBack(){
+  return '<div class="toolbar no-print"><button class="btn ghost" onclick="apPartnerGo(\'home\')">↩️ الرئيسية</button></div>';
 }
 function apPartnerGo(tab){
   AP_PTAB=tab;
@@ -8315,11 +8335,14 @@ function apPartnerRender(){
   $$('.screen').forEach(x=>x.classList.toggle('active',x.id==='scr-customerFile'));
   currentScreen='customerFile';
   const el=$('#scr-customerFile'); if(!el) return;
-  el.innerHTML = AP_PTAB==='home' ? apHomeHTML()
-               : AP_PTAB==='blds' ? apPartnerBldsHTML(P)
-               : AP_PTAB==='stmt' ? apPartnerStmtHTML(P)
-               : AP_PTAB==='cap'  ? apPartnerCapHTML(P)
-               :                    apPartnerSumHTML(P);
+  el.innerHTML = AP_PTAB==='home'  ? apHomeHTML()
+               : AP_PTAB==='blds'  ? apPartnerBldsHTML(P)
+               : AP_PTAB==='avail' ? apPartnerAvailHTML(P)
+               : AP_PTAB==='flow'  ? apPartnerFlowHTML(P)
+               : AP_PTAB==='stmt'  ? apPartnerStmtHTML(P)
+               : AP_PTAB==='cap'   ? apPartnerCapHTML(P)
+               :                     apPartnerSumHTML(P);
+  if(AP_PTAB==='flow'){ try{ apPFlowDraw(); }catch(e){} }
   const fab=$('#shareFab'); if(fab) fab.style.display='flex';
   if(AP_PTAB==='home'){ try{ apVidBoot(); }catch(e){} }
 }
@@ -8327,6 +8350,7 @@ function apPartnerSumHTML(P){
   const t=P.totals||{};
   const bal=Number(t.balance)||0;
   return `<h2 class="screen-title">ملخص حسابى — ${esc(P.name)}</h2>
+  ${apPBack()}
   ${apPushBtnHTML()}
   <div class="card"><h3>⚖️ الرصيد</h3>
     <div class="bpBig" style="border:1.8px solid ${bal>=0?'var(--green)':'var(--red)'};border-radius:14px;
@@ -8350,21 +8374,48 @@ function apPartnerSumHTML(P){
 }
 function apPartnerBldsHTML(P){
   const rows=P.rows||[];
-  return `<h2 class="screen-title">نصيبى بالعمارات</h2>
+  const tn=rows.reduce((a,r)=>a+(Number(r.n)||0),0);
+  return `<h2 class="screen-title">الوحدات المباعة</h2>
+  ${apPBack()}
   <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button></div>
-  <div class="card"><div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
-    <th>العمارة</th><th>نسبتى</th><th>إجمالي المحصل</th><th>نصيبى</th>
+  <div class="card"><h3>🏢 الوحدات المباعة</h3><div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
+    <th>العمارة</th><th>نسبتى</th><th>عدد الوحدات المباعة</th><th>إجمالي المحصل</th><th>نصيبى</th>
   </tr></thead><tbody>
-  ${rows.map(r=>`<tr><td><b>${esc(r.b)}</b></td><td>${r.pc}٪</td>
-    <td>${fmtM(r.collected)}</td><td><b>${fmtM(r.sh)}</b></td></tr>`).join('')
-    ||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">لا نسب مسجلة</td></tr>'}
-  ${rows.length?`<tr style="background:#FBF3D9"><td colspan="3"><b>الإجمالي</b></td>
+  ${rows.map(r=>`<tr><td data-label="العمارة"><b>${esc(r.b)}</b></td><td data-label="نسبتى">${r.pc}٪</td>
+    <td data-label="عدد الوحدات المباعة">${fmtN(r.n||0)}</td>
+    <td data-label="إجمالي المحصل">${fmtM(r.collected)}</td><td data-label="نصيبى"><b>${fmtM(r.sh)}</b></td></tr>`).join('')
+    ||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">لا نسب مسجلة</td></tr>'}
+  ${rows.length?`<tr style="background:#FBF3D9"><td colspan="2"><b>الإجمالي</b></td>
+    <td><b>${fmtN(tn)}</b></td><td></td>
     <td><b>${fmtM((P.totals||{}).share)}</b></td></tr>`:''}
   </tbody></table></div></div>`;
+}
+/* v61.35: الوحدات المتاحة فى عمارات الشريك ونصيبه المتوقّع */
+function apPartnerAvailHTML(P){
+  const rows=P.avail||[];
+  const tn=rows.reduce((a,r)=>a+(Number(r.n)||0),0);
+  const tt=rows.reduce((a,r)=>a+(Number(r.total)||0),0);
+  const ts=rows.reduce((a,r)=>a+(Number(r.sh)||0),0);
+  return `<h2 class="screen-title">الوحدات المتاحة</h2>
+  ${apPBack()}
+  <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button></div>
+  <div class="card"><h3>🅿️ الوحدات المتاحة</h3><div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>
+    <th>العمارة</th><th>نسبتى</th><th>عدد الوحدات المتاحة</th><th>إجمالى أسعارها</th><th>نصيبى المتوقّع</th>
+  </tr></thead><tbody>
+  ${rows.map(r=>`<tr><td data-label="العمارة"><b>${esc(r.b)}</b></td><td data-label="نسبتى">${r.pc}٪</td>
+    <td data-label="عدد الوحدات المتاحة">${fmtN(r.n)}</td>
+    <td data-label="إجمالى أسعارها">${fmtM(r.total)}</td>
+    <td data-label="نصيبى المتوقّع"><b>${fmtM(r.sh)}</b></td></tr>`).join('')
+    ||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">لا وحدات متاحة</td></tr>'}
+  ${rows.length?`<tr style="background:#FBF3D9"><td colspan="2"><b>الإجمالي</b></td>
+    <td><b>${fmtN(tn)}</b></td><td><b>${fmtM(tt)}</b></td><td><b>${fmtM(ts)}</b></td></tr>`:''}
+  </tbody></table></div>
+  <p class="gray-note">رقم تقديرى بأسعار الوحدات الحالية — يتغيّر مع أى تعديل فى الأسعار أو بيع أى وحدة.</p></div>`;
 }
 function apPartnerStmtHTML(P){
   const u=P.units||[];
   return `<h2 class="screen-title">كشف حساب مفصّل</h2>
+  ${apPBack()}
   <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
     <span class="gray-note" style="margin-inline-start:auto">عدد البنود: ${fmtN(u.length)}</span></div>
   <div class="card"><div class="tbl-wrap"><table class="tbl apCliTbl apStmtTbl"><thead><tr>
@@ -8377,19 +8428,135 @@ function apPartnerStmtHTML(P){
     <td><b>${fmtM((P.totals||{}).share)}</b></td></tr>`:''}
   </tbody></table></div></div>`;
 }
+/* ===================================================================
+   v61.35 — التدفقات النقدية فى بوابة الشريك
+   خط واحد: نصيب الشريك من الأقساط التى لم تُحصَّل بعد، بتاريخ استحقاقها.
+   من/إلى يحدّد المدى، والضغط على أى نقطة يعرض بنودها:
+   العمارة ورقم الوحدة ونصيب الشريك — بلا أسماء عملاء ولا قيمة القسط.
+   =================================================================== */
+let AP_PF_FROM='', AP_PF_TO='';
+/* المدى الافتراضى: من أول الشهر الحالى واثنا عشر شهرًا قدّام.
+   كل التواريخ (ومنها المتأخر) تظهر بزرار «الكل». */
+function apPFlowDefault(){
+  const d=new Date();
+  const a=new Date(d.getFullYear(),d.getMonth(),1);
+  const b=new Date(d.getFullYear(),d.getMonth()+12,0);
+  const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  return [iso(a),iso(b)];
+}
+function apPFlowRange(P){
+  const L=(P.flow||[]).map(x=>x.d).filter(Boolean).sort();
+  const D=apPFlowDefault();
+  const a=AP_PF_FROM||D[0];
+  const b=AP_PF_TO  ||D[1];
+  return [a,b];
+}
+/* التجميع بالشهر — باليوم كانت مئات النقاط فوق بعضها على الموبايل */
+function apPFlowDays(P){
+  const [a,b]=apPFlowRange(P);
+  const m={};
+  (P.flow||[]).forEach(x=>{
+    if(!x.d||x.d<a||x.d>b) return;
+    const k=String(x.d).slice(0,7);
+    (m[k]=m[k]||{d:k,total:0,items:[]});
+    m[k].total+=Number(x.sh)||0;
+    m[k].items.push(x);
+  });
+  return Object.values(m).sort((p,q)=>p.d<q.d?-1:1);
+}
+function apPFlowLbl(k){
+  const [y,mo]=String(k).split('-');
+  return mo+'/'+y;
+}
+function apPartnerFlowHTML(P){
+  const [a,b]=apPFlowRange(P);
+  const days=apPFlowDays(P);
+  const tot=days.reduce((x,d)=>x+d.total,0);
+  return `<h2 class="screen-title">التدفقات النقدية</h2>
+  ${apPBack()}
+  <div class="toolbar no-print" style="flex-wrap:wrap;gap:8px">
+    <label class="gray-note">من</label><input type="date" id="pfFrom" value="${esc(a)}" onchange="apPFlowSet()">
+    <label class="gray-note">إلى</label><input type="date" id="pfTo" value="${esc(b)}" onchange="apPFlowSet()">
+    <button class="btn ghost" onclick="apPFlowReset()">الكل</button>
+    <button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
+    <span class="gray-note" style="margin-inline-start:auto">إجمالى نصيبى فى المدة: <b>${fmtM(tot)}</b></span>
+  </div>
+  <div class="card"><h3>📈 نصيبى من الأقساط المستحقة</h3>
+    <div id="pfChart" class="pfChart"></div>
+    <p class="gray-note" id="pfHint">اضغط على أى نقطة تشوف بنودها.</p>
+    <div id="pfDet"></div>
+  </div>`;
+}
+function apPFlowSet(){
+  const f=$('#pfFrom'), t=$('#pfTo');
+  AP_PF_FROM=(f&&f.value)||''; AP_PF_TO=(t&&t.value)||'';
+  apPartnerRender();
+}
+function apPFlowReset(){ AP_PF_FROM=''; AP_PF_TO=''; apPartnerRender(); }
+function apPFlowDraw(){
+  const host=document.getElementById('pfChart'); if(!host) return;
+  const P=AP_PARTNER; if(!P) return;
+  const days=apPFlowDays(P);
+  if(!days.length){ host.innerHTML='<p class="gray-note" style="text-align:center;padding:26px 0">لا أقساط مستحقة فى المدة دى.</p>'; return; }
+  const W=Math.max(320,host.clientWidth||320), H=250;
+  const padL=58, padR=14, padT=14, padB=38;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  const mx=Math.max.apply(null,days.map(d=>d.total))||1;
+  const n=days.length;
+  const X=i=> padL + (n===1? iw/2 : iw*i/(n-1));
+  const Y=v=> padT + ih - (ih*v/mx);
+  const pts=days.map((d,i)=>[X(i),Y(d.total)]);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area=line+' L'+pts[pts.length-1][0].toFixed(1)+' '+(padT+ih)+' L'+pts[0][0].toFixed(1)+' '+(padT+ih)+' Z';
+  const ticks=[0,.25,.5,.75,1].map(f=>{
+    const v=mx*f, y=Y(v);
+    return '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="#e7eef4"/>'+
+           '<text x="'+(padL-7)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" font-size="10" fill="#5b7186">'+fmtN(Math.round(v))+'</text>';
+  }).join('');
+  const step=Math.max(1,Math.ceil(n/6));
+  /* آخر تاريخ يُرسم فقط لو مش ملزوق فى اللى قبله، وإلا اتداخلوا */
+  const lastOk=((n-1)%step)===0 || ((n-1)-(Math.floor((n-1)/step)*step))>=step*0.6;
+  const lbls=days.map((d,i)=> (i%step===0||(i===n-1&&lastOk))
+    ? '<text x="'+X(i).toFixed(1)+'" y="'+(padT+ih+16)+'" text-anchor="middle" font-size="10" fill="#5b7186">'+apPFlowLbl(d.d)+'</text>' : '').join('');
+  const dots=days.map((d,i)=>'<circle class="pfDot" data-i="'+i+'" cx="'+X(i).toFixed(1)+'" cy="'+Y(d.total).toFixed(1)+
+    '" r="6" fill="#fff" stroke="#1195b2" stroke-width="2.4"><title>'+esc(apPFlowLbl(d.d))+' — '+esc(fmtM(d.total))+'</title></circle>').join('');
+  host.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" dir="ltr">'+
+    ticks+'<path d="'+area+'" fill="#1195b222"/>'+
+    '<path d="'+line+'" fill="none" stroke="#1195b2" stroke-width="2.4" stroke-linejoin="round"/>'+
+    dots+lbls+'</svg>';
+  host.querySelectorAll('.pfDot').forEach(c=>{
+    c.style.cursor='pointer';
+    c.addEventListener('click',()=>apPFlowPoint(Number(c.dataset.i)));
+  });
+}
+function apPFlowPoint(i){
+  const P=AP_PARTNER; if(!P) return;
+  const d=apPFlowDays(P)[i]; if(!d) return;
+  const box=document.getElementById('pfDet'); if(!box) return;
+  const items=d.items.slice().sort((a,b)=>(a.d<b.d?-1:a.d>b.d?1:(b.sh||0)-(a.sh||0)));
+  box.innerHTML='<h3 style="margin:12px 0 8px;font-size:14.5px;color:var(--navy2)">📅 '+esc(apPFlowLbl(d.d))+
+    ' — نصيبى: <b>'+fmtM(d.total)+'</b> · '+fmtN(items.length)+' قسط</h3>'+
+    '<div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>'+
+    '<th>تاريخ الاستحقاق</th><th>العمارة</th><th>رقم الوحدة</th><th>نصيبى من القسط</th></tr></thead><tbody>'+
+    items.map(x=>'<tr><td data-label="تاريخ الاستحقاق">'+esc(fmtD(x.d))+'</td>'+
+      '<td data-label="العمارة"><b>'+esc(x.b)+'</b></td>'+
+      '<td data-label="رقم الوحدة">'+esc(x.u||'—')+'</td>'+
+      '<td data-label="نصيبى من القسط"><b>'+fmtM(x.sh)+'</b></td></tr>').join('')+
+    '</tbody></table></div>';
+  const h=document.getElementById('pfHint');
+  if(h) h.textContent='اضغط على نقطة تانية عشان تشوف بنودها.';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 function apPartnerCapHTML(P){
-  const cap=(P.capital||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
   const po=(P.payoutsList||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
   const dr=(P.depositReturns||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
   const tbl=(title,rows,cols,body)=>`<div class="card"><h3>${title}</h3>
     <div class="tbl-wrap"><table class="tbl apCliTbl"><thead><tr>${cols.map(c=>'<th>'+c+'</th>').join('')}</tr></thead>
     <tbody>${body||'<tr><td colspan="'+cols.length+'" style="text-align:center;color:var(--muted)">لا حركات</td></tr>'}</tbody></table></div></div>`;
-  return `<h2 class="screen-title">رأس المال والأرباح</h2>
+  /* v61.35: الاسم بقى «الأرباح» وكارت حركات رأس المال اتشال من عند الشريك */
+  return `<h2 class="screen-title">الأرباح</h2>
+  ${apPBack()}
   <div class="toolbar no-print"><button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button></div>
-  ${tbl('💼 حركات رأس المال',cap,['التاريخ','المبلغ','ملاحظات'],
-    cap.map(m=>`<tr><td>${fmtD(m.date)}</td>
-      <td class="${Number(m.amount)>=0?'pos':'warn-red'}"><b>${fmtM(m.amount)}</b></td>
-      <td>${esc(m.notes||'')}</td></tr>`).join(''))}
   ${tbl('💸 دفعات الأرباح المصروفة لى',po,['التاريخ','المبلغ','الطريقة','ملاحظات'],
     po.map(m=>`<tr><td>${fmtD(m.date)}</td><td><b>${fmtM(m.amount)}</b></td>
       <td>${esc(m.method||'')}</td><td>${esc(m.notes||'')}</td></tr>`).join(''))}
@@ -9261,11 +9428,14 @@ const AP_GUIDE={
   ['🆔 اسم المستخدم','تقدر تدخل التطبيق باسم المستخدم بدل البريد. حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة، وبيتكتب كابيتال. لو الاسم محجوز لحد تانى النظام هيقولك تختار غيره.']
  ]},
  partner:{t:'دليل الشريك',s:[
+  ['🏠 الرئيسية','كل الأقسام تحت الفيديو، كل واحد فى سطر. ومن جوّه أى شاشة اضغط «↩️ الرئيسية» ترجع.'],
   ['📊 ملخصى','رصيدك الإجمالى ونصيبك من المشروع.'],
-  ['🏢 نصيبى بالعمارات','توزيع نصيبك على كل عمارة.'],
+  ['🏢 الوحدات المباعة','كل عمارة: نسبتك فيها وعدد وحداتها المباعة وإجمالى المحصل ونصيبك منه.'],
+  ['🅿️ الوحدات المتاحة','الوحدات اللى لسه ما اتباعتش فى عماراتك، وإجمالى أسعارها ونصيبك المتوقّع منها. رقم تقديرى بيتغيّر مع الأسعار والمبيعات.'],
   ['📄 كشف مفصّل','كل وحدة ونصيبك منها وما تم تحصيله.'],
-  ['💼 رأس المال والأرباح','ما دفعته وما استحقّ لك.'],
-  ['⚙️ الإعدادات','كلمة السر والبصمة وموسيقى الخلفية.']
+  ['📈 التدفقات النقدية','نصيبك من الأقساط اللى لسه ما اتحصّلتش، مرسومة بالشهر. حدّد المدة بـ«من/إلى» أو اضغط «الكل»، واضغط على أى نقطة تشوف بنودها: تاريخ الاستحقاق والعمارة ورقم الوحدة ونصيبك.'],
+  ['💸 الأرباح','دفعات الأرباح المصروفة لك والمردود من الودائع.'],
+  ['⚙️ الإعدادات','اسم المستخدم وكلمة السر والبصمة وموسيقى الخلفية.']
  ]},
  staff:{t:'دليل الموظف',s:[
   ['🏠 الرئيسية','أرقام المشروع تظهر لك فقط لو عندك صلاحية «أرقام لوحة التحكم».'],
@@ -9284,7 +9454,7 @@ const AP_GUIDE={
   ['✏️ التعديل الجماعى','من «قاعدة العملاء» زرار ✏️ تعديل جنب عدد النتائج: بيفتح العملاء الظاهرين بالفلتر فى جدول واحد تعدّل فيه الاسم والتليفون والرقم القومى والإيميل وباقة التشطيب. رقم الوحدة للعرض فقط، والإيميل مقفول لمن له حساب مربوط. وقبل الحفظ بيوريك كشف بكل تغيير.'],
   ['✉️ عدّاد الدعوات','الرقم الأحمر على زرار INVITATION بيقول كام مرة اتفتحت الدعوة على الواتساب لهذا العميل، واضغط عليه تشوف تاريخ ووقت كل مرة ومين بعتها. النظام مش بيعرف لو ضغطت «إرسال» جوّه الواتساب نفسه.'],
   ['⚠️ وحدات مباعة بلا عميل','لو رقم «المباعة» أكبر من عدد العملاء، هتلاقى علامة حمرا على كارت المباعة بتوريك الوحدات اللى حالتها مباعة من غير عملية بيع، وترجّعها «متاحة» بضغطة.'],
-  ['🆔 أسماء المستخدمين','كل حساب ممكن يكون له USER NAME إنجليزى كابيتال يدخل بيه بدل البريد. الأسماء محجوزة على السحابة فمحدش ياخد اسم حد تانى.'],
+  ['🆔 أسماء المستخدمين','اسم الحساب بقى خانة واحدة: USER NAME إنجليزى كابيتال، بيدخل بيه وبيظهر بيه. محجوز على السحابة فمحدش ياخد اسم حد تانى. ولو العميل أو الموظف غيّره من جهازه بيتحدّث عندك تلقائيًا. والعميل والشريك بيفضلوا شايفين اسمهم العربى من بيانات التعاقد.'],
   ['🔐 البصمة','تتفعّل لكل جهاز على حدة من شاشة الإعدادات.']
  ]}
 };
@@ -9653,6 +9823,8 @@ const AP_CLIENT_MENU=[
 ];
 function apHomeIconsHTML(){
   const isAdminHere = !!(CURRENT_USER && CURRENT_USER.admin);
+  if(typeof apPartnerMode==='function'&&apPartnerMode()&&typeof apPartnerMenuHTML==='function')
+    return apPartnerMenuHTML();
   if(apIsClientSession()){
     return '<div class="svcGrid apHomeIcons">'+AP_CLIENT_MENU.map(([k,lb,c,fn])=>
       '<button class="svcTile" style="--c:'+c+'" onclick="'+fn+'">'+
@@ -9727,20 +9899,42 @@ async function unameSeed(){
     if(!(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin())) return;
     let changed=false;
     for(const u of (DB.users||[])){
-      if(u.admin) continue;
       if(u.uname) continue;
       const cand=unameNorm(u.name);
-      if(!UNAME_RE.test(cand)) continue;       /* اسم عربى أو غير صالح — يُترك */
+      if(!UNAME_RE.test(cand)) continue;       /* اسم عربى أو غير صالح — يُترك للمدير يصلّحه */
+      if(!String(u.email||'').trim()){ u.uname=cand; u.name=cand; changed=true; continue; }
       const r=await window.apUnameClaim(cand,String(u.email||''),'');
-      if(r&&r.ok){ u.uname=cand; changed=true; }
+      if(r&&r.ok){ u.uname=cand; u.name=cand; changed=true; }
     }
     if(changed) save();
+    await unameSyncIn();
   }catch(e){ console.warn('unameSeed',e); }
+}
+/* v61.35: المدير يسحب الأسامى من الفهرس — فلو العميل أو الموظف غيّر
+   اسمه من جهازه، يتحدّث عند المدير تلقائيًا. الفهرس هو المرجع. */
+async function unameSyncIn(){
+  try{
+    if(typeof window.apUnamesAll!=='function') return 0;
+    const idx=await window.apUnamesAll();
+    if(!idx) return 0;
+    const byMail={};
+    Object.keys(idx).forEach(n=>{ const m=String(idx[n]||'').toLowerCase(); if(m) byMail[m]=n; });
+    let n=0;
+    (DB.users||[]).forEach(u=>{
+      const m=String(u.email||'').trim().toLowerCase(); if(!m) return;
+      const nm=byMail[m]; if(!nm) return;
+      if(unameNorm(u.uname||'')===nm && unameNorm(u.name||'')===nm) return;
+      u.uname=nm; u.name=nm; n++;
+    });
+    if(n){ save(); try{ if(currentScreen==='settings') renderSettings(); }catch(e){} }
+    return n;
+  }catch(e){ console.warn('unameSyncIn',e); return 0; }
 }
 function apMyUname(){
   try{
     const u=CURRENT_USER&&findUser(CURRENT_USER.id);
     if(u&&u.uname) return u.uname;
+    if(u&&unameOk(u.name)) return unameNorm(u.name);
     if(CURRENT_USER&&CURRENT_USER.uname) return CURRENT_USER.uname;
   }catch(e){}
   return '';
@@ -9778,8 +9972,10 @@ async function apUnameSave(){
   try{
     const r=await unameClaim(v,mail,apMyUname());
     if(!r||!r.ok){ toast(r&&r.err?r.err:'الاسم ده محجوز، اختار غيره','err'); return; }
-    if(me){ me.uname=v; save(); }
-    if(CURRENT_USER) CURRENT_USER.uname=v;
+    /* v61.35: الاسم واسم الدخول واحد — فالاتنين بيتغيّروا مع بعض */
+    if(me){ me.uname=v; me.name=v; save(); }
+    if(CURRENT_USER){ CURRENT_USER.uname=v; CURRENT_USER.name=v; }
+    try{ const n=$('#curUserName'); if(n&&!apIsClientSession()&&!(typeof AP_PARTNER!=='undefined'&&AP_PARTNER)) n.textContent=v; }catch(e){}
     if(msg){ msg.textContent='✔ اتحفظ. تقدر تدخل بيه من أى جهاز.'; msg.className='gray-note'; }
     toast('اسم المستخدم اتحفظ: '+v+' ✔','ok');
   }catch(e){ toast('تعذر الحفظ: '+(e&&e.message||''),'err'); }
@@ -9952,6 +10148,45 @@ function apClientSlice(unitId){
    تُحسب أرقامه هنا عند المدير وتُرفع «جاهزة» لمساحته المستقلة.
    لا تحتوى أى بيانات شريك آخر ولا مصروفات ولا بنوك ولا تدفقات —
    فجهازه لا يملك ما يُكسر أصلًا. */
+/* ===================================================================
+   v61.35 — أرقام إضافية فى نسخة الشريك
+   كلها محسوبة عند المدير وتُرسل جاهزة، فبوابة الشريك لا تقرأ أى قاعدة
+   بيانات. ولا تحتوى أى اسم عميل — نصيب الشريك ورقم الوحدة فقط.
+   =================================================================== */
+function apPSold(b){
+  try{ return (DB.sales||[]).filter(s=>{ const u=unitById(s.unitId); return u&&u.building===b; }).length; }
+  catch(e){ return 0; }
+}
+function apPAvail(p){
+  const out=[];
+  try{
+    Object.keys(p.pct||{}).forEach(b=>{
+      const pc=Number(p.pct[b])||0; if(pc<=0) return;
+      const av=(DB.units||[]).filter(u=>u.building===b&&u.status==='available');
+      const tot=av.reduce((a,u)=>a+(Number(u.price)||0),0);
+      out.push({b:b,pc:pc,n:av.length,total:tot,sh:tot*pc/100});
+    });
+  }catch(e){}
+  return out;
+}
+function apPFlow(p){
+  const out=[];
+  try{
+    Object.keys(p.pct||{}).forEach(b=>{
+      const pc=Number(p.pct[b])||0; if(pc<=0) return;
+      (DB.sales||[]).forEach(s=>{
+        const u=unitById(s.unitId); if(!u||u.building!==b) return;
+        let rows=[]; try{ rows=scheduleWithStatus(s); }catch(e){ rows=[]; }
+        rows.forEach(i=>{
+          if(i.st==='محصل') return;                 /* المحصّل ليس تدفقًا قادمًا */
+          const amt=Number(i.amount)||0; if(!(amt>0)||!i.due) return;
+          out.push({d:i.due,b:b,u:String(u.unitNo||''),sh:amt*pc/100});
+        });
+      });
+    });
+  }catch(e){}
+  return out;
+}
 function apPartnerSlice(partnerId){
   const p=partnerById(partnerId); if(!p) return null;
   let c,units;
@@ -9970,7 +10205,11 @@ function apPartnerSlice(partnerId){
       obligation:c.obligation, depReturned:c.depReturned, obligationLeft:c.obligationLeft
     },
     rows:(c.rows||[]).map(r=>({b:r.b,pc:r.pc,down:r.down,inst:r.inst,dep:r.dep,
-      club:r.club,penalty:r.penalty,collected:r.collected,sh:r.sh})),
+      club:r.club,penalty:r.penalty,collected:r.collected,sh:r.sh,n:apPSold(r.b)})),
+    /* v61.35: الوحدات المتاحة فى عمارات الشريك ونصيبه المتوقّع منها */
+    avail:apPAvail(p),
+    /* v61.35: أقساط لم تُحصَّل بعد — نصيب الشريك منها فقط، بلا أسماء عملاء */
+    flow:apPFlow(p),
     units:units.map(r=>({b:r.b,pc:r.pc,unit:r.unit,customer:r.customer,col:r.col,sh:r.sh,kind:r.kind})),
     capital:(p.capital||[]).map(m=>({date:m.date,amount:m.amount,notes:m.notes||''})),
     payoutsList:(p.payouts||[]).map(m=>({date:m.date,amount:m.amount,method:m.method||'',notes:m.notes||''})),
@@ -9990,10 +10229,17 @@ function apAccessMaps(){
     const em=String(u.email||'').trim(); if(!em) return;
     if(u.client){
       const sl=apClientSlice(u.unitId); if(!sl) return;
-      clients[apMailKey(em)]={name:u.name,unitId:u.unitId,slice:sl};
+      /* v61.35: اسم الدخول بقى إنجليزى، فالبوابة تعرض الاسم العربى
+         من بيانات التعاقد نفسها — ده اسمه الرسمى مش اسم دخوله. */
+      let nm=u.name;
+      try{ const s2=(DB.sales||[]).find(x=>x.unitId===u.unitId);
+           if(s2&&s2.customer&&s2.customer.name) nm=s2.customer.name; }catch(e){}
+      clients[apMailKey(em)]={name:nm,unitId:u.unitId,slice:sl};
     }else if(u.partner){
       const sl=apPartnerSlice(u.partnerId); if(!sl) return;
-      partners[apMailKey(em)]={name:u.name,partnerId:u.partnerId,slice:sl};
+      let nm=u.name;
+      try{ const pr=partnerById(u.partnerId); if(pr&&pr.name) nm=pr.name; }catch(e){}
+      partners[apMailKey(em)]={name:nm,partnerId:u.partnerId,slice:sl};
     }else{
       staff[apMailKey(em)]=true;
     }
@@ -14176,6 +14422,16 @@ function apSetAttUrl(key,url){
       const sn = await rtdb.ref('unames/' + name).get();
       const v = sn.val();
       return v ? String(v.mail || '') : '';
+    } catch (e) { return null; }
+  };
+  window.apUnamesAll = async function () {
+    if (!rtdb) return null;
+    try {
+      const sn = await rtdb.ref('unames').get();
+      const v = sn.val() || {};
+      const out = {};
+      Object.keys(v).forEach(k => { if (v[k] && v[k].mail) out[k] = String(v[k].mail); });
+      return out;
     } catch (e) { return null; }
   };
   window.apUnameClaim = async function (name, mail, oldName) {
