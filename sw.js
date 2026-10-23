@@ -4,7 +4,7 @@
    استراتيجية: الشبكة أولًا للملف الرئيسى (ليصل التحديث فورًا) مع الرجوع
    للنسخة المخزّنة عند انقطاع الشبكة، والمخزّن أولًا للأيقونات.
    ===================================================================== */
-const CACHE = 'aqua-pearl-erp-v61.27';
+const CACHE = 'aqua-pearl-erp-v61.28';
 const CORE = [
   './',
   './index.html',
@@ -14,13 +14,10 @@ const CORE = [
   './icons/maskable-192.png',
   './icons/maskable-512.png',
   './icons/icon-180.png',
-  './icons/favicon.ico',
-  './intro.mp4',
-  './intro.webm',
-  './theme.m4a',
-  './theme.ogg',
-  './intro.jpg'
+  './icons/favicon.ico'
 ];
+/* الفيديو والموسيقى لا تُحمّل مسبقًا: حجمها كبير ولا يحتاجها كل مستخدم فورًا.
+   معالج fetch يخزّنها أول مرة تُطلب فعلًا، والنسخة المطلوبة وحدها. */
 
 self.addEventListener('install', e => {
   e.waitUntil(
