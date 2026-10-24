@@ -4340,7 +4340,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.40';
+const APP_VER  = 'v61.41';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5170,8 +5170,11 @@ async function doLogin(){
         if(ep) ep.value=$('#loginPass').value;
         return doLoginEmail();
       }
+      /* v61.41: فشل الترجمة لأى سبب (نت أو صلاحية) ما يبقاش طريق مسدود —
+         نفتح له الدخول بالبريد بدل ما نسيبه واقف. */
       if(mail===null){
-        $('#loginErr').textContent='تعذر الوصول للسحابة — اتأكد من الإنترنت';
+        $('#loginErr').textContent='مش قادرين نتأكد من اسم المستخدم دلوقتى — ادخل ببريدك وكلمة سرك';
+        apShowEmailLogin();
         return;
       }
     }
