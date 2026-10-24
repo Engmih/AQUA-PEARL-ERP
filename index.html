@@ -4340,7 +4340,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.39';
+const APP_VER  = 'v61.40';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4592,6 +4592,55 @@ function confirmBox(title,html,okLabel,cb,danger){
   const ok=$('#cfOk');ok.textContent=okLabel||'تأكيد';ok.className='btn '+(danger?'red':'green');
   ok.onclick=()=>{closeModal('confirmModal');cb&&cb();};
   openModal('confirmModal');
+}
+/* ===================================================================
+   v61.40 — زرار الرجوع على الموبايل
+   كان بيقفل التطبيق من أول دوسة. دلوقتى بيشتغل جوّه التطبيق:
+     نافذة مفتوحة ← تتقفل
+     شاشة داخلية  ← يرجع للرئيسية
+     الرئيسية     ← «اضغط رجوع تانى للخروج» وثانيتين للتأكيد
+   ونسيب الخروج يتم لو دُست تانى، فما نحبسش حد جوّه التطبيق.
+   =================================================================== */
+let AP_BACK_ARMED=false, AP_BACK_T=null;
+function apBackPush(){ try{ history.pushState({ap:1},'',location.href); }catch(e){} }
+function apBackTopModal(){
+  const L=[...document.querySelectorAll('.modal-back.open')];
+  return L.length?L[L.length-1]:null;
+}
+function apBackInit(){
+  if(window.__apBackOn) return;
+  window.__apBackOn=true;
+  apBackPush();
+  window.addEventListener('popstate',function(){
+    /* ١) نافذة مفتوحة؟ اقفل أحدث واحدة */
+    const m=apBackTopModal();
+    if(m){ m.classList.remove('open'); apBackPush(); return; }
+    /* ٢) قفل البصمة شغّال؟ ما نعملش حاجة */
+    const lk=document.getElementById('apBioLock');
+    if(lk&&lk.style.display==='flex'){ apBackPush(); return; }
+    /* ٣) شاشة الدخول مفتوحة؟ سيبه يخرج بدوستين */
+    const ov=document.getElementById('loginOverlay');
+    const atLogin=ov&&ov.classList.contains('open');
+    if(!atLogin){
+      /* ٤) جوّه شاشة داخلية؟ ارجع للرئيسية */
+      try{
+        if(typeof AP_CLIENT!=='undefined'&&AP_CLIENT){
+          if(AP_CTAB!=='home'){ apClientGo('home'); apBackPush(); return; }
+        }else if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER){
+          if(AP_PTAB!=='home'){ apPartnerGo('home'); apBackPush(); return; }
+        }else if(CURRENT_USER&&currentScreen&&currentScreen!=='dashboard'){
+          nav('dashboard'); apBackPush(); return;
+        }
+      }catch(e){}
+    }
+    /* ٥) على الرئيسية — دوسة تانية خلال ثانيتين تقفل */
+    if(AP_BACK_ARMED){ AP_BACK_ARMED=false; history.back(); return; }
+    AP_BACK_ARMED=true;
+    try{ toast('اضغط رجوع تانى للخروج','err'); }catch(e){}
+    apBackPush();
+    clearTimeout(AP_BACK_T);
+    AP_BACK_T=setTimeout(()=>{ AP_BACK_ARMED=false; },2000);
+  });
 }
 function openModal(id){$('#'+id).classList.add('open');}
 function closeModal(id){$('#'+id).classList.remove('open');}
@@ -10098,6 +10147,7 @@ function apRole(){
 const AP_GUIDE={
  client:{t:'دليل العميل',s:[
   ['🏠 الرئيسية','كل حاجة بتبدأ من هنا. الفيديو بيفضل ثابت فوق والأيقونات بتعدّى من تحته اتنين فى الصف — اضغط على أى واحدة تفتح، ومن جوّه اضغط «↩️ الرئيسية» ترجع.'],
+  ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['📄 ملفى','بياناتك وبيانات وحدتك والتعاقد، وكارت البونص والغرامات. اضغط على الكارت تشوف تفاصيل كل بند.'],
   ['📅 أقساطى','جدول أقساطك: رقم القسط وتاريخ استحقاقه وقيمته وحالته. وجنب زرار الطباعة هتلاقى «⚖️ البونص والغرامات» بيفتح لك نفس الشاشة اللى بتظهر أول ما تدخل.'],
   ['⚖️ البونص والغرامات','بتظهر لك وحدها كل ما تدخل، وتقفلها بعلامة ✕. بتقولك عليك غرامة تأخير ولا ليك بونص سداد مبكّر — ولو سدادك منتظم بتقولك كده. وتقدر تفتحها وقت ما تحب من جوّه «أقساطى».'],
@@ -10151,7 +10201,8 @@ const AP_GUIDE={
   ['📝 التسجيل الذاتى','مفتاح فى «المستخدمون» بيفتح للعملاء مدخل «تسجيل جديد». الطلب بيوصلك وتراجعه وتختار الوحدة الصح بنفسك قبل الموافقة — ومحدش بيشوف أى بيانات قبل ما توافق. يُفضَّل تفضل مقفولة وتفتحها عند الحاجة بس.'],
   ['🆔 أسماء المستخدمين','اسم الحساب بقى خانة واحدة: USER NAME إنجليزى كابيتال، بيدخل بيه وبيظهر بيه. محجوز على السحابة فمحدش ياخد اسم حد تانى. ولو العميل أو الموظف غيّره من جهازه بيتحدّث عندك تلقائيًا. والعميل والشريك بيفضلوا شايفين اسمهم العربى من بيانات التعاقد.'],
   ['🔐 البصمة','تتفعّل لكل جهاز على حدة من الإعدادات، وبتطلب كلمة سرك مرة واحدة وتحفظها مشفّرة على الجهاز، وبعدها بتدخل ببصمتك على طول.'],
-  ['🔑 شاشة الدخول','اسم المستخدم وكلمة السر والبصمة وبس. لو كتبت اسم مش موجود، ساعتها بس بيظهر مدخل الدخول بالبريد وكود التفعيل.']
+  ['🔑 شاشة الدخول','اسم المستخدم وكلمة السر والبصمة وبس. لو كتبت اسم مش موجود، ساعتها بس بيظهر مدخل الدخول بالبريد وكود التفعيل.'],
+  ['⬅️ زرار الرجوع','على الموبايل: بيقفل النافذة المفتوحة، أو يرجّعك للرئيسية. وعلى الرئيسية بيقولك «اضغط رجوع تانى للخروج» — فمابقاش يقفل التطبيق بالغلط.']
  ]}
 };
 function apGuideOpen(){
@@ -12102,6 +12153,7 @@ async function boot(){
   }
 }
 document.addEventListener('DOMContentLoaded',()=>{boot();
+  try{ apBackInit(); }catch(e){}
   setTimeout(()=>{
     if(DB&&DB.lastAutoBk!==todayISO()){
       document.addEventListener('click',autoBackupDaily,{once:true,capture:true});
