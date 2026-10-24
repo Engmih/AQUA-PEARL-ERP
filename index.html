@@ -4340,7 +4340,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.41';
+const APP_VER  = 'v61.42';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5697,6 +5697,7 @@ function renderSettings(){
     <div class="toolbar no-print" style="margin-bottom:10px">
       <button class="btn gold" onclick="apBulkAccOpen()" title="إنشاء حسابات لكل العملاء اللى لسه مالهمش حساب دفعة واحدة">👥 إنشاء حسابات جماعى</button>
       <button class="btn ghost" onclick="apBulkResetOpen()" title="إرسال روابط تغيير كلمة السر لمجموعة مستخدمين">📨 روابط كلمة السر</button>
+      <button class="btn ghost" onclick="apUnameRepair()" title="يتأكد إن كل اسم مستخدم محجوز على السحابة عشان الدخول بالاسم يشتغل">🔄 مزامنة الأسامى</button>
       <button class="btn aqua" onclick="apSuReview()" title="طلبات العملاء اللى سجّلوا بنفسهم">📝 طلبات التسجيل${AP_SU_PEND.length?' ('+fmtN(AP_SU_PEND.length)+')':''}</button>
       <label class="bpApply${AP_SIGNUP_ON?' on':''}" style="margin-inline-start:auto">
         <input type="checkbox" ${AP_SIGNUP_ON?'checked':''} onchange="apSignupToggle(this.checked)">
@@ -10647,21 +10648,42 @@ async function unameSeed(){
   try{
     if(typeof window.apUnameClaim!=='function') return;
     if(!(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin())) return;
-    let changed=false;
+    let changed=false, fixed=0;
     for(const u of (DB.users||[])){
-      if(u.uname) continue;
-      const cand=unameNorm(u.name);
+      const cand=unameNorm(u.uname||u.name);
       if(!UNAME_RE.test(cand)) continue;       /* اسم عربى أو غير صالح — يُترك للمدير يصلّحه */
-      if(!String(u.email||'').trim()){ u.uname=cand; u.name=cand; changed=true; continue; }
-      const r=await window.apUnameClaim(cand,String(u.email||''),'');
-      if(r&&r.ok){ u.uname=cand; u.name=cand; changed=true; }
+      const mail=String(u.email||'').trim();
+      if(!mail){ if(!u.uname){ u.uname=cand; u.name=cand; changed=true; } continue; }
+      /* v61.41: مش بنكتفى بإن الاسم متسجّل محليًا — بنتأكد إنه محجوز على
+         الفهرس فعلًا، وإلا الدخول بالاسم مايشتغلش عند صاحبه. */
+      let owner=null;
+      try{ owner=await window.apUnameGet(cand); }catch(e){ owner=null; }
+      if(owner===null) break;                  /* السحابة مش متاحة — نوقف ونعيد بعدين */
+      if(!owner){
+        const r=await window.apUnameClaim(cand,mail,'');
+        if(r&&r.ok){ fixed++; }
+      }
+      if(!u.uname||u.name!==cand){ u.uname=cand; u.name=cand; changed=true; }
     }
     if(changed) save();
+    if(fixed) toast('اتسجّل '+fmtN(fixed)+' اسم مستخدم على السحابة ✔','ok');
     await unameSyncIn();
   }catch(e){ console.warn('unameSeed',e); }
 }
 /* v61.35: المدير يسحب الأسامى من الفهرس — فلو العميل أو الموظف غيّر
    اسمه من جهازه، يتحدّث عند المدير تلقائيًا. الفهرس هو المرجع. */
+/* v61.41: زرار يدوى لإصلاح الفهرس — يفيد لو الحسابات اتعملت والسحابة
+   مقطوعة، فالأسماء اتسجّلت محليًا ومااتحجزتش على السحابة. */
+async function apUnameRepair(){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  if(typeof window.apUnameClaim!=='function'||!(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin())){
+    toast('محتاج اتصال بالسحابة','err'); return;
+  }
+  toast('⏳ بنراجع الأسامى...','ok');
+  window.__unameSeeded=true;
+  await unameSeed();
+  toast('خلص ✔','ok');
+}
 async function unameSyncIn(){
   try{
     if(typeof window.apUnamesAll!=='function') return 0;
