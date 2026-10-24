@@ -1365,11 +1365,9 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <a href="javascript:void(0)" id="emLoginToggle" class="gray-note"
          style="display:block;text-align:center;cursor:pointer;font-weight:700">
          👤 دخول العملاء — بالبريد وكلمة السر</a>
-      <!-- v61.36: العميل الجديد يفعّل حسابه بكود وصله من الإدارة -->
-      <a href="javascript:void(0)" id="apIvLink" class="gray-note"
-         style="display:block;text-align:center;cursor:pointer;font-weight:700;margin-top:7px">
+      <!-- v61.39: مخارج احتياطية — مخفية، تظهر وقت الحاجة فقط -->
+      <a href="javascript:void(0)" id="apIvLink" class="gray-note" style="display:none;text-align:center;cursor:pointer;font-weight:700;margin-top:7px">
          🎟️ عندى كود تفعيل — إنشاء حسابى</a>
-      <!-- v61.36: يظهر فقط لو المدير فتح التسجيل الذاتى -->
       <a href="javascript:void(0)" id="apSuLink" class="gray-note" style="display:none;text-align:center;cursor:pointer;font-weight:700;margin-top:7px">
          📝 تسجيل جديد — اطلب حساب</a>
       <div id="emLoginBox" style="display:none;margin-top:9px">
@@ -4342,7 +4340,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.38';
+const APP_VER  = 'v61.39';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4674,9 +4672,12 @@ function showLogin(){
   $('#loginPass').onkeydown=e=>{if(e.key==='Enter')doLogin();};
   /* v61.16: قسم الدخول بالبريد مخفى — يظهر فقط بعد فشل الدخول العادى */
   const tg=$('#emLoginToggle'), bx=$('#emLoginBox'), wrap=$('#emLoginWrap');
-  /* v61.16: المدخل ظاهر دائمًا — العملاء يدخلون منه ببريدهم */
-  if(wrap) wrap.style.display='block';
+  /* v61.39: الشاشة بقت اسم مستخدم وكلمة سر وبصمة وبس.
+     المخارج الاحتياطية (البريد · كود التفعيل · التسجيل) مخفية،
+     وتظهر لحظة الحاجة فقط: فشل دخول، أو رابط كود، أو تسجيل مفتوح. */
+  if(wrap) wrap.style.display='none';
   if(bx) bx.style.display='none';
+  if(tg) tg.style.display='none';
   if(tg&&bx){
     tg.onclick=()=>{ const on=bx.style.display!=='none';
       bx.style.display=on?'none':'block';
@@ -4689,8 +4690,7 @@ function showLogin(){
     const iv=$('#apIvLink');
     if(iv) iv.onclick=()=>{ $('#loginOverlay').classList.remove('open'); apInvOpen(AP_INV_CODE); };
     const su=$('#apSuLink');
-    if(su){ su.style.display=AP_SIGNUP_ON?'block':'none';
-            su.onclick=()=>{ $('#loginOverlay').classList.remove('open'); apSuOpen(); }; }
+    if(su){ su.onclick=()=>{ $('#loginOverlay').classList.remove('open'); apSuOpen(); }; }
     try{ apSignupLoad(); }catch(e){}
     if(AP_INV_CODE){ setTimeout(()=>{ $('#loginOverlay').classList.remove('open'); apInvOpen(AP_INV_CODE); },300); }
   }catch(e){}
@@ -4988,7 +4988,8 @@ async function apBioVerify(){
 function apBioMount(){
   const wrap=$('#bioWrap'); if(!wrap) return;
   const rec=apBioGet();
-  const staffOk=apBioSupported()&&apIsPhone()&&rec&&(!rec.kind||rec.kind==='staff')&&findUser(rec.userId);
+  const staffOk=apBioSupported()&&rec&&(!rec.kind||rec.kind==='staff')&&findUser(rec.userId)
+                &&(apIsPhone()||!!bioSecGet());
   /* v61.37: العميل والشريك كمان — بيدخلوا ببصمتهم من بيانات محفوظة مشفّرة */
   const portalOk=apBioPortalLoginReady();
   const ok=staffOk||portalOk;
@@ -5006,12 +5007,23 @@ async function apBioLogin(){
     const rec=await apBioVerify();
     const u=findUser(rec.userId);
     if(!u){ err.textContent='المستخدم لم يعد موجودًا — ادخل بكلمة السر'; apBioClear(); apBioMount(); return; }
-    /* جلسة السحابة محفوظة على الجهاز، فلا نحتاج كلمة السر مرة أخرى.
-       لو انتهت الجلسة نطلب كلمة السر صراحةً بدل أن ندخله بلا صلاحية. */
     const live=(typeof window.apCloudOn==='function')&&window.apCloudOn();
     const cfg=(typeof window.apCloudCfg==='function')?window.apCloudCfg():null;
+    /* v61.39: الجلسة انتهت؟ نستعملها من بيانات الدخول المحفوظة بالبصمة
+       بدل ما نوقفه ونطلب منه كلمة السر. */
     if(cfg&&cfg.apiKey&&u.email&&!live){
+      if(bioSecGet()){
+        err.textContent='⏳ جارٍ الدخول...';
+        const o=await apBioReadPass();
+        const em=$('#loginEmail'), ep=$('#loginEmailPass');
+        if(em) em.value=o.m;
+        if(ep) ep.value=o.p;
+        await doLoginEmail();
+        try{ if(ep) ep.value=''; }catch(e){}
+        return;
+      }
       err.textContent='انتهت جلستك على السحابة — ادخل بكلمة السر مرة واحدة';
+      apShowEmailLogin();
       return;
     }
     err.textContent='';
@@ -5045,17 +5057,39 @@ function apBioOffer(u){
 }
 /* إلغاء البصمة من الإعدادات */
 function apBioDisable(){
-  apBioClear();
+  apBioClear(); bioSecClear();
   try{ localStorage.removeItem('apBioAsked'); }catch(e){}
   toast('تم إلغاء البصمة من هذا الجهاز','ok');
   if(typeof renderSettings==='function'&&currentScreen==='settings') renderSettings();
 }
+/* v61.39: البصمة للمدير والموظف بقت تدخّل فعلًا زى العميل — نطلب كلمة
+   السر مرة واحدة ونحفظها مشفّرة بنفس الطريقة، فلا تظهر رسالة «انتهت
+   جلستك» تانى ولا يحتاج يكتب كلمة سره كل مرة. */
 async function apBioEnableFromSettings(){
   if(!CURRENT_USER){ toast('سجّل الدخول أولًا','err'); return; }
   if(!apBioSupported()){ toast('البصمة تعمل من الرابط الأونلاين فقط (https)','err'); return; }
-  try{ await apBioEnroll(Object.assign({},CURRENT_USER,{kind:'staff'})); toast('تم تفعيل البصمة على هذا الجهاز ✔','ok'); }
-  catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); }
-  if(currentScreen==='settings') renderSettings();
+  const mail=String((CURRENT_USER&&CURRENT_USER.email)||'').trim();
+  confirmBox('🔐 تفعيل الدخول بالبصمة',
+    '<p class="gray-note" style="margin:0 0 9px">اكتب كلمة سرك مرة واحدة عشان البصمة تدخّلك من غير ما تكتبها تانى.'+
+    ' هتتحفظ على الجهاز ده وحده مشفّرة، ومش بتتبعت لأى مكان.</p>'+
+    '<div class="form-row"><label>🔑 كلمة السر</label><input type="password" id="bioPw2" autocomplete="current-password"></div>',
+    '🔐 تفعيل', async ()=>{
+      const pw=(($('#bioPw2')&&$('#bioPw2').value)||'').trim();
+      if(pw.length<4){ toast('اكتب كلمة السر الصحيحة','err'); return; }
+      try{ await apBioEnroll(Object.assign({},CURRENT_USER,{kind:'staff'})); }
+      catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); return; }
+      if(mail){
+        let mode='weak';
+        try{ mode=await apBioSavePass(mail,pw); }
+        catch(e){ apBioClear(); toast('تعذر الحفظ: '+((e&&e.message)||''),'err'); return; }
+        toast(mode==='prf'?'تم التفعيل ✔ — تقدر تدخل ببصمتك'
+                          :'تم التفعيل ✔ — جهازك مابيدعمش التشفير بالبصمة، فاتحفظت مشفّرة على الجهاز','ok');
+      }else{
+        toast('تم التفعيل ✔','ok');
+      }
+      if(currentScreen==='settings') renderSettings();
+      try{ apUserSettings(); }catch(e){}
+    });
 }
 
 /* v61.19: الاسم يُكتب — نطابقه بالاسم أو بالبريد، بلا حساسية لحالة الأحرف */
@@ -5094,7 +5128,9 @@ async function doLogin(){
     }
   }
   if(!u0){
-    $('#loginErr').textContent = typed ? 'مفيش مستخدم بالاسم ده' : 'اكتب اسم المستخدم';
+    if(!typed){ $('#loginErr').textContent='اكتب اسم المستخدم'; return; }
+    $('#loginErr').textContent='الاسم ده مش موجود — جرّب تدخل ببريدك';
+    apShowEmailLogin();
     return;
   }
   try{ localStorage.setItem('apLastUser',u0.name); }catch(e){}
@@ -5148,11 +5184,16 @@ async function doLogin(){
    هذا هو الطريق المضمون لأى جهاز جديد أو عليه بيانات قديمة. */
 
 /* v61.16: إظهار مدخل الدخول بالبريد بعد فشل محاولة عادية */
+/* v61.39: يُستدعى عند فشل الدخول فقط — فيظهر مدخل البريد مفتوحًا */
 function apShowEmailLogin(){
   const w=$('#emLoginWrap'); if(!w) return;
   w.style.display='block';
   const tg=$('#emLoginToggle');
-  if(tg) tg.textContent='☁️ جرّب الدخول بالبريد وكلمة سر السحابة';
+  if(tg){ tg.style.display='block'; tg.textContent='▲ إخفاء'; }
+  const bx=$('#emLoginBox'); if(bx) bx.style.display='block';
+  const iv=$('#apIvLink'); if(iv) iv.style.display='block';
+  const su=$('#apSuLink'); if(su) su.style.display=AP_SIGNUP_ON?'block':'none';
+  const e2=$('#loginEmail'); if(e2&&!e2.value) setTimeout(()=>{ try{ e2.focus(); }catch(e){} },80);
 }
 async function doLoginEmail(){
   const err=$('#loginErr');
@@ -10090,7 +10131,8 @@ const AP_GUIDE={
   ['الشاشات المتاحة','بتشوف الشاشات اللى المدير سمح لك بيها بس — أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
   ['👥 بيانات العملاء','قاعدة العملاء وملفاتهم للمدير وحده ومش ظاهرة لأى موظف.'],
   ['🏢 عرض وحدة','تشوف بيانات الوحدة ومساحتها وسعرها وحالتها.'],
-  ['⚙️ الإعدادات','من أيقونة الإعدادات فى الرئيسية: كلمة سرك واسم المستخدم والبصمة والموسيقى.']
+  ['⚙️ الإعدادات','من أيقونة الإعدادات فى الرئيسية: كلمة سرك واسم المستخدم والبصمة والموسيقى.'],
+  ['🔐 البصمة','بتطلب كلمة سرك مرة واحدة وتحفظها مشفّرة على جهازك، وبعدها تدخل ببصمتك من شاشة الدخول.']
  ]},
  admin:{t:'دليل المدير',s:[
   ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
@@ -10108,7 +10150,8 @@ const AP_GUIDE={
   ['🎟️ كود التفعيل','من ملف العميل: زرار «كود تفعيل» بيولّد كود لمرة واحدة ورمز QR ورابط، تبعتهم على الواتساب. العميل يفتح الرابط ويكتب الكود ويختار اسم المستخدم وكلمة السر بنفسه. الكود صالح أسبوعين ولمرة واحدة، وحسابه بيتربط عندك أول ما تفتح النظام.'],
   ['📝 التسجيل الذاتى','مفتاح فى «المستخدمون» بيفتح للعملاء مدخل «تسجيل جديد». الطلب بيوصلك وتراجعه وتختار الوحدة الصح بنفسك قبل الموافقة — ومحدش بيشوف أى بيانات قبل ما توافق. يُفضَّل تفضل مقفولة وتفتحها عند الحاجة بس.'],
   ['🆔 أسماء المستخدمين','اسم الحساب بقى خانة واحدة: USER NAME إنجليزى كابيتال، بيدخل بيه وبيظهر بيه. محجوز على السحابة فمحدش ياخد اسم حد تانى. ولو العميل أو الموظف غيّره من جهازه بيتحدّث عندك تلقائيًا. والعميل والشريك بيفضلوا شايفين اسمهم العربى من بيانات التعاقد.'],
-  ['🔐 البصمة','تتفعّل لكل جهاز على حدة من شاشة الإعدادات.']
+  ['🔐 البصمة','تتفعّل لكل جهاز على حدة من الإعدادات، وبتطلب كلمة سرك مرة واحدة وتحفظها مشفّرة على الجهاز، وبعدها بتدخل ببصمتك على طول.'],
+  ['🔑 شاشة الدخول','اسم المستخدم وكلمة السر والبصمة وبس. لو كتبت اسم مش موجود، ساعتها بس بيظهر مدخل الدخول بالبريد وكود التفعيل.']
  ]}
 };
 function apGuideOpen(){
