@@ -1354,7 +1354,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     <button class="btn green" style="width:100%;justify-content:center" onclick="doLogin()">🔓 دخول</button>
     <!-- v61.19: الدخول بالبصمة — يظهر على الموبايل بعد تفعيله مرة واحدة -->
     <div id="bioWrap" style="display:none;margin-top:9px">
-      <button class="btn aqua" style="width:100%;justify-content:center" onclick="apBioLogin()">
+      <button class="btn aqua" id="bioBtn" style="width:100%;justify-content:center" onclick="apBioLogin()">
         🔐 دخول ببصمتك <span id="bioName" style="font-weight:400;opacity:.85"></span></button>
       <div class="gray-note" style="margin-top:6px;text-align:center;font-size:11.5px">
         أو اكتب كلمة السر فوق وادخل عادى</div>
@@ -1365,6 +1365,13 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <a href="javascript:void(0)" id="emLoginToggle" class="gray-note"
          style="display:block;text-align:center;cursor:pointer;font-weight:700">
          👤 دخول العملاء — بالبريد وكلمة السر</a>
+      <!-- v61.36: العميل الجديد يفعّل حسابه بكود وصله من الإدارة -->
+      <a href="javascript:void(0)" id="apIvLink" class="gray-note"
+         style="display:block;text-align:center;cursor:pointer;font-weight:700;margin-top:7px">
+         🎟️ عندى كود تفعيل — إنشاء حسابى</a>
+      <!-- v61.36: يظهر فقط لو المدير فتح التسجيل الذاتى -->
+      <a href="javascript:void(0)" id="apSuLink" class="gray-note" style="display:none;text-align:center;cursor:pointer;font-weight:700;margin-top:7px">
+         📝 تسجيل جديد — اطلب حساب</a>
       <div id="emLoginBox" style="display:none;margin-top:9px">
         <div class="form-row"><label>📧 البريد</label>
           <input type="email" id="loginEmail" style="direction:ltr" placeholder="name@example.com"></div>
@@ -1454,6 +1461,45 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <button class="btn green" id="apInvSend" onclick="apInviteSend()">💬 إرسال واتساب</button>
       <button class="btn aqua" onclick="apInviteCopy()">📋 نسخ النص</button>
       <button class="btn ghost" onclick="closeModal('apInvModal')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- v61.36: طلب حساب جديد (التسجيل الذاتى) -->
+<div class="modal-back" id="apSuModal">
+  <div class="modal" style="max-width:420px">
+    <h3><span>📝 طلب حساب جديد</span><button class="x" onclick="closeModal('apSuModal')">✕</button></h3>
+    <p class="gray-note" style="margin:2px 0 9px">املأ بياناتك، والطلب هيتراجع من الإدارة قبل ما يتفعّل حسابك.</p>
+    <div id="apSuBody"></div>
+    <div class="actions">
+      <button class="btn green" id="suGo" onclick="apSuSend()">📨 إرسال الطلب</button>
+      <button class="btn ghost" onclick="closeModal('apSuModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- v61.36: تفعيل حساب العميل بكود الدعوة -->
+<div class="modal-back" id="apIvModal">
+  <div class="modal" style="max-width:420px">
+    <h3><span>🎟️ تفعيل الحساب بالكود</span><button class="x" onclick="closeModal('apIvModal')">✕</button></h3>
+    <p class="gray-note" style="margin:2px 0 9px">اكتب الكود اللى وصلك من الإدارة، واختار اسم المستخدم وكلمة السر اللى تحبهم.</p>
+    <div id="apIvBody"></div>
+    <div class="actions">
+      <button class="btn green" id="ivGo" onclick="apInvRedeem()">✅ تفعيل الحساب</button>
+      <button class="btn ghost" onclick="closeModal('apIvModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- v61.36: إنشاء حسابات العملاء جماعيًا / روابط كلمة السر -->
+<div class="modal-back" id="apBaModal">
+  <div class="modal apBulkWrap" style="max-width:1180px">
+    <h3><span>👥 إنشاء حسابات جماعى</span><button class="x" onclick="closeModal('apBaModal')">✕</button></h3>
+    <p class="gray-note" id="apBaNote" style="margin:2px 0 9px"></p>
+    <div id="apBaBody" class="apBulkBody"></div>
+    <div class="actions">
+      <button class="btn green" id="apBaRun" onclick="apBulkAccRun()">🚀 إنشاء المحدد</button>
+      <button class="btn ghost" onclick="closeModal('apBaModal')">إغلاق</button>
     </div>
   </div>
 </div>
@@ -4296,7 +4342,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.35';
+const APP_VER  = 'v61.38';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4457,6 +4503,15 @@ function migrateDB(data){
   data.seq=data.seq||{year:new Date().getFullYear(),counter:0};
   data.sales=data.sales||[];data.payments=data.payments||[];data.returned=data.returned||[];data.partners=data.partners||[];data.banks=data.banks||[];data.bankTx=data.bankTx||[];data.expenses=data.expenses||[];data.zakatPays=data.zakatPays||[];data.cashflowCfg=data.cashflowCfg||{start:'',overdue:false,b:{}};
   if(!data.users||!data.users.length)data.users=defaultUsers();
+  /* v61.37: قاعدة العملاء بقت للمدير وحده — نشيل الصلاحية القديمة من أى موظف
+     حتى لا تفضل مُعلَّمة فى الشاشة وهى غير فعّالة */
+  try{
+    (data.users||[]).forEach(u=>{
+      if(u.admin||u.client||u.partner) return;
+      if(Array.isArray(u.perms)&&u.perms.includes('customers'))
+        u.perms=u.perms.filter(x=>x!=='customers');
+    });
+  }catch(e){}
   return data;
 }
 function loadFromLS(){
@@ -4582,8 +4637,10 @@ function allowed(id){
   if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER) return false;
   if(CURRENT_USER.admin)return true;
   if(id==='settings')return false;               // الإعدادات للمدير فقط
+  /* v61.37: قاعدة العملاء وملف العميل للمدير وحده — الموظف لا يراهما إطلاقًا،
+     ولا حتى بالضغط على عميل من شاشة الأقساط أو المحصّل. */
+  if(id==='customers'||id==='customerFile')return false;
   if(id==='dashboard')return true;
-  if(id==='customerFile')return ['customers','sales','due','collected','sold'].some(p=>(CURRENT_USER.perms||[]).includes(p));
   return (CURRENT_USER.perms||[]).includes(id);
 }
 function buildTabs(){
@@ -4627,6 +4684,16 @@ function showLogin(){
       if(!on){ const e2=$('#loginEmail'); if(e2) e2.focus(); } };
     const pe=$('#loginEmailPass'); if(pe) pe.onkeydown=e=>{ if(e.key==='Enter')doLoginEmail(); };
   }
+  /* v61.36: مدخل تفعيل الحساب بالكود — يفتح تلقائيًا لو الرابط فيه ?inv= */
+  try{
+    const iv=$('#apIvLink');
+    if(iv) iv.onclick=()=>{ $('#loginOverlay').classList.remove('open'); apInvOpen(AP_INV_CODE); };
+    const su=$('#apSuLink');
+    if(su){ su.style.display=AP_SIGNUP_ON?'block':'none';
+            su.onclick=()=>{ $('#loginOverlay').classList.remove('open'); apSuOpen(); }; }
+    try{ apSignupLoad(); }catch(e){}
+    if(AP_INV_CODE){ setTimeout(()=>{ $('#loginOverlay').classList.remove('open'); apInvOpen(AP_INV_CODE); },300); }
+  }catch(e){}
   /* v61.16: على الكمبيوتر نضع المؤشر فى كلمة السر مباشرة.
      على الموبايل لا نفعل، حتى لا يقفز الكيبورد ويغطى الشاشة. */
   try{
@@ -4703,8 +4770,11 @@ function apBioPortalOn(){
   return !!(r&&r.credId&&r.kind&&r.kind!=='staff'&&m&&String(r.email||'').toLowerCase()===m);
 }
 /* قفل الشاشة حتى تنجح البصمة */
+let AP_BIO_JUST=false;
 async function apBioGate(){
   if(!apBioPortalOn()) return true;
+  /* v61.37: دخل ببصمته لتوّه — مانطلبهاش تانى فى نفس اللحظة */
+  if(AP_BIO_JUST){ AP_BIO_JUST=false; return true; }
   document.body.classList.add('apLocked');
   let ov=document.getElementById('apBioLock');
   if(!ov){
@@ -4741,6 +4811,113 @@ function apBioGateOut(){
   document.body.classList.remove('apLocked');
   try{ logout(); }catch(e){}
 }
+/* ===================================================================
+   v61.37 — الدخول بالبصمة للعميل والشريك
+   البصمة كانت قفلًا على البيانات بعد الدخول فقط. الآن تدخِّل فعلًا.
+   ولأن الدخول يتم على Firebase ببريد وكلمة سر، لا بد من حفظ كلمة السر
+   على الجهاز. نحفظها مشفّرة:
+     • لو الجهاز يدعم امتداد PRF فى WebAuthn (أغلب أندرويد الحديث):
+       المفتاح نفسه يخرج من المستشعر عند كل بصمة، فلا يمكن فك التشفير
+       بغير بصمة صاحب الجهاز. هذه هى الحالة الآمنة.
+     • لو لا يدعمه: نشفّر بمفتاح عشوائى مخزّن على الجهاز نفسه — وهذا
+       إخفاء لا حماية: من يفتح الموبايل ويفتّش مخزن المتصفح يصل إليها.
+   الحالة مكتوبة للمستخدم فى شاشة الإعدادات بوضوح.
+   =================================================================== */
+const BIO_SEC='apBioSec';
+function bioSecGet(){ try{ return JSON.parse(localStorage.getItem(BIO_SEC)||'null'); }catch(e){ return null; } }
+function bioSecClear(){ try{ localStorage.removeItem(BIO_SEC); }catch(e){} }
+async function bioKeyFrom(raw){
+  const base=await crypto.subtle.importKey('raw',raw,'HKDF',false,['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'HKDF',hash:'SHA-256',salt:new Uint8Array(16),info:new TextEncoder().encode('ap-bio-v1')},
+    base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function bioEnc(raw,txt){
+  const key=await bioKeyFrom(raw);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(txt));
+  return {iv:b64u(iv),ct:b64u(ct)};
+}
+async function bioDec(raw,rec){
+  const key=await bioKeyFrom(raw);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64u(rec.iv)},key,unb64u(rec.ct));
+  return new TextDecoder().decode(pt);
+}
+/* يطلب من المستشعر مفتاحًا مشتقًا (PRF). يرجع Uint8Array أو null */
+async function bioPrf(credId,saltB64){
+  try{
+    const ch=crypto.getRandomValues(new Uint8Array(32));
+    const a=await navigator.credentials.get({publicKey:{
+      challenge:ch,
+      allowCredentials:[{type:'public-key',id:unb64u(credId)}],
+      userVerification:'required', timeout:60000,
+      extensions:{prf:{eval:{first:unb64u(saltB64)}}}
+    }});
+    if(!a) return null;
+    const r=a.getClientExtensionResults&&a.getClientExtensionResults();
+    const f=r&&r.prf&&r.prf.results&&r.prf.results.first;
+    return f?new Uint8Array(f):null;
+  }catch(e){
+    /* إلغاء المستخدم ليس «عدم دعم» — لازم يتبلّغ، وإلا نزّلنا الحماية بالغلط */
+    if(e&&(e.name==='NotAllowedError'||e.name==='AbortError')) throw e;
+    return null;
+  }
+}
+/* يحفظ كلمة السر للدخول بالبصمة. يرجع 'prf' أو 'weak' أو يرمى خطأ */
+async function apBioSavePass(mail,pass){
+  const rec=apBioGet();
+  if(!rec||!rec.credId) throw new Error('البصمة غير مفعّلة');
+  const salt=b64u(crypto.getRandomValues(new Uint8Array(32)));
+  let raw=await bioPrf(rec.credId,salt), mode='prf';
+  if(!raw){ raw=crypto.getRandomValues(new Uint8Array(32)); mode='weak'; }
+  const box=await bioEnc(raw,JSON.stringify({m:mail,p:pass}));
+  const out={mode:mode,salt:salt,iv:box.iv,ct:box.ct,at:new Date().toISOString()};
+  if(mode==='weak') out.k=b64u(raw);     /* المفتاح على الجهاز — إخفاء لا حماية */
+  try{ localStorage.setItem(BIO_SEC,JSON.stringify(out)); }catch(e){ throw new Error('تعذر الحفظ على الجهاز'); }
+  return mode;
+}
+/* يتحقق بالبصمة ويرجع {m,p} أو يرمى خطأ */
+async function apBioReadPass(){
+  const rec=apBioGet(), sec=bioSecGet();
+  if(!rec||!rec.credId) throw new Error('البصمة غير مفعّلة على هذا الجهاز');
+  if(!sec) throw new Error('مفيش بيانات دخول محفوظة — ادخل بكلمة السر مرة واحدة');
+  let raw=null;
+  if(sec.mode==='prf'){
+    raw=await bioPrf(rec.credId,sec.salt);
+    if(!raw) throw new Error('تعذر التحقق بالبصمة');
+  }else{
+    await apBioVerify();                 /* بصمة أولًا، ثم المفتاح المحلى */
+    raw=unb64u(sec.k||'');
+    if(!raw||!raw.length) throw new Error('بيانات الدخول تالفة');
+  }
+  const txt=await bioDec(raw,sec);
+  const o=JSON.parse(txt);
+  if(!o||!o.m||!o.p) throw new Error('بيانات الدخول تالفة');
+  return o;
+}
+/* زرار الدخول بالبصمة للعميل والشريك على شاشة الدخول */
+function apBioPortalLoginReady(){
+  const rec=apBioGet(), sec=bioSecGet();
+  return !!(apBioSupported()&&rec&&rec.credId&&rec.kind&&rec.kind!=='staff'&&sec);
+}
+async function apBioPortalLogin(){
+  const err=$('#loginErr');
+  try{
+    err.textContent='⏳ فى انتظار البصمة...';
+    const o=await apBioReadPass();
+    err.textContent='⏳ جارٍ الدخول...';
+    AP_BIO_JUST=true;
+    const em=$('#loginEmail'), ep=$('#loginEmailPass');
+    if(em) em.value=o.m;
+    if(ep) ep.value=o.p;
+    await doLoginEmail();
+    try{ if(ep) ep.value=''; }catch(e){}
+  }catch(e){
+    const no=e&&(e.name==='NotAllowedError'||e.name==='AbortError');
+    err.textContent=no?'اتلغى التحقق — جرّب تانى أو ادخل بالبريد'
+                     :('تعذر الدخول بالبصمة: '+((e&&e.message)||''));
+  }
+}
 /* تفعيل/إلغاء البصمة من داخل بوابة العميل أو الشريك */
 function apBioPortalCard(){
   if(!apBioIsPortal()) return '';
@@ -4761,16 +4938,31 @@ async function apBioPortalEnable(){
   const mail=apBioPortalEmail();
   if(!mail){ toast('لم نتعرّف على بريد حسابك — أعد الدخول','err'); return; }
   if(!apBioSupported()){ toast('البصمة تعمل من الرابط الأونلاين فقط (https)','err'); return; }
-  try{
-    await apBioEnroll({id:'portal',name:(CURRENT_USER&&CURRENT_USER.name)||mail,email:mail,
-                       kind:AP_CLIENT?'client':'partner'});
-    toast('تم تفعيل البصمة على هذا الجهاز ✔','ok');
-  }catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); return; }
-  apBioPortalRefresh();
+  /* v61.37: نسأله كلمة سره مرة واحدة عشان البصمة تدخّله بعد كده */
+  confirmBox('🔐 تفعيل الدخول بالبصمة',
+    '<p class="gray-note" style="margin:0 0 9px">اكتب كلمة سرك مرة واحدة عشان نقدر ندخّلك ببصمتك بعد كده.'+
+    ' هتتحفظ على موبايلك ده وحده مشفّرة، ومش بتتبعت لأى مكان.</p>'+
+    '<div class="form-row"><label>🔑 كلمة السر</label><input type="password" id="bioPw" autocomplete="current-password"></div>'+
+    '<div class="gray-note" id="bioPwMsg" style="min-height:16px"></div>',
+    '🔐 تفعيل', async ()=>{
+      const pw=(($('#bioPw')&&$('#bioPw').value)||'').trim();
+      if(pw.length<6){ toast('اكتب كلمة السر الصحيحة','err'); return; }
+      try{
+        await apBioEnroll({id:'portal',name:(CURRENT_USER&&CURRENT_USER.name)||mail,email:mail,
+                           kind:AP_CLIENT?'client':'partner'});
+      }catch(e){ toast('تعذر التفعيل: '+(e&&e.message||''),'err'); return; }
+      let mode='weak';
+      try{ mode=await apBioSavePass(mail,pw); }
+      catch(e){ apBioClear(); toast('تعذر الحفظ: '+((e&&e.message)||''),'err'); return; }
+      toast(mode==='prf'?'تم التفعيل ✔ — تقدر تدخل ببصمتك'
+                        :'تم التفعيل ✔ — جهازك مابيدعمش التشفير بالبصمة، فاتحفظت مشفّرة على الجهاز','ok');
+      apBioPortalRefresh();
+      try{ apUserSettings(); }catch(e){}
+    });
 }
 function apBioPortalOff(){
-  apBioClear();
-  toast('تم إلغاء البصمة من هذا الجهاز','ok');
+  apBioClear(); bioSecClear();
+  toast('تم إلغاء البصمة وحذف بيانات الدخول من هذا الجهاز','ok');
   apBioPortalRefresh();
 }
 function apBioPortalRefresh(){
@@ -4796,10 +4988,15 @@ async function apBioVerify(){
 function apBioMount(){
   const wrap=$('#bioWrap'); if(!wrap) return;
   const rec=apBioGet();
-  const ok=apBioSupported()&&apIsPhone()&&rec&&(!rec.kind||rec.kind==='staff')&&findUser(rec.userId);
+  const staffOk=apBioSupported()&&apIsPhone()&&rec&&(!rec.kind||rec.kind==='staff')&&findUser(rec.userId);
+  /* v61.37: العميل والشريك كمان — بيدخلوا ببصمتهم من بيانات محفوظة مشفّرة */
+  const portalOk=apBioPortalLoginReady();
+  const ok=staffOk||portalOk;
   wrap.style.display=ok?'block':'none';
   if(ok){
-    const nm=$('#bioName'); if(nm) nm.textContent=rec.name||'';
+    const nm=$('#bioName'); if(nm) nm.textContent=(rec&&rec.name)||'';
+    const btn=$('#bioBtn');
+    if(btn) btn.onclick=portalOk?apBioPortalLogin:apBioLogin;
   }
 }
 async function apBioLogin(){
@@ -5404,6 +5601,17 @@ function renderSettings(){
   ${musicCardHTML()}
   ${bioCardHTML()}
   <div class="card"><h3>👥 المستخدمون والصلاحيات</h3>
+    <div class="toolbar no-print" style="margin-bottom:10px">
+      <button class="btn gold" onclick="apBulkAccOpen()" title="إنشاء حسابات لكل العملاء اللى لسه مالهمش حساب دفعة واحدة">👥 إنشاء حسابات جماعى</button>
+      <button class="btn ghost" onclick="apBulkResetOpen()" title="إرسال روابط تغيير كلمة السر لمجموعة مستخدمين">📨 روابط كلمة السر</button>
+      <button class="btn aqua" onclick="apSuReview()" title="طلبات العملاء اللى سجّلوا بنفسهم">📝 طلبات التسجيل${AP_SU_PEND.length?' ('+fmtN(AP_SU_PEND.length)+')':''}</button>
+      <label class="bpApply${AP_SIGNUP_ON?' on':''}" style="margin-inline-start:auto">
+        <input type="checkbox" ${AP_SIGNUP_ON?'checked':''} onchange="apSignupToggle(this.checked)">
+        <span>فتح التسجيل الذاتى للعملاء</span></label>
+    </div>
+    <p class="gray-note" style="margin:-4px 0 10px">${AP_SIGNUP_ON
+      ? '⚠️ التسجيل الذاتى <b>مفتوح</b> — أى حد معاه رابط التطبيق يقدر يبعت طلب. مفيش حد بيشوف أى بيانات قبل موافقتك.'
+      : 'التسجيل الذاتى مقفول. افتحه لما تحتاج، واقفله تانى بعد ما تخلص.'}</p>
     <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th class="no-print"></th></tr></thead><tbody>
     ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':(u.partner?'<span class="badge ret">شريك</span>':'<span class="badge av">مستخدم</span>'))}</td>
       <td style="white-space:nowrap;direction:ltr">${u.email?esc(u.email):'<span class="gray-note">—</span>'}
@@ -5462,7 +5670,8 @@ function renderSettings(){
     <label class="gray-note" style="display:block;margin-bottom:6px">البوابات المسموحة للمستخدم الجديد (الرئيسية متاحة دائمًا — الإعدادات للمدير فقط):</label>
     <div class="perm-list" id="nuPerms">
       <label><input type="checkbox" value="dashStats"> 📊 أرقام لوحة التحكم</label>
-      ${SCREENS.filter(([id])=>id!=='dashboard'&&id!=='settings').map(([id,lb])=>`<label><input type="checkbox" value="${id}"> ${lb}</label>`).join('')}
+      ${SCREENS.filter(([id])=>id!=='dashboard'&&id!=='settings'&&id!=='customers').map(([id,lb])=>`<label><input type="checkbox" value="${id}"> ${lb}</label>`).join('')}
+      <span class="gray-note" style="flex:1 0 100%">👥 قاعدة العملاء للمدير وحده — مش بتتمنح لأى موظف.</span>
     </div></div>
     <h3 style="margin-top:14px">🔑 تغيير كلمة سر المدير</h3>
     <div class="grid g3">
@@ -5779,6 +5988,435 @@ async function addUser(){
   apPushAccess();
   renderSettings();
 }
+/* ===================================================================
+   v61.36 — الطريقة الثالثة: كود دعوة لكل عميل (ومعه QR)
+   المدير يولّد كودًا لوحدة بعينها، ويُحفظ على السحابة فى /invites.
+   العميل يفتح التطبيق، يدخل الكود، ويختار اسم المستخدم وكلمة السر
+   بنفسه، فيُنشأ حسابه ويُستهلك الكود فورًا فلا يُستعمل مرتين.
+   =================================================================== */
+function invCode(){
+  const C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let a=''; for(let i=0;i<4;i++) a+=C[Math.floor(Math.random()*C.length)];
+  let b=''; for(let i=0;i<4;i++) b+=C[Math.floor(Math.random()*C.length)];
+  return a+'-'+b;
+}
+async function apInvGen(saleId){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const s=saleById(saleId); if(!s){ toast('مفيش عميل','err'); return; }
+  if((DB.users||[]).some(u=>u.client&&u.unitId===s.unitId)){ toast('الوحدة دى لها حساب بالفعل','err'); return; }
+  if(typeof window.apInvitePut!=='function'||!(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin())){
+    toast('محتاج اتصال بالسحابة عشان تولّد كود','err'); return;
+  }
+  const u=unitById(s.unitId)||{};
+  const code=invCode();
+  const exp=new Date(Date.now()+14*86400000).toISOString();
+  /* الاسم ورقم الوحدة لا يُرفعان — عقدة الكود يمكن قراءتها بمعرفة الكود،
+     فلا نضع فيها أى بيانات شخصية. المدير يعرفهما من نسخته هو. */
+  const rec={unitId:s.unitId, exp:exp, at:new Date().toISOString()};
+  try{
+    const r=await window.apInvitePut(code,rec);
+    if(!r||!r.ok) throw new Error((r&&r.err)||'تعذر الحفظ');
+  }catch(e){ toast('تعذر توليد الكود: '+((e&&e.message)||''),'err'); return; }
+  apInvShow(code,Object.assign({},rec,{
+    unit:(u.building&&u.unitNo)?(u.building+'-'+u.unitNo):'',
+    name:(s.customer&&s.customer.name)||''}),s);
+}
+function apInvShow(code,rec,sale){
+  const url=apAppUrl()+(apAppUrl().indexOf('?')>-1?'&':'?')+'inv='+encodeURIComponent(code);
+  let qr='';
+  try{ qr=APQR.svg(url,200); }catch(e){ qr='<p class="gray-note">تعذر رسم الرمز</p>'; }
+  const exp=new Date(rec.exp);
+  const msg='السلام عليكم أ/ '+(rec.name||'')+'\n\nده كود تفعيل حسابك فى تطبيق '+
+    (S().projectName||'')+' للوحدة '+(rec.unit||'')+':\n\n*'+code+'*\n\n'+
+    'افتح الرابط ده واكتب الكود، واختار اسم المستخدم وكلمة السر اللى تحبهم:\n'+url+
+    '\n\nالكود صالح لحد '+exp.toLocaleDateString('ar-EG')+' ولمرة واحدة.';
+  confirmBox('🎟️ كود تفعيل — '+(rec.name||''),
+    '<div style="text-align:center">'+
+    '<div style="font-size:27px;font-weight:900;letter-spacing:3px;direction:ltr;color:var(--navy)">'+esc(code)+'</div>'+
+    '<p class="gray-note" style="margin:4px 0 10px">الوحدة '+esc(rec.unit||'')+' · صالح لحد '+
+      esc(exp.toLocaleDateString('ar-EG'))+' · لمرة واحدة</p>'+
+    '<div style="display:inline-block;background:#fff;padding:9px;border-radius:12px;border:1px solid var(--line)">'+qr+'</div>'+
+    '<p class="gray-note" style="margin-top:9px;direction:ltr;word-break:break-all;font-size:11px">'+esc(url)+'</p>'+
+    '</div>','💬 إرسال على واتساب',()=>{
+      const ph=waPhone(sale.customer&&sale.customer.phone);
+      if(!ph){ toast('مفيش رقم موبايل مسجّل للعميل ده','err'); return; }
+      window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(msg),'_blank');
+    });
+}
+/* ===================================================================
+   v61.36 — الطريقة الرابعة: التسجيل الذاتى
+   مقفولة افتراضيًا. حين تُفتح، يظهر للعميل مدخل «تسجيل جديد» يكتب فيه
+   بياناته، فيصل لك طلب تنتظر موافقتك. لا يرى العميل أى بيانات قبل أن
+   توافق، والرفض يمسح الطلب. أنصح بإبقائها مقفولة وفتحها عند الحاجة.
+   =================================================================== */
+let AP_SIGNUP_ON=false;
+async function apSignupLoad(){
+  try{
+    if(typeof window.apSignupFlag!=='function') return;
+    const v=await window.apSignupFlag();
+    AP_SIGNUP_ON=(v===true);
+    const a=$('#apSuLink'); if(a) a.style.display=AP_SIGNUP_ON?'block':'none';
+  }catch(e){}
+}
+async function apSignupToggle(on){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  if(typeof window.apSignupSetFlag!=='function'){ toast('محتاج اتصال بالسحابة','err'); return; }
+  const r=await window.apSignupSetFlag(!!on);
+  if(!r||!r.ok){ toast((r&&r.err)||'تعذر الحفظ','err'); return; }
+  AP_SIGNUP_ON=!!on;
+  toast(on?'التسجيل الذاتى مفتوح — أى حد يقدر يبعت طلب':'التسجيل الذاتى مقفول','ok');
+  renderSettings();
+}
+/* ---- جهة العميل ---- */
+function apSuOpen(){
+  const b=$('#apSuBody'); if(!b) return;
+  b.innerHTML=`
+    <div class="form-row"><label>👤 اسمك بالكامل</label><input id="suName"></div>
+    <div class="form-row"><label>📞 رقم الموبايل</label><input id="suPhone" style="direction:ltr"></div>
+    <div class="form-row"><label>🏢 رقم الوحدة</label><input id="suUnit" placeholder="B08-010" style="direction:ltr"></div>
+    <div class="form-row"><label>📧 بريدك الإلكترونى</label><input id="suMail" type="email" style="direction:ltr"></div>
+    <div class="form-row"><label>🆔 اسم المستخدم (USER NAME)</label>
+      <input id="suUname" maxlength="20" spellcheck="false" placeholder="MOHAMED_HASSAN"
+             style="direction:ltr;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      <span class="gray-note">${esc(UNAME_HINT)}</span></div>
+    <div class="form-row"><label>🔑 كلمة السر</label><input id="suPass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>🔑 تأكيد كلمة السر</label><input id="suPass2" type="password" autocomplete="new-password"></div>
+    <div id="suMsg" class="gray-note" style="min-height:18px"></div>`;
+  openModal('apSuModal');
+}
+async function apSuSend(){
+  const g=id=>($('#'+id)&&$('#'+id).value)||'';
+  const msg=$('#suMsg'), btn=$('#suGo');
+  const set=(t,bad)=>{ if(msg){ msg.textContent=t; msg.className=bad?'warn-red':'gray-note'; } };
+  const name=String(g('suName')).trim(), phone=String(g('suPhone')).trim();
+  const unit=String(g('suUnit')).trim(), mail=String(g('suMail')).trim();
+  const un=unameNorm(g('suUname')), p1=g('suPass'), p2=g('suPass2');
+  if(!name){ set('اكتب اسمك',1); return; }
+  if(!phone){ set('اكتب رقم موبايلك',1); return; }
+  if(!unit){ set('اكتب رقم وحدتك',1); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ set('بريد غير صحيح',1); return; }
+  const why=unameWhy(un); if(why){ set(why,1); return; }
+  if(p1.length<6){ set('كلمة السر ٦ أحرف على الأقل',1); return; }
+  if(p1!==p2){ set('كلمة السر والتأكيد مش متطابقين',1); return; }
+  if(typeof window.apSignupSend!=='function'){ set('السحابة غير مهيأة',1); return; }
+  if(btn){ btn.disabled=true; btn.textContent='⏳ جارٍ الإرسال...'; }
+  try{
+    const r=await window.apSignupSend(mail,p1,{name:name,phone:phone,unit:unit,uname:un});
+    if(!r||!r.ok){ set((r&&r.err)||'تعذر الإرسال',1); return; }
+    set('✔ وصل طلبك. هيتراجع وهيتفعّل حسابك، وهنبلّغك.');
+    setTimeout(()=>closeModal('apSuModal'),2200);
+  }catch(e){ set('تعذر الإرسال: '+((e&&e.message)||''),1); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='📨 إرسال الطلب'; } }
+}
+/* ---- جهة المدير: مراجعة الطلبات ---- */
+let AP_SU_PEND=[];
+async function apSuRefresh(){
+  try{
+    if(typeof window.apSignupsList!=='function') return 0;
+    const L=await window.apSignupsList();
+    AP_SU_PEND=L||[];
+    return AP_SU_PEND.length;
+  }catch(e){ return 0; }
+}
+async function apSuReview(){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  await apSuRefresh();
+  const body=$('#apBaBody'), note=$('#apBaNote');
+  if(!body) return;
+  const rb=$('#apBaRun'); if(rb){ rb.style.display='none'; }
+  const ttl=document.querySelector('#apBaModal h3 span'); if(ttl) ttl.textContent='📝 طلبات التسجيل';
+  if(!AP_SU_PEND.length){
+    body.innerHTML='<p class="gray-note" style="text-align:center;padding:22px 0">مفيش طلبات تسجيل.</p>';
+    if(note) note.textContent='';
+    openModal('apBaModal'); return;
+  }
+  if(note) note.innerHTML='<b>'+fmtN(AP_SU_PEND.length)+'</b> طلب. راجع البيانات واختار الوحدة الصح من عندك — '+
+    'ما تعتمدش على اللى كتبه هو. الرفض بيمسح الطلب، وحسابه على السحابة بيفضل موجود بس من غير أى بيانات.';
+  body.innerHTML='<table><thead><tr>'+
+    '<th style="width:20%">الاسم</th><th style="width:13%">الموبايل</th>'+
+    '<th style="width:11%">كتب وحدة</th><th style="width:20%">البريد</th>'+
+    '<th style="width:14%">اسم المستخدم</th><th style="width:22%">الوحدة المعتمدة</th>'+
+    '</tr></thead><tbody>'+
+    AP_SU_PEND.map(it=>{
+      const r=it.rec||{};
+      return '<tr data-k="'+esc(it.k)+'">'+
+        '<td>'+esc(r.name||'')+'</td><td style="direction:ltr">'+esc(r.phone||'')+'</td>'+
+        '<td style="direction:ltr">'+esc(r.unit||'')+'</td>'+
+        '<td style="direction:ltr">'+esc(r.mail||'')+'</td>'+
+        '<td style="direction:ltr">'+esc(r.uname||'')+'</td>'+
+        '<td><select data-f="unit"><option value="">— اختار الوحدة —</option>'+apUnitOptionsHTML('')+'</select>'+
+        '<div style="display:flex;gap:5px;margin-top:5px">'+
+        '<button class="btn sm green" onclick="apSuApprove(\'' + esc(it.k) + '\')">موافقة</button>'+
+        '<button class="btn sm red" onclick="apSuReject(\'' + esc(it.k) + '\')">رفض</button></div></td></tr>';
+    }).join('')+'</tbody></table>';
+  openModal('apBaModal');
+}
+async function apSuApprove(k){
+  const it=AP_SU_PEND.find(x=>x.k===k); if(!it) return;
+  const tr=document.querySelector('#apBaBody tr[data-k="'+k+'"]'); if(!tr) return;
+  const unitId=(tr.querySelector('[data-f="unit"]')||{}).value||'';
+  if(!unitId){ toast('اختار الوحدة الأول','err'); return; }
+  const r=it.rec||{};
+  const un=unameNorm(r.uname||''), mail=String(r.mail||'').trim();
+  if(unameWhy(un)){ toast('اسم المستخدم غير صالح','err'); return; }
+  if((DB.users||[]).some(u=>u.client&&u.unitId===unitId)){ toast('الوحدة دى لها حساب بالفعل','err'); return; }
+  if((DB.users||[]).some(u=>String(u.email||'').toLowerCase()===mail.toLowerCase())){ toast('البريد ده مستخدم','err'); return; }
+  if(typeof window.apUnameClaim==='function'){
+    const c=await window.apUnameClaim(un,mail,'');
+    if(!c||!c.ok){ toast((c&&c.err)||'تعذر حجز الاسم','err'); return; }
+  }
+  DB.users.push({id:uid(),name:un,uname:un,pass:'',pPlain:'',email:mail,
+                 admin:false,client:true,unitId:unitId,perms:['customerFile']});
+  save();
+  try{ await window.apSignupDrop(k); }catch(e){}
+  apPushAccess();
+  toast('اتفعّل حساب '+un+' ✔','ok');
+  apSuReview();
+  renderSettings();
+}
+async function apSuReject(k){
+  confirmBox('رفض الطلب','هيتمسح الطلب خالص. حسابه على السحابة هيفضل موجود لكن من غير أى بيانات ومش هيشوف حاجة.',
+    '🗑️ رفض', async ()=>{
+      try{ await window.apSignupDrop(k); }catch(e){}
+      toast('اترفض الطلب','ok');
+      apSuReview();
+    }, true);
+}
+/* المدير يلتقط الأكواد اللى اتفعّلت ويعمل حسابات أصحابها */
+async function apInvCollect(){
+  try{
+    if(typeof window.apInvitesPending!=='function') return 0;
+    const list=await window.apInvitesPending();
+    if(!list||!list.length) return 0;
+    let n=0;
+    for(const it of list){
+      const r=it.rec||{}, u=r.used||{};
+      const mail=String(u.mail||'').trim(), un=unameNorm(u.uname||'');
+      if(!mail||!un||!r.unitId) continue;
+      const dup=(DB.users||[]).some(x=>String(x.email||'').toLowerCase()===mail.toLowerCase())
+             || (DB.users||[]).some(x=>x.client&&x.unitId===r.unitId);
+      if(!dup){
+        DB.users.push({id:uid(),name:un,uname:un,pass:'',pPlain:'',email:mail,
+                       admin:false,client:true,unitId:r.unitId,perms:['customerFile']});
+        n++;
+      }
+      try{ await window.apInviteDone(it.code); }catch(e){}
+    }
+    if(n){ save(); apPushAccess(); try{ renderSettings(); }catch(e){}
+      toast('اتفعّل '+fmtN(n)+' حساب عميل بالكود ✔','ok'); }
+    return n;
+  }catch(e){ console.warn('invCollect',e); return 0; }
+}
+/* ---- جهة العميل: تفعيل بالكود ---- */
+let AP_INV_CODE='';
+try{
+  const q=new URLSearchParams(location.search);
+  const v=String(q.get('inv')||'').trim().toUpperCase();
+  if(v) AP_INV_CODE=v;
+}catch(e){}
+function apInvOpen(pre){
+  const b=$('#apIvBody'); if(!b) return;
+  b.innerHTML=`
+    <div class="form-row"><label>🎟️ كود التفعيل</label>
+      <input id="ivCode" value="${esc(pre||'')}" placeholder="XXXX-XXXX" maxlength="9"
+             style="direction:ltr;text-transform:uppercase;letter-spacing:2px"
+             oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="form-row"><label>📧 بريدك الإلكترونى</label>
+      <input id="ivMail" type="email" placeholder="name@example.com" style="direction:ltr"></div>
+    <div class="form-row"><label>🆔 اسم المستخدم (USER NAME)</label>
+      <input id="ivUname" maxlength="20" placeholder="MOHAMED_HASSAN" spellcheck="false"
+             style="direction:ltr;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      <span class="gray-note">${esc(UNAME_HINT)}</span></div>
+    <div class="form-row"><label>🔑 كلمة السر</label>
+      <input id="ivPass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>🔑 تأكيد كلمة السر</label>
+      <input id="ivPass2" type="password" autocomplete="new-password"></div>
+    <div id="ivMsg" class="gray-note" style="min-height:18px"></div>`;
+  openModal('apIvModal');
+}
+async function apInvRedeem(){
+  const g=id=>($('#'+id)&&$('#'+id).value)||'';
+  const msg=$('#ivMsg'); const btn=$('#ivGo');
+  const set=(t,bad)=>{ if(msg){ msg.textContent=t; msg.className=bad?'warn-red':'gray-note'; } };
+  const code=String(g('ivCode')).trim().toUpperCase();
+  const mail=String(g('ivMail')).trim();
+  const un=unameNorm(g('ivUname'));
+  const p1=g('ivPass'), p2=g('ivPass2');
+  if(!code){ set('اكتب كود التفعيل',1); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ set('بريد غير صحيح',1); return; }
+  const why=unameWhy(un); if(why){ set(why,1); return; }
+  if(p1.length<6){ set('كلمة السر ٦ أحرف على الأقل',1); return; }
+  if(p1!==p2){ set('كلمة السر والتأكيد مش متطابقين',1); return; }
+  if(typeof window.apInviteRedeem!=='function'){ set('السحابة غير مهيأة على الجهاز ده',1); return; }
+  if(btn){ btn.disabled=true; btn.textContent='⏳ جارٍ التفعيل...'; }
+  set('⏳ بنتأكد من الكود...');
+  try{
+    const r=await window.apInviteRedeem(code,mail,un,p1);
+    if(!r||!r.ok){ set((r&&r.err)||'الكود مش صالح',1); return; }
+    set('✔ اتفعّل الحساب — بندخّلك دلوقتى...');
+    closeModal('apIvModal');
+    const em=$('#loginEmail'), ep=$('#loginEmailPass');
+    if(em) em.value=mail;
+    if(ep) ep.value=p1;
+    await doLoginEmail();
+  }catch(e){ set('تعذر التفعيل: '+((e&&e.message)||''),1); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='✅ تفعيل الحساب'; } }
+}
+/* ===================================================================
+   v61.36 — الطريقة الثانية لإنشاء حسابات العملاء: إنشاء جماعى
+   تعرض كل عميل ليس له حساب، باسم مستخدم مقترح من عمارته ووحدته،
+   وكلمة سر مولّدة، وبريده إن وُجد. المدير يراجع ويعدّل ثم ينشئ.
+   كل صف مستقل: فشل واحد لا يوقف الباقى، والنتيجة تُعرض صفًا صفًا.
+   =================================================================== */
+function apBulkAccRows(){
+  const out=[];
+  (DB.sales||[]).forEach(s=>{
+    if((DB.users||[]).some(u=>u.client&&u.unitId===s.unitId)) return;   /* له حساب */
+    const u=unitById(s.unitId)||{};
+    out.push({sid:s.id, unitId:s.unitId,
+      name:(s.customer&&s.customer.name)||'',
+      phone:(s.customer&&s.customer.phone)||'',
+      mail:String((s.customer&&s.customer.email)||'').trim(),
+      unit:(u.building&&u.unitNo)?(u.building+'-'+u.unitNo):String(u.unitNo||'')});
+  });
+  return out;
+}
+/* اسم مقترح من العمارة والوحدة — فريد بطبيعته وحروفه مسموحة */
+function apBulkAccUname(unit){
+  const v=unameNorm(String(unit||'').replace(/[^A-Za-z0-9]+/g,'_'));
+  return UNAME_RE.test(v)?v:'';
+}
+function apBulkAccPass(){
+  const C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s=''; for(let i=0;i<8;i++) s+=C[Math.floor(Math.random()*C.length)];
+  return s;
+}
+function apBulkAccOpen(){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const rb=$('#apBaRun'); if(rb){ rb.textContent='🚀 إنشاء المحدد'; rb.onclick=apBulkAccRun; rb.disabled=false; rb.style.display=''; }
+  const ttl=document.querySelector('#apBaModal h3 span'); if(ttl) ttl.textContent='👥 إنشاء حسابات جماعى';
+  const list=apBulkAccRows();
+  const body=$('#apBaBody'), note=$('#apBaNote');
+  if(!body) return;
+  if(!list.length){
+    body.innerHTML='<p class="gray-note" style="text-align:center;padding:22px 0">كل العملاء عندهم حسابات بالفعل ✔</p>';
+    if(note) note.textContent='';
+    if(rb) rb.disabled=true;
+    openModal('apBaModal'); return;
+  }
+  const cloud=(typeof window.apIsCloudAdmin==='function')&&window.apIsCloudAdmin();
+  if(note) note.innerHTML='<b>'+fmtN(list.length)+'</b> عميل من غير حساب. '+
+    (cloud?'الحسابات هتتعمل على السحابة كمان.'
+          :'<span style="color:#b45309">إنت مش متصل بالسحابة دلوقتى — الحسابات هتتعمل على الجهاز ده بس، ولازم تعيد الإنشاء وإنت متصل عشان يقدروا يدخلوا.</span>');
+  body.innerHTML='<table><thead><tr>'+
+    '<th style="width:34px"><input type="checkbox" id="baAll" onchange="apBaAll(this.checked)"></th>'+
+    '<th style="width:24%">العميل</th><th style="width:11%">الوحدة</th>'+
+    '<th style="width:21%">البريد</th><th style="width:18%">اسم المستخدم</th>'+
+    '<th style="width:14%">كلمة السر</th><th style="width:12%">الحالة</th>'+
+    '</tr></thead><tbody>'+
+    list.map(r=>{
+      const un=apBulkAccUname(r.unit);
+      return '<tr data-sid="'+esc(r.sid)+'" data-unit="'+esc(r.unitId)+'">'+
+        '<td><input type="checkbox" class="baChk"'+(r.mail?' checked':'')+'></td>'+
+        '<td>'+esc(r.name)+'</td>'+
+        '<td style="direction:ltr">'+esc(r.unit||'—')+'</td>'+
+        '<td><input data-f="mail" value="'+esc(r.mail)+'" placeholder="لازم بريد" style="direction:ltr"></td>'+
+        '<td><input data-f="un" value="'+esc(un)+'" maxlength="20" style="direction:ltr;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></td>'+
+        '<td><input data-f="pw" value="'+apBulkAccPass()+'" style="direction:ltr"></td>'+
+        '<td class="baSt gray-note">—</td></tr>';
+    }).join('')+'</tbody></table>';
+  openModal('apBaModal');
+}
+function apBaAll(on){ $$('#apBaBody .baChk').forEach(c=>{ c.checked=!!on; }); }
+async function apBulkAccRun(){
+  const trs=[...document.querySelectorAll('#apBaBody tbody tr')].filter(tr=>{
+    const c=tr.querySelector('.baChk'); return c&&c.checked; });
+  if(!trs.length){ toast('ماحددتش حد','err'); return; }
+  const btn=$('#apBaRun'); if(btn){ btn.disabled=true; }
+  let ok=0, fail=0;
+  for(let i=0;i<trs.length;i++){
+    const tr=trs[i];
+    const st=tr.querySelector('.baSt');
+    const g=f=>tr.querySelector('[data-f="'+f+'"]');
+    const mail=String(g('mail').value||'').trim();
+    const un=unameNorm(g('un').value);
+    const pw=String(g('pw').value||'').trim();
+    const unitId=tr.dataset.unit;
+    const sale=saleById(tr.dataset.sid);
+    const set=(t,cls)=>{ st.textContent=t; st.className='baSt '+(cls||'gray-note'); };
+    set('⏳ جارٍ...','gray-note');
+    try{
+      if(!mail||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) throw new Error('بريد غير صحيح');
+      const why=unameWhy(un); if(why) throw new Error(why);
+      if((DB.users||[]).some(u=>unameNorm(u.uname||u.name||'')===un)) throw new Error('الاسم محجوز');
+      if((DB.users||[]).some(u=>String(u.email||'').toLowerCase()===mail.toLowerCase())) throw new Error('البريد مستخدم');
+      if((DB.users||[]).some(u=>u.client&&u.unitId===unitId)) throw new Error('الوحدة لها حساب');
+      if(pw.length<6) throw new Error('كلمة السر قصيرة');
+      if(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin()){
+        try{ await window.apCloudCreateUser(mail,pw); }
+        catch(e){ if(!(e&&e.code==='auth/email-already-in-use')) throw e; }
+        if(typeof window.apUnameClaim==='function'){
+          const r=await window.apUnameClaim(un,mail,'');
+          if(!r||!r.ok) throw new Error((r&&r.err)||'تعذر حجز الاسم');
+        }
+      }
+      DB.users.push({id:uid(),name:un,uname:un,pass:pHash(pw),pPlain:pw,email:mail,
+                     admin:false,client:true,unitId:unitId,perms:['customerFile']});
+      if(sale&&sale.customer&&!sale.customer.email) sale.customer.email=mail;
+      save();
+      set('✔ اتعمل','pos');
+      tr.dataset.done='1'; ok++;
+    }catch(e){
+      set('⛔ '+((e&&e.message)||'فشل'),'warn-red'); fail++;
+    }
+    await new Promise(r=>setTimeout(r,120));   /* نَفَس بين الطلبات */
+  }
+  if(btn) btn.disabled=false;
+  apPushAccess();
+  renderSettings();
+  toast('اتعمل '+fmtN(ok)+' حساب'+(fail?(' · فشل '+fmtN(fail)):''), fail?'err':'ok');
+}
+/* ---- روابط تغيير كلمة السر لمجموعة ---- */
+function apBulkResetOpen(){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const us=(DB.users||[]).filter(u=>!u.admin&&String(u.email||'').trim());
+  const body=$('#apBaBody'), note=$('#apBaNote');
+  if(!body) return;
+  if(!us.length){ body.innerHTML='<p class="gray-note" style="text-align:center;padding:22px 0">مفيش مستخدمين ببريد.</p>'; openModal('apBaModal'); return; }
+  if(note) note.innerHTML='اختار مين يتبعتله رابط يغيّر بيه كلمة سره بنفسه. الرابط بيروح على بريده من Firebase.';
+  body.innerHTML='<table><thead><tr>'+
+    '<th style="width:34px"><input type="checkbox" id="baAll" onchange="apBaAll(this.checked)"></th>'+
+    '<th style="width:28%">المستخدم</th><th style="width:16%">النوع</th>'+
+    '<th style="width:34%">البريد</th><th style="width:20%">الحالة</th></tr></thead><tbody>'+
+    us.map(u=>'<tr data-uid="'+esc(u.id)+'" data-mail="'+esc(u.email)+'">'+
+      '<td><input type="checkbox" class="baChk"></td>'+
+      '<td><b>'+esc(u.name)+'</b></td>'+
+      '<td>'+(u.client?'عميل':u.partner?'شريك':'مستخدم')+'</td>'+
+      '<td style="direction:ltr">'+esc(u.email)+'</td>'+
+      '<td class="baSt gray-note">—</td></tr>').join('')+'</tbody></table>';
+  const b=$('#apBaRun'); if(b){ b.textContent='📨 إرسال الروابط'; b.onclick=apBulkResetRun; b.disabled=false; b.style.display=''; }
+  const ttl=document.querySelector('#apBaModal h3 span'); if(ttl) ttl.textContent='📨 روابط كلمة السر';
+  openModal('apBaModal');
+}
+async function apBulkResetRun(){
+  const trs=[...document.querySelectorAll('#apBaBody tbody tr')].filter(tr=>{
+    const c=tr.querySelector('.baChk'); return c&&c.checked; });
+  if(!trs.length){ toast('ماحددتش حد','err'); return; }
+  const btn=$('#apBaRun'); if(btn) btn.disabled=true;
+  let ok=0,fail=0;
+  for(const tr of trs){
+    const st=tr.querySelector('.baSt');
+    st.textContent='⏳ جارٍ...'; st.className='baSt gray-note';
+    try{
+      if(typeof window.apCloudSendReset!=='function') throw new Error('السحابة غير مهيأة');
+      await window.apCloudSendReset(tr.dataset.mail);
+      st.textContent='✔ اتبعت'; st.className='baSt pos'; ok++;
+    }catch(e){ st.textContent='⛔ '+((e&&e.message)||'فشل'); st.className='baSt warn-red'; fail++; }
+    await new Promise(r=>setTimeout(r,150));
+  }
+  if(btn) btn.disabled=false;
+  toast('اتبعت '+fmtN(ok)+' رابط'+(fail?(' · فشل '+fmtN(fail)):''), fail?'err':'ok');
+}
 /* v61.16: ارفع خرائط الصلاحيات ومساحات العملاء فورًا بعد أى تغيير */
 function apPushAccess(){
   try{ if(typeof window.apCloudSyncAccess==='function') window.apCloudSyncAccess(); }catch(e){}
@@ -5829,7 +6467,7 @@ function editUser(id){
   if(!isAdmin()){toast('للمدير فقط 🔒','err');return;}
   const perms=u.perms||[];
   const opts=[['dashStats','📊 أرقام لوحة التحكم']]
-    .concat(SCREENS.filter(([k])=>k!=='dashboard'&&k!=='settings'))
+    .concat(SCREENS.filter(([k])=>k!=='dashboard'&&k!=='settings'&&k!=='customers'))
     .map(([k,lb])=>`<label><input type="checkbox" value="${k}" ${perms.includes(k)?'checked':''}> ${lb}</label>`).join('');
   const html=`<div class="grid g2" style="margin-bottom:10px">
       <div class="form-row"><label>👤 اسم المستخدم</label><input id="euName" value="${esc(u.name)}"></div>
@@ -5985,6 +6623,13 @@ function syncHeaderBtns(){
   if(!window.__unameSeeded && CURRENT_USER && CURRENT_USER.admin && !AP_CLIENT){
     window.__unameSeeded=true;
     setTimeout(()=>{ try{ unameSeed(); }catch(e){} },4000);
+    setTimeout(()=>{ try{ apInvCollect(); }catch(e){} },6000);
+    setTimeout(async()=>{ try{
+      await apSignupLoad();
+      const n=await apSuRefresh();
+      if(n){ toast('📝 فيه '+fmtN(n)+' طلب تسجيل مستنى مراجعتك','err');
+             try{ if(currentScreen==='settings') renderSettings(); }catch(e){} }
+    }catch(e){} },7000);
   }
   const show = !!CURRENT_USER && !AP_CLIENT;
   const bb=$('#btnBackup'); if(bb) bb.style.display=show?'':'none';
@@ -7973,6 +8618,7 @@ function renderCustomerFile(saleId){
     <button class="btn ghost" onclick="openAttachModal({saleId:'${s.id}'})">📎 إضافة مرفقات</button>
     <button class="btn ghost" onclick="nav('attach','${s.id}')">🗂️ عرض المرفقات</button>
     <button class="btn ghost" onclick="printScreen()">🖨️ طباعة الملف</button>
+    <button class="btn gold" onclick="apInvGen('${s.id}')" title="كود تفعيل لمرة واحدة يسجّل به العميل بنفسه">🎟️ كود تفعيل</button>
     ${(function(){const n=apInviteCount(s);
       return '<span class="invWrap">'+
         '<button class="btn aqua" onclick="apInviteOpen(\''+s.id+'\')" title="إرسال دعوة للعميل على واتساب">✉️ INVITATION</button>'+
@@ -9425,6 +10071,7 @@ const AP_GUIDE={
   ['📣 شكاوى','اكتب شكواك أو مقترحك وابعته، وهنرد على رقمك المسجّل.'],
   ['🔔 الجرس','بيوريك الأقساط المتأخرة وأقرب قسط مستحق وأى دفعة جديدة اتسجّلت لك.'],
   ['⚙️ الإعدادات','غيّر كلمة سرك واسم المستخدم، فعّل الدخول بالبصمة على موبايلك، واتحكم فى موسيقى الخلفية.'],
+  ['🔐 الدخول بالبصمة','أول ما تفعّلها هيطلب كلمة سرك مرة واحدة ويحفظها مشفّرة على موبايلك ده وحده. بعدها بتلاقى زرار «دخول ببصمتك» فى شاشة الدخول. ولو غيّرت كلمة السر بتتحدّث لوحدها. وإلغاء البصمة بيمسح البيانات دى من جهازك فورًا.'],
   ['🆔 اسم المستخدم','تقدر تدخل التطبيق باسم المستخدم بدل البريد. حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة، وبيتكتب كابيتال. لو الاسم محجوز لحد تانى النظام هيقولك تختار غيره.']
  ]},
  partner:{t:'دليل الشريك',s:[
@@ -9435,17 +10082,19 @@ const AP_GUIDE={
   ['📄 كشف مفصّل','كل وحدة ونصيبك منها وما تم تحصيله.'],
   ['📈 التدفقات النقدية','نصيبك من الأقساط اللى لسه ما اتحصّلتش، مرسومة بالشهر. حدّد المدة بـ«من/إلى» أو اضغط «الكل»، واضغط على أى نقطة تشوف بنودها: تاريخ الاستحقاق والعمارة ورقم الوحدة ونصيبك.'],
   ['💸 الأرباح','دفعات الأرباح المصروفة لك والمردود من الودائع.'],
-  ['⚙️ الإعدادات','اسم المستخدم وكلمة السر والبصمة وموسيقى الخلفية.']
+  ['⚙️ الإعدادات','اسم المستخدم وكلمة السر والبصمة وموسيقى الخلفية.'],
+  ['🔐 الدخول بالبصمة','بتطلب كلمة سرك مرة واحدة وتحفظها مشفّرة على موبايلك، وبعدها تدخل ببصمتك من شاشة الدخول.']
  ]},
  staff:{t:'دليل الموظف',s:[
   ['🏠 الرئيسية','أرقام المشروع تظهر لك فقط لو عندك صلاحية «أرقام لوحة التحكم».'],
   ['الشاشات المتاحة','بتشوف الشاشات اللى المدير سمح لك بيها بس — أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
-  ['👥 قاعدة العملاء','ابحث بالاسم أو الهاتف أو رقم العقد. البحث بيتجاهل فروق الهمزة والتاء المربوطة وصيغة رقم الموبايل. وجنب كل عميل ☁️ لو دخل التطبيق، أو ✉️ وعليها عدد مرات إرسال الدعوة لو لسه مدخلش.'],
-  ['📄 ملف العميل','بياناته وأقساطه ودفعاته، وزرار ✉️ INVITATION بيبعتله دعوة التطبيق على الواتساب.'],
+  ['👥 بيانات العملاء','قاعدة العملاء وملفاتهم للمدير وحده ومش ظاهرة لأى موظف.'],
+  ['🏢 عرض وحدة','تشوف بيانات الوحدة ومساحتها وسعرها وحالتها.'],
   ['⚙️ الإعدادات','من أيقونة الإعدادات فى الرئيسية: كلمة سرك واسم المستخدم والبصمة والموسيقى.']
  ]},
  admin:{t:'دليل المدير',s:[
   ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
+  ['👥 صلاحيات الموظفين','قاعدة العملاء وملف العميل مقفولين على المدير وحده — مش بينفع تتمنح لموظف حتى بالخطأ.'],
   ['👥 المستخدمون','تضيف موظف أو عميل أو شريك. لو السحابة متصلة الحساب بيتعمل على Firebase تلقائيًا، و«📨 إرسال رابط» بيخلّى المستخدم يحط كلمة سره بنفسه.'],
   ['🔔 الإشعارات','مفتاح VAPID ورابط Apps Script. «🩺 فحص السحابة» بيوريك مين مسجّل جهازه، و«🔄 إعادة نشر» بتعيد رفع بيانات العملاء والشركاء.'],
   ['💾 النسخ','«نسخة احتياطية» ملف JSON، و«نسخة محمولة» ملف HTML بالبيانات جواه.'],
@@ -9454,6 +10103,10 @@ const AP_GUIDE={
   ['✏️ التعديل الجماعى','من «قاعدة العملاء» زرار ✏️ تعديل جنب عدد النتائج: بيفتح العملاء الظاهرين بالفلتر فى جدول واحد تعدّل فيه الاسم والتليفون والرقم القومى والإيميل وباقة التشطيب. رقم الوحدة للعرض فقط، والإيميل مقفول لمن له حساب مربوط. وقبل الحفظ بيوريك كشف بكل تغيير.'],
   ['✉️ عدّاد الدعوات','الرقم الأحمر على زرار INVITATION بيقول كام مرة اتفتحت الدعوة على الواتساب لهذا العميل، واضغط عليه تشوف تاريخ ووقت كل مرة ومين بعتها. النظام مش بيعرف لو ضغطت «إرسال» جوّه الواتساب نفسه.'],
   ['⚠️ وحدات مباعة بلا عميل','لو رقم «المباعة» أكبر من عدد العملاء، هتلاقى علامة حمرا على كارت المباعة بتوريك الوحدات اللى حالتها مباعة من غير عملية بيع، وترجّعها «متاحة» بضغطة.'],
+  ['👥 إنشاء حسابات جماعى','من «الإعدادات ← المستخدمون»: بيعرض كل عميل مالوش حساب باسم مستخدم مقترح من عمارته ووحدته وكلمة سر مولّدة. تراجع وتعدّل وتدوس إنشاء، وكل صف بيقولك اتعمل ولا لأ وليه.'],
+  ['📨 روابط كلمة السر','تبعت لمجموعة مستخدمين روابط يغيّروا بيها كلمة سرهم بنفسهم على بريدهم.'],
+  ['🎟️ كود التفعيل','من ملف العميل: زرار «كود تفعيل» بيولّد كود لمرة واحدة ورمز QR ورابط، تبعتهم على الواتساب. العميل يفتح الرابط ويكتب الكود ويختار اسم المستخدم وكلمة السر بنفسه. الكود صالح أسبوعين ولمرة واحدة، وحسابه بيتربط عندك أول ما تفتح النظام.'],
+  ['📝 التسجيل الذاتى','مفتاح فى «المستخدمون» بيفتح للعملاء مدخل «تسجيل جديد». الطلب بيوصلك وتراجعه وتختار الوحدة الصح بنفسك قبل الموافقة — ومحدش بيشوف أى بيانات قبل ما توافق. يُفضَّل تفضل مقفولة وتفتحها عند الحاجة بس.'],
   ['🆔 أسماء المستخدمين','اسم الحساب بقى خانة واحدة: USER NAME إنجليزى كابيتال، بيدخل بيه وبيظهر بيه. محجوز على السحابة فمحدش ياخد اسم حد تانى. ولو العميل أو الموظف غيّره من جهازه بيتحدّث عندك تلقائيًا. والعميل والشريك بيفضلوا شايفين اسمهم العربى من بيانات التعاقد.'],
   ['🔐 البصمة','تتفعّل لكل جهاز على حدة من شاشة الإعدادات.']
  ]}
@@ -9994,8 +10647,14 @@ function apUserSettings(){
     </div>
     <div class="usRow">
       <div><b>🔐 الدخول بالبصمة على هذا الجهاز</b>
-        <p class="gray-note">${canBio?'البصمة محفوظة على جهازك وحده ولا تُرسل لأى مكان.'
-                                   :'متاحة من الرابط الأونلاين (https) فقط.'}</p></div>
+        <p class="gray-note">${!canBio?'متاحة من الرابط الأونلاين (https) فقط.'
+          : (apIsClientSession()||(typeof AP_PARTNER!=='undefined'&&AP_PARTNER))
+            ? (bioOn
+                ? ((bioSecGet()||{}).mode==='prf'
+                    ? 'مفعّلة — بتدخل ببصمتك، وبيانات دخولك مشفّرة بمفتاح مابيطلعش إلا ببصمتك.'
+                    : '⚠️ مفعّلة — بس جهازك مابيدعمش التشفير بالبصمة، فبيانات دخولك متخزّنة مشفّرة على الجهاز نفسه. مين يفتح موبايلك ممكن يوصلها.')
+                : 'فعّلها عشان تدخل ببصمتك من غير ما تكتب بريدك وكلمة سرك كل مرة.')
+            : 'البصمة محفوظة على جهازك وحده ولا تُرسل لأى مكان.'}</p></div>
       ${canBio?apSwitchHTML('swBio', bioOn, 'apBioSwitch(!'+(bioOn?'true':'false')+')')
               :'<span class="gray-note">غير متاحة</span>'}
     </div>
@@ -10059,6 +10718,13 @@ async function apChangeMyPassword(){
       if(u.pass && pHash(o)!==u.pass){ toast('كلمة السر الحالية غير صحيحة','err'); return; }
       u.pass=pHash(a); u.pPlain=a; save();
     }
+    /* v61.37: لو البصمة مفعّلة، نحدّث كلمة السر المحفوظة وإلا هتفضل القديمة */
+    try{
+      if(apBioPortalLoginReady()){
+        const mail=apBioPortalEmail();
+        if(mail){ await apBioSavePass(mail,a); }
+      }
+    }catch(e){ toast('كلمة السر اتغيّرت، بس تعذر تحديث بصمة الجهاز — فعّلها تانى','err'); }
     toast('تم تغيير كلمة السر ✔','ok');
     ['usPwOld','usPwNew','usPwNew2'].forEach(id=>{ const e2=$('#'+id); if(e2) e2.value=''; });
   }catch(e){
@@ -14424,6 +15090,105 @@ function apSetAttUrl(key,url){
       return v ? String(v.mail || '') : '';
     } catch (e) { return null; }
   };
+  /* ===================================================================
+     v61.36 — أكواد الدعوة /invites
+     العقدة الواحدة: { unitId, unit, name, exp, at, used? }
+     القواعد تسمح بقراءة الكود بعينه فقط (لا سرد للقائمة)، وبكتابة
+     «used» مرة واحدة من الحساب الذى فعّله. المدير وحده يُنشئ ويمسح.
+     =================================================================== */
+  /* ===================================================================
+     v61.36 — التسجيل الذاتى (الطريقة الرابعة)
+     /pub/signup  : مفتاح يقرأه أى جهاز ليعرف هل التسجيل مفتوح.
+     /signups/<مفتاح البريد> : طلب تسجيل ينتظر موافقة المدير. العميل
+     لا يرى أى بيانات قبل الموافقة — الطلب مجرد إخطار لك.
+     =================================================================== */
+  window.apSignupFlag = async function () {
+    if (!rtdb) return null;
+    try { const sn = await rtdb.ref('pub/signup').get(); return sn.val() === true; }
+    catch (e) { return null; }
+  };
+  window.apSignupSetFlag = async function (on) {
+    if (!rtdb) return { err: 'السحابة غير مهيأة' };
+    if (!isCloudAdmin()) return { err: 'للمدير فقط' };
+    try { await rtdb.ref('pub/signup').set(!!on); return { ok: true }; }
+    catch (e) { return { err: (e && (e.code || e.message)) || 'تعذر الحفظ' }; }
+  };
+  window.apSignupSend = async function (mail, pass, rec) {
+    if (!rtdb || !auth) return { err: 'السحابة غير مهيأة' };
+    try { await auth.createUserWithEmailAndPassword(String(mail).trim(), pass); }
+    catch (e) {
+      if (e && e.code === 'auth/email-already-in-use') {
+        try { await auth.signInWithEmailAndPassword(String(mail).trim(), pass); }
+        catch (e2) { return { err: 'البريد ده له حساب بكلمة سر مختلفة' }; }
+      } else return { err: (e && e.message) || 'تعذر إنشاء الحساب' };
+    }
+    try {
+      const k = mailKey(String(mail).trim());
+      await rtdb.ref('signups/' + k).set(Object.assign({}, rec, {
+        mail: String(mail).trim().toLowerCase(), at: new Date().toISOString()
+      }));
+      return { ok: true };
+    } catch (e) { return { err: 'تعذر إرسال الطلب' }; }
+  };
+  window.apSignupsList = async function () {
+    if (!rtdb || !isCloudAdmin()) return null;
+    try {
+      const sn = await rtdb.ref('signups').get();
+      const v = sn.val() || {};
+      return Object.keys(v).map(k => ({ k: k, rec: v[k] }));
+    } catch (e) { return null; }
+  };
+  window.apSignupDrop = async function (k) {
+    if (!rtdb || !isCloudAdmin()) return false;
+    try { await rtdb.ref('signups/' + k).remove(); return true; } catch (e) { return false; }
+  };
+
+  window.apInvitePut = async function (code, rec) {
+    if (!rtdb) return { err: 'السحابة غير مهيأة' };
+    if (!isCloudAdmin()) return { err: 'للمدير فقط' };
+    try { await rtdb.ref('invites/' + code).set(rec); return { ok: true }; }
+    catch (e) { return { err: (e && (e.code || e.message)) || 'تعذر الحفظ' }; }
+  };
+  window.apInviteRedeem = async function (code, mail, uname, pass) {
+    if (!rtdb || !auth) return { err: 'السحابة غير مهيأة' };
+    let v = null;
+    try { const sn = await rtdb.ref('invites/' + code).get(); v = sn.val(); }
+    catch (e) { return { err: 'تعذر الوصول للسحابة' }; }
+    if (!v) return { err: 'الكود مش موجود' };
+    if (v.used) return { err: 'الكود ده اتستخدم قبل كده' };
+    if (v.exp && new Date(v.exp) < new Date()) return { err: 'الكود انتهت صلاحيته' };
+    /* إنشاء الحساب ثم الدخول به، فيصير له صلاحية كتابة اسمه و used */
+    try { await auth.createUserWithEmailAndPassword(String(mail).trim(), pass); }
+    catch (e) {
+      if (e && e.code === 'auth/email-already-in-use') {
+        try { await auth.signInWithEmailAndPassword(String(mail).trim(), pass); }
+        catch (e2) { return { err: 'البريد ده له حساب بكلمة سر مختلفة' }; }
+      } else return { err: (e && e.message) || 'تعذر إنشاء الحساب' };
+    }
+    try {
+      const r = await window.apUnameClaim(uname, String(mail).trim(), '');
+      if (!r || !r.ok) return { err: (r && r.err) || 'الاسم محجوز' };
+    } catch (e) { return { err: 'تعذر حجز الاسم' }; }
+    try {
+      await rtdb.ref('invites/' + code + '/used')
+        .set({ mail: String(mail).trim().toLowerCase(), uname: uname, at: new Date().toISOString() });
+    } catch (e) { return { err: 'تعذر تأكيد الكود' }; }
+    return { ok: true };
+  };
+  window.apInvitesPending = async function () {
+    if (!rtdb || !isCloudAdmin()) return null;
+    try {
+      const sn = await rtdb.ref('invites').get();
+      const v = sn.val() || {};
+      return Object.keys(v).filter(k => v[k] && v[k].used)
+                   .map(k => ({ code: k, rec: v[k] }));
+    } catch (e) { return null; }
+  };
+  window.apInviteDone = async function (code) {
+    if (!rtdb || !isCloudAdmin()) return false;
+    try { await rtdb.ref('invites/' + code).remove(); return true; } catch (e) { return false; }
+  };
+
   window.apUnamesAll = async function () {
     if (!rtdb) return null;
     try {
