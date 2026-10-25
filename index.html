@@ -4584,7 +4584,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.50';
+const APP_VER  = 'v61.51';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -6176,10 +6176,10 @@ function dailyCardHTML(){
       <button class="btn green" onclick="apDailySave2()">💾 حفظ ونشر</button>
       <button class="btn ghost" onclick="apDailyPull(1)">↻ تحديث الآن</button>
     </div>
-    <p class="gray-note" style="margin:9px 0 0">الطقس ومواقيت الصلاة بيشتغلوا تلقائيًا من غير أى إعداد —
-      المواقيت بطريقة <b>الهيئة المصرية العامة للمساحة</b>.
-      والدولار والذهب: اللى تكتبه هنا بيظهر مكتوب جنبه «رسمى»، ولو سبته فاضى
-      بيظهر الرقم التلقائى مكتوب جنبه مصدره.</p>
+    <p class="gray-note" style="margin:9px 0 0">كل حاجة هنا بتشتغل <b>تلقائيًا من غير أى إعداد</b> —
+      الطقس، والمواقيت بطريقة <b>الهيئة المصرية العامة للمساحة</b>، والدولار والذهب.
+      <br>الأرقام التلقائية <b>سعر سوق عالمى</b> مش سعر البنك المركزى ولا سعر الصاغة، وبيظهر
+      مصدرها مكتوب تحتها. فلو كتبت رقم هنا بإيدك هو اللى هيظهر، مكتوب جنبه «رسمى».</p>
     <div class="gray-note" style="margin-top:7px">المعروض دلوقتى:
       ${M.usd?'الدولار <b>'+M.usd.v.toFixed(2)+'</b> ('+esc(M.usd.s)+')':'الدولار — مفيش'} ·
       ${M.g21?'ذهب ٢١ <b>'+fmtN(M.g21.v)+'</b> ('+esc(M.g21.s)+')':'الذهب — مفيش'}</div>
@@ -11774,8 +11774,9 @@ function apDailySave(){
 }
 let AP_DAILY_LAST=0;
 function apDailySig(){
-  const w=AP_DAILY.wx||{}, m=AP_DAILY.money||{};
-  return [AP_DAILY.prayDate,AP_DAILY.hijri,w.t,w.code,w.hi,w.lo,m.usd,m.g21,m.g24].join('|');
+  const w=AP_DAILY.wx||{}, m=AP_DAILY.money||{}, a=AP_DAILY.auto||{};
+  return [AP_DAILY.prayDate,AP_DAILY.hijri,w.t,w.code,w.hi,w.lo,
+          m.usd,m.g21,m.g24,a.usd,a.g21,a.g24].join('|');
 }
 async function apDailyPull(force){
   if(AP_DAILY_BUSY) return;
@@ -11815,7 +11816,12 @@ async function apDailyPull(force){
         }
       }).catch(()=>{}));
   }
-  /* الدولار والذهب — من السحابة (سكريبت يومى) */
+  /* الدولار والذهب — مجانى بلا مفتاح ولا سكريبت، زى الطقس بالظبط.
+     المصدر ملف JSON ثابت على CDN بيتحدّث يوميًا. */
+  if(force||!AP_DAILY.auto||(Date.now()-(AP_DAILY.autoAt||0))>21600000){
+    jobs.push(apFxPull().catch(()=>{}));
+  }
+  /* ولو حابب تنشر أرقام من عندك مركزيًا، pub/daily بتكسب على التلقائى */
   if(typeof window.apDailyGet==='function'){
     jobs.push(window.apDailyGet().then(m=>{ if(m&&typeof m==='object') AP_DAILY.money=m; }).catch(()=>{}));
   }
@@ -11853,15 +11859,47 @@ function apLeftTxt(m){
   if(!mm) return 'فاضل '+fmtN(h)+' ساعة';
   return 'فاضل '+fmtN(h)+' س و'+fmtN(mm)+' د';
 }
+/* الأونصة بالجرام — لتحويل سعر الذهب العالمى لسعر الجرام */
+const AP_OZ=31.1034768;
+async function apFxPull(){
+  const BASE=[
+    'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/',
+    'https://latest.currency-api.pages.dev/v1/currencies/'
+  ];
+  for(const b of BASE){
+    try{
+      const [u,x]=await Promise.all([
+        fetch(b+'usd.json',{cache:'no-store'}).then(r=>r.json()),
+        fetch(b+'xau.json',{cache:'no-store'}).then(r=>r.json())
+      ]);
+      const usd=Number(u&&u.usd&&u.usd.egp)||0;
+      const ozE=Number(x&&x.xau&&x.xau.egp)||0;
+      if(!(usd>5&&usd<500)) continue;                 /* رقم غير معقول — جرّب المصدر التانى */
+      const g24=ozE>0?Math.round(ozE/AP_OZ):0;
+      AP_DAILY.auto={usd:Math.round(usd*100)/100,
+        g24:(g24>100&&g24<100000)?g24:0,
+        g21:(g24>100&&g24<100000)?Math.round(g24*21/24):0,
+        date:(u&&u.date)||''};
+      AP_DAILY.autoAt=Date.now();
+      return true;
+    }catch(e){ /* جرّب اللى بعده */ }
+  }
+  return false;
+}
 function apMoneyNow(){
-  const c=apDailyCfg(), m=AP_DAILY.money||{};
-  const usd = c.usd>0 ? {v:c.usd, s:'رسمى — البنك المركزى'}
-            : (Number(m.usd)>0 ? {v:Number(m.usd), s:m.usdSrc||'تقريبى — سعر السوق'} : null);
-  const g21 = c.g21>0 ? {v:c.g21, s:'سعر الصاغة'}
-            : (Number(m.g21)>0 ? {v:Number(m.g21), s:'البورصة العالمية'} : null);
-  const g24 = c.g24>0 ? {v:c.g24, s:'سعر الصاغة'}
-            : (Number(m.g24)>0 ? {v:Number(m.g24), s:'البورصة العالمية'} : null);
-  return {usd,g21,g24,at:m.at||''};
+  /* الأولوية: اللى تكتبه بإيدك ← اللى تنشره مركزيًا ← التلقائى */
+  const c=apDailyCfg(), m=AP_DAILY.money||{}, a=AP_DAILY.auto||{};
+  const pick=(mine,mineLbl,pub,auto,autoLbl)=>
+      mine>0 ? {v:mine, s:mineLbl}
+    : Number(pub)>0 ? {v:Number(pub), s:'رسمى'}
+    : Number(auto)>0 ? {v:Number(auto), s:autoLbl}
+    : null;
+  return {
+    usd: pick(c.usd,'رسمى — البنك المركزى', m.usd, a.usd, 'تقريبى — سعر السوق'),
+    g21: pick(c.g21,'سعر الصاغة',           m.g21, a.g21, 'محسوب من البورصة العالمية'),
+    g24: pick(c.g24,'سعر الصاغة',           m.g24, a.g24, 'محسوب من البورصة العالمية'),
+    at:  m.at||a.date||''
+  };
 }
 function apDailyHTML(){
   const c=apDailyCfg(); if(!c.on) return '';
