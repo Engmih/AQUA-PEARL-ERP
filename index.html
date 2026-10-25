@@ -1322,6 +1322,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <div class="screen" id="scr-collected"></div>
       <div class="screen" id="scr-sold"></div>
       <div class="screen" id="scr-returnedScr"></div>
+      <div class="screen" id="scr-wallets"></div>
       <div class="screen" id="scr-cashflow"></div>
       <div class="screen" id="scr-partners"></div>
       <div class="screen" id="scr-expenses"></div>
@@ -4352,7 +4353,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.43';
+const APP_VER  = 'v61.44';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4673,7 +4674,7 @@ function adminGuard(title,html,okLabel,cb){
 const SCREENS=[
  ['dashboard','🏠 الرئيسية'],['unitView','🏢 عرض وحدة'],['sales','📝 تسجيل بيع'],['customers','👥 قاعدة العملاء'],
  ['due','📅 الأقساط المستحقة'],['collected','💰 الأقساط المحصلة'],['sold','🏷️ الوحدات المباعة'],['returnedScr','↩️ الوحدات المرتجعة'],
- ['cashflow','📈 التدفقات النقدية'],['partners','🤝 شركاء وبنوك'],['expenses','🧾 مصروفات عامة'],['zakat','🕌 الزكاة'],['reports','📊 التقارير'],['attach','📎 المرفقات'],['importScr','⬆️ استيراد البيانات'],['settings','⚙️ الإعدادات']
+ ['wallets','💰 رصيد العملاء'],['cashflow','📈 التدفقات النقدية'],['partners','🤝 شركاء وبنوك'],['expenses','🧾 مصروفات عامة'],['zakat','🕌 الزكاة'],['reports','📊 التقارير'],['attach','📎 المرفقات'],['importScr','⬆️ استيراد البيانات'],['settings','⚙️ الإعدادات']
 ];
 const SESSION_KEY='aquaPearlERP_session';
 let CURRENT_USER=null;
@@ -4698,7 +4699,7 @@ function allowed(id){
   if(id==='settings')return false;               // الإعدادات للمدير فقط
   /* v61.37: قاعدة العملاء وملف العميل للمدير وحده — الموظف لا يراهما إطلاقًا،
      ولا حتى بالضغط على عميل من شاشة الأقساط أو المحصّل. */
-  if(id==='customers'||id==='customerFile')return false;
+  if(id==='customers'||id==='customerFile'||id==='wallets')return false;
   if(id==='dashboard')return true;
   return (CURRENT_USER.perms||[]).includes(id);
 }
@@ -5310,7 +5311,7 @@ function nav(id,arg){
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===id));
   const r={dashboard:renderDashboard,unitView:()=>renderUnitView(arg),availEdit:renderAvailEdit,sales:()=>renderSales(arg),customers:renderCustomers,
     customerFile:()=>renderCustomerFile(arg),due:renderDue,collected:renderCollected,sold:renderSold,returnedScr:renderReturned,
-    reports:renderReports,attach:()=>renderAttachScreen(arg),importScr:renderImport,settings:renderSettings,partners:()=>renderPartnersPortal(arg),expenses:()=>renderExpenses(arg),zakat:renderZakat,cashflow:renderCashflow}[id];
+    wallets:renderWallets,reports:renderReports,attach:()=>renderAttachScreen(arg),importScr:renderImport,settings:renderSettings,partners:()=>renderPartnersPortal(arg),expenses:()=>renderExpenses(arg),zakat:renderZakat,cashflow:renderCashflow}[id];
   r&&r();
   const fab=$('#shareFab');
   if(fab)fab.style.display=['dashboard','unitView','sales','customers','customerFile','due','collected','sold','returnedScr','reports','attach','expenses'].includes(id)?'flex':'none';
@@ -10157,6 +10158,130 @@ function apWalletHTML(sale){
       <div class="walLog"><h4>سجل المصروفات</h4>${rows(w.spends,'spend')}</div>
     </div>`;
 }
+/* ===================================================================
+   v61.44 — شاشة «رصيد العملاء» (للمدير وحده)
+   جدول بأرصدة كل العملاء، وسجل موحّد بكل حركات الشحن والصرف.
+   أرصدة المحفظة منفصلة تمامًا عن حسابات الأقساط: لا saleRemaining
+   ولا collectedOf ولا customerPosition ولا bonusPenaltyNet ولا أرقام
+   لوحة التحكم ولا حسابات الشركاء تقرأ المحفظة إطلاقًا.
+   =================================================================== */
+function apWalletRows(){
+  const out=[];
+  (DB.sales||[]).forEach(s=>{
+    const w=apWallet(s);
+    const u=unitById(s.unitId)||{};
+    const tin=w.topups.reduce((a,r)=>a+(Number(r.amount)||0),0);
+    const tout=w.spends.reduce((a,r)=>a+(Number(r.amount)||0),0);
+    out.push({sid:s.id, name:(s.customer&&s.customer.name)||'',
+      b:u.building||'', unit:u.unitNo||'', bal:w.balance,
+      tin:tin, tout:tout, n:w.topups.length+w.spends.length});
+  });
+  return out;
+}
+function apWalletLog(){
+  const out=[];
+  (DB.sales||[]).forEach(s=>{
+    const w=apWallet(s);
+    const u=unitById(s.unitId)||{};
+    const base={sid:s.id,name:(s.customer&&s.customer.name)||'',b:u.building||'',unit:u.unitNo||''};
+    w.topups.forEach(r=>out.push(Object.assign({kind:'in'},base,r)));
+    w.spends.forEach(r=>out.push(Object.assign({kind:'out'},base,r)));
+  });
+  out.sort((a,b)=>String(a.date)<String(b.date)?1:-1);
+  return out;
+}
+function renderWallets(){
+  const rows=apWalletRows();
+  const log=apWalletLog();
+  const tb=rows.reduce((a,r)=>a+r.bal,0);
+  const ti=rows.reduce((a,r)=>a+r.tin,0);
+  const to=rows.reduce((a,r)=>a+r.tout,0);
+  const withBal=rows.filter(r=>r.bal>0).length;
+  $('#scr-wallets').innerHTML=`
+  <h2 class="screen-title">رصيد العملاء</h2>
+  <div class="toolbar no-print">
+    <input id="walSearch" placeholder="🔍 بحث بالاسم / الوحدة / العمارة" style="min-width:250px">
+    <span class="gray-note" id="walCount"></span>
+    <button class="btn gold" onclick="apTuReview()">📥 طلبات الشحن</button>
+    <button class="btn ghost" style="margin-inline-start:auto" onclick="printScreen()">🖨️ طباعة</button>
+  </div>
+  <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">
+    <div class="stat"><span class="ic">💰</span><div><div class="tt">إجمالى أرصدة العملاء</div>
+      <div class="nm">${fmtM(tb)}</div></div></div>
+    <div class="stat green"><span class="ic">⬆️</span><div><div class="tt">إجمالى الشحن</div>
+      <div class="nm">${fmtM(ti)}</div></div></div>
+    <div class="stat red"><span class="ic">⬇️</span><div><div class="tt">إجمالى المصروف</div>
+      <div class="nm">${fmtM(to)}</div></div></div>
+    <div class="stat gold"><span class="ic">👥</span><div><div class="tt">عملاء لهم رصيد</div>
+      <div class="nm">${fmtN(withBal)}</div></div></div>
+  </div>
+  <p class="gray-note" style="margin:-4px 0 12px">أرصدة المحفظة للخدمات فقط — مالهاش أى علاقة بأقساط الوحدات،
+    ومش داخلة فى المحصل ولا المتبقى ولا حسابات الشركاء ولا الزكاة.</p>
+  <div class="card"><h3>💰 أرصدة العملاء</h3>
+  <div class="tbl-wrap"><table class="tbl" id="walTbl"><thead><tr>
+    <th>العميل</th><th>العمارة</th><th>الوحدة</th><th>الرصيد الحالى</th>
+    <th>إجمالى الشحن</th><th>إجمالى المصروف</th><th class="no-print">سجل الدفع</th>
+  </tr></thead><tbody>
+  ${rows.map(r=>`<tr>
+    <td data-label="العميل"><b>${esc(r.name)}</b></td>
+    <td data-label="العمارة">${esc(r.b||'—')}</td>
+    <td data-label="الوحدة">${esc(r.unit||'—')}</td>
+    <td data-label="الرصيد الحالى" class="${r.bal>0?'pos':''}"><b>${fmtM(r.bal)}</b></td>
+    <td data-label="إجمالى الشحن">${fmtM(r.tin)}</td>
+    <td data-label="إجمالى المصروف">${fmtM(r.tout)}</td>
+    <td data-label="سجل الدفع" class="no-print">
+      <button class="btn sm ghost" onclick="apWalOne('${r.sid}')">📜 السجل${r.n?' ('+fmtN(r.n)+')':''}</button></td>
+  </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">لا عملاء</td></tr>'}
+  ${rows.length?`<tr style="background:#FBF3D9"><td colspan="3"><b>الإجمالي</b></td>
+    <td><b>${fmtM(tb)}</b></td><td><b>${fmtM(ti)}</b></td><td><b>${fmtM(to)}</b></td><td class="no-print"></td></tr>`:''}
+  </tbody></table></div></div>
+  <div class="card"><h3>📜 سجل المدفوعات</h3>
+  ${log.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr>
+    <th>التاريخ</th><th>العميل</th><th>الوحدة</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th>بواسطة</th>
+  </tr></thead><tbody>
+  ${log.slice(0,300).map(r=>`<tr>
+    <td data-label="التاريخ">${esc(fmtD(r.date))}</td>
+    <td data-label="العميل">${esc(r.name)}</td>
+    <td data-label="الوحدة">${esc((r.b?r.b+'-':'')+(r.unit||''))}</td>
+    <td data-label="النوع"><span class="badge ${r.kind==='in'?'av':'ret'}">${r.kind==='in'?'شحن':'صرف'}</span></td>
+    <td data-label="البيان">${esc(r.note||'—')}</td>
+    <td data-label="المبلغ" class="${r.kind==='in'?'pos':'warn-red'}"><b>${fmtM(Number(r.amount)||0)}</b></td>
+    <td data-label="بواسطة">${esc(r.by||'—')}</td>
+  </tr>`).join('')}
+  </tbody></table></div>${log.length>300?'<p class="gray-note">معروض أحدث ٣٠٠ حركة من '+fmtN(log.length)+'.</p>':''}`
+   :'<p class="gray-note">لسه مفيش أى حركات شحن أو صرف.</p>'}</div>`;
+  const si=$('#walSearch'); if(si) si.addEventListener('input',walFilter);
+  walFilter();
+}
+function walFilter(){
+  const raw=(($('#walSearch')&&$('#walSearch').value)||'').trim();
+  const q=apNorm(raw);
+  let n=0;
+  $$('#walTbl tbody tr').forEach(tr=>{
+    if(tr.children.length<7){ return; }
+    const src=[0,1,2].map(i=>tr.children[i]?tr.children[i].textContent:'').join(' ');
+    const ok=!q||apNorm(src).includes(q);
+    tr.style.display=ok?'':'none'; if(ok)n++;
+  });
+  const c=$('#walCount'); if(c) c.textContent='عدد النتائج: '+fmtN(n);
+}
+function apWalOne(sid){
+  const s=saleById(sid); if(!s) return;
+  const w=apWallet(s);
+  const u=unitById(s.unitId)||{};
+  const tbl=(list,kind)=> list.length
+    ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th><th>بواسطة</th></tr></thead><tbody>'+
+      list.map(r=>'<tr><td>'+esc(fmtD(r.date))+'</td><td>'+esc(r.note||'—')+'</td><td class="'+
+        (kind==='in'?'pos':'warn-red')+'"><b>'+fmtM(Number(r.amount)||0)+'</b></td><td>'+esc(r.by||'—')+'</td></tr>').join('')+
+      '</tbody></table></div>'
+    : '<p class="gray-note">لا حركات.</p>';
+  confirmBox('📜 سجل الدفع — '+(s.customer&&s.customer.name||''),
+    '<p class="gray-note" style="margin:0 0 8px">الوحدة '+esc((u.building||'')+'-'+(u.unitNo||''))+
+    ' · الرصيد الحالى <b>'+fmtM(w.balance)+'</b></p>'+
+    '<div class="apBulkDiff"><h4 style="margin:6px 0 5px;font-size:13.5px">⬆️ الشحن</h4>'+tbl(w.topups,'in')+
+    '<h4 style="margin:12px 0 5px;font-size:13.5px">⬇️ المصروفات</h4>'+tbl(w.spends,'out')+'</div>',
+    'تمام',function(){});
+}
 /* ---- جهة المدير: مراجعة طلبات الشحن ---- */
 let AP_TU_PEND=[];
 async function apTuRefresh(){
@@ -10433,6 +10558,7 @@ const AP_GUIDE={
   ['✏️ التعديل الجماعى','من «قاعدة العملاء» زرار ✏️ تعديل جنب عدد النتائج: بيفتح العملاء الظاهرين بالفلتر فى جدول واحد تعدّل فيه الاسم والتليفون والرقم القومى والإيميل وباقة التشطيب. رقم الوحدة للعرض فقط، والإيميل مقفول لمن له حساب مربوط. وقبل الحفظ بيوريك كشف بكل تغيير.'],
   ['✉️ عدّاد الدعوات','الرقم الأحمر على زرار INVITATION بيقول كام مرة اتفتحت الدعوة على الواتساب لهذا العميل، واضغط عليه تشوف تاريخ ووقت كل مرة ومين بعتها. النظام مش بيعرف لو ضغطت «إرسال» جوّه الواتساب نفسه.'],
   ['⚠️ وحدات مباعة بلا عميل','لو رقم «المباعة» أكبر من عدد العملاء، هتلاقى علامة حمرا على كارت المباعة بتوريك الوحدات اللى حالتها مباعة من غير عملية بيع، وترجّعها «متاحة» بضغطة.'],
+  ['💰 رصيد العملاء','تاب مستقل فيه أرصدة كل العملاء وسجل موحّد بكل حركات الشحن والصرف، وبحث بالاسم أو الوحدة، وسجل مستقل لكل عميل. الأرصدة دى للخدمات فقط ومالهاش أى علاقة بأقساط الوحدات — مش داخلة فى المحصل ولا المتبقى ولا حسابات الشركاء ولا الزكاة.'],
   ['💰 شحن رصيد العملاء','من الإعدادات ← «شحن رصيد العملاء — إنستاباى»: حطّ عنوان إنستاباى اللى هتستقبل عليه. وزرار «📥 طلبات الشحن» بيوريك طلبات العملاء بالمبلغ ورقم العملية وصورة التحويل. راجع التحويل على حسابك الأول — النظام مابيشوفش حسابك — وبعدين وافق فيزيد الرصيد ويتسجّل فى كشفه.'],
   ['👥 إنشاء حسابات جماعى','من «الإعدادات ← المستخدمون»: بيعرض كل عميل مالوش حساب باسم مستخدم مقترح من عمارته ووحدته وكلمة سر مولّدة. تراجع وتعدّل وتدوس إنشاء، وكل صف بيقولك اتعمل ولا لأ وليه.'],
   ['📨 روابط كلمة السر','تبعت لمجموعة مستخدمين روابط يغيّروا بيها كلمة سرهم بنفسهم على بريدهم.'],
