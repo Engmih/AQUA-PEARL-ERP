@@ -257,6 +257,57 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .tuBadge{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;
   margin-inline-start:6px;border-radius:10px;background:#C62828;color:#fff;
   font-size:11px;font-weight:800;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.55)}
+
+/* ===================================================================
+   v61.46 — التلات نقط ⋮ على شريط الفيديو، ولوحة الخدمات، وفيد الأخبار
+   =================================================================== */
+.apVid .apVidCap.apCapRow{display:flex;align-items:center;gap:10px}
+.apCapRow .capTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.apVidDots{flex:0 0 auto;width:36px;height:36px;border-radius:50%;cursor:pointer;
+  border:1px solid rgba(255,255,255,.5);background:rgba(9,26,43,.45);color:#fff;
+  font-size:20px;line-height:1;display:grid;place-items:center;font-family:inherit;
+  padding:0;transition:.15s;-webkit-tap-highlight-color:transparent}
+.apVidDots:hover,.apVidDots:focus{background:rgba(9,26,43,.8);border-color:#fff;outline:none}
+.apVidDots.pulse{animation:apDotsPulse 1.5s ease-out 3}
+@keyframes apDotsPulse{
+  0%{box-shadow:0 0 0 0 rgba(255,255,255,.75)}
+  70%{box-shadow:0 0 0 13px rgba(255,255,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+#apSvcModal{align-items:flex-start;justify-content:flex-start;padding:0;background:rgba(9,26,43,.3)}
+.apSvcPanel{position:fixed;top:70px;inset-inline-start:12px;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(9,26,43,.32);
+  padding:6px;width:min(300px,calc(100vw - 24px));max-height:62vh;
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.apSvcPanel .svcRow{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;
+  padding:9px 8px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:.93rem;
+  color:var(--navy2);text-align:start}
+.apSvcPanel .svcRow:hover{background:#f1f6fa}
+.apSvcPanel .svcRow+.svcRow{border-top:1px solid #f1f5f9}
+.apSvcPanel .svcRow .svcIc{width:36px;height:36px;border-radius:11px;flex:0 0 auto}
+.apSvcPanel .svcRow .svcIc svg{width:23px;height:23px}
+.apSvcPanel .svcRow b{flex:1;font-weight:600;min-width:0}
+.apSvcPanel .svcRow::after{content:'‹';color:var(--muted);font-size:1.25rem;line-height:1;opacity:.5;flex:0 0 auto}
+
+.apFeed{margin-top:12px;display:flex;flex-direction:column;gap:11px}
+.apPost{display:block;width:100%;padding:0;text-align:start;font-family:inherit;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  box-shadow:0 1px 3px rgba(18,43,69,.05);transition:.15s}
+.apPost:hover{box-shadow:0 7px 20px rgba(11,42,74,.11)}
+.apPost img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;background:#eef3f7}
+.apPost .bd{padding:11px 13px 13px}
+.apPost .hd{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.apPost h4{margin:0;font-size:1rem;color:var(--navy2);font-weight:700;line-height:1.4}
+.apPost p{margin:5px 0 0;color:var(--muted);font-size:.88rem;line-height:1.65;white-space:pre-wrap;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.apPost .meta{margin-top:8px;font-size:.78rem;color:var(--muted)}
+.npTag{font-size:.72rem;font-weight:700;border-radius:999px;padding:2px 9px;line-height:1.75}
+.npTag.news{background:#e6f2f7;color:#13708a}
+.npTag.offer{background:#fdf0dc;color:#8f6310}
+.npTag.alert{background:#fde8e8;color:#b02222}
+.npNew{background:#C62828;color:#fff;font-size:.69rem;font-weight:800;border-radius:999px;padding:2px 9px;line-height:1.75}
+.apFeedEnd{text-align:center;color:var(--muted);font-size:.82rem;padding:9px 0 2px}
+.apNwPrev{max-width:430px}
 .svcEmpty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 10px;
   color:var(--muted);font-size:.84rem;text-align:center;
   border:1px dashed #cfdfea;border-radius:11px;background:#fbfdff}
@@ -1343,6 +1394,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <div class="screen" id="scr-sold"></div>
       <div class="screen" id="scr-returnedScr"></div>
       <div class="screen" id="scr-wallets"></div>
+      <div class="screen" id="scr-news"></div>
       <div class="screen" id="scr-cashflow"></div>
       <div class="screen" id="scr-partners"></div>
       <div class="screen" id="scr-expenses"></div>
@@ -1433,6 +1485,39 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <button class="btn green" onclick="savePayment(false)">💾 حفظ الدفعة</button>
       <button class="btn aqua" onclick="savePayment(true)">🖨️ حفظ وطباعة إيصال</button>
       <button class="btn ghost" onclick="closeModal('payModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- v61.46: لوحة الخدمات اللى بتفتح من التلات نقط ⋮ فوق الفيديو -->
+<div class="modal-back" id="apSvcModal" onclick="if(event.target===this)apSvcClose()">
+  <div class="apSvcPanel" id="apSvcPanel"></div>
+</div>
+
+<!-- v61.46: إضافة/تعديل خبر أو عرض (للمدير) -->
+<div class="modal-back" id="apNwModal">
+  <div class="modal">
+    <h3><span id="apNwTitle">خبر جديد</span><button class="x" onclick="closeModal('apNwModal')">✕</button></h3>
+    <div class="grid g2">
+      <div class="form-row" style="grid-column:1/-1"><label>📰 العنوان *</label>
+        <input id="apNwTtl" maxlength="90" placeholder="مثال: بدء تسليم عمارة B11"></div>
+      <div class="form-row" style="grid-column:1/-1"><label>📝 النص</label>
+        <textarea id="apNwBody" rows="4" maxlength="1200" placeholder="تفاصيل الخبر..."></textarea></div>
+      <div class="form-row"><label>🏷️ النوع</label>
+        <select id="apNwType" onchange="apNwTypeSync()">
+          <option value="news">خبر</option><option value="offer">عرض</option><option value="alert">تنبيه</option>
+        </select></div>
+      <div class="form-row"><label>📅 يبدأ الظهور من</label><input type="date" id="apNwStart"></div>
+      <div class="form-row" id="apNwEndRow" style="display:none"><label>⏳ ينتهى العرض فى</label>
+        <input type="date" id="apNwEnd"></div>
+      <div class="form-row"><label>📌 تثبيت فوق الفيد</label>
+        <select id="apNwPin"><option value="">لا</option><option value="1">نعم</option></select></div>
+      <div id="apNwAttHost" style="grid-column:1/-1"></div>
+      <div id="apNwImgNow" style="grid-column:1/-1"></div>
+    </div>
+    <div class="actions">
+      <button class="btn green" onclick="apNwSave()">💾 حفظ ونشر</button>
+      <button class="btn ghost" onclick="closeModal('apNwModal')">إلغاء</button>
     </div>
   </div>
 </div>
@@ -4395,7 +4480,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.45';
+const APP_VER  = 'v61.46';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4715,8 +4800,13 @@ function adminGuard(title,html,okLabel,cb){
 /* ---------- Router & permissions ---------- */
 const SCREENS=[
  ['dashboard','🏠 الرئيسية'],['unitView','🏢 عرض وحدة'],['sales','📝 تسجيل بيع'],['customers','👥 قاعدة العملاء'],
- ['due','📅 الأقساط المستحقة'],['collected','💰 الأقساط المحصلة'],['sold','🏷️ الوحدات المباعة'],['returnedScr','↩️ الوحدات المرتجعة'],
- ['wallets','💰 رصيد العملاء'],['cashflow','📈 التدفقات النقدية'],['partners','🤝 شركاء وبنوك'],['expenses','🧾 مصروفات عامة'],['zakat','🕌 الزكاة'],['reports','📊 التقارير'],['attach','📎 المرفقات'],['importScr','⬆️ استيراد البيانات'],['settings','⚙️ الإعدادات']
+ ['due','📅 الأقساط المستحقة'],['collected','💰 الأقساط المحصلة'],
+ /* v61.46: الاتنين دول اتشالوا من الشريط العلوى عشان زحمته — وشاشاتهم زى ما هى،
+    والدخول عليهم من مربعى «المباعة» و«المرتجعة» فى الرئيسية. العلم الثالث = مخفى من التابات. */
+ ['sold','🏷️ الوحدات المباعة',1],['returnedScr','↩️ الوحدات المرتجعة',1],
+ ['wallets','💰 رصيد العملاء'],['news','📢 الأخبار والعروض'],['cashflow','📈 التدفقات النقدية'],['partners','🤝 شركاء وبنوك'],['expenses','🧾 مصروفات عامة'],['zakat','🕌 الزكاة'],['reports','📊 التقارير'],['attach','📎 المرفقات'],
+ /* v61.46: الاستيراد اتشال من الشريط ومدخله بقى جوّه الإعدادات — الشاشة زى ما هى */
+ ['importScr','⬆️ استيراد البيانات',1],['settings','⚙️ الإعدادات']
 ];
 const SESSION_KEY='aquaPearlERP_session';
 let CURRENT_USER=null;
@@ -4741,7 +4831,7 @@ function allowed(id){
   if(id==='settings')return false;               // الإعدادات للمدير فقط
   /* v61.37: قاعدة العملاء وملف العميل للمدير وحده — الموظف لا يراهما إطلاقًا،
      ولا حتى بالضغط على عميل من شاشة الأقساط أو المحصّل. */
-  if(id==='customers'||id==='customerFile'||id==='wallets')return false;
+  if(id==='customers'||id==='customerFile'||id==='wallets'||id==='news')return false;
   if(id==='dashboard')return true;
   return (CURRENT_USER.perms||[]).includes(id);
 }
@@ -4754,7 +4844,7 @@ function buildTabs(){
     return;
   }
   tabs.style.display='';
-  tabs.innerHTML=SCREENS.filter(([id])=>allowed(id)).map(([id,lb])=>`<button data-s="${id}" onclick="nav('${id}')">${lb}</button>`).join('');
+  tabs.innerHTML=SCREENS.filter(([id,lb,hid])=>!hid&&allowed(id)).map(([id,lb])=>`<button data-s="${id}" onclick="nav('${id}')">${lb}</button>`).join('');
 }
 function showLogin(){
   CURRENT_USER=null;sessionStorage.removeItem(SESSION_KEY);localStorage.removeItem(SESSION_KEY);
@@ -5353,7 +5443,7 @@ function nav(id,arg){
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===id));
   const r={dashboard:renderDashboard,unitView:()=>renderUnitView(arg),availEdit:renderAvailEdit,sales:()=>renderSales(arg),customers:renderCustomers,
     customerFile:()=>renderCustomerFile(arg),due:renderDue,collected:renderCollected,sold:renderSold,returnedScr:renderReturned,
-    wallets:renderWallets,reports:renderReports,attach:()=>renderAttachScreen(arg),importScr:renderImport,settings:renderSettings,partners:()=>renderPartnersPortal(arg),expenses:()=>renderExpenses(arg),zakat:renderZakat,cashflow:renderCashflow}[id];
+    wallets:renderWallets,news:renderNewsScr,reports:renderReports,attach:()=>renderAttachScreen(arg),importScr:renderImport,settings:renderSettings,partners:()=>renderPartnersPortal(arg),expenses:()=>renderExpenses(arg),zakat:renderZakat,cashflow:renderCashflow}[id];
   r&&r();
   const fab=$('#shareFab');
   if(fab)fab.style.display=['dashboard','unitView','sales','customers','customerFile','due','collected','sold','returnedScr','reports','attach','expenses'].includes(id)?'flex':'none';
@@ -5749,6 +5839,14 @@ function renderSettings(){
   ${instapayCardHTML()}
   ${musicCardHTML()}
   ${bioCardHTML()}
+  <!-- v61.46: مدخل الاستيراد بعد ما اتشال من الشريط العلوى — الشاشة نفسها زى ما هى -->
+  <div class="card"><h3>⬆️ استيراد البيانات</h3>
+    <div class="toolbar no-print">
+      <button class="btn ghost" onclick="nav('importScr')">⬆️ فتح شاشة الاستيراد</button>
+      <span class="gray-note">تحميل وحدات أو عملاء من ملف إكسل. اتشالت من الشريط العلوى عشان
+        مش بتتستعمل كل يوم، ومكانها هنا.</span>
+    </div>
+  </div>
   <div class="card"><h3>👥 المستخدمون والصلاحيات</h3>
     <div class="toolbar no-print" style="margin-bottom:10px">
       <button class="btn gold" onclick="apBulkAccOpen()" title="إنشاء حسابات لكل العملاء اللى لسه مالهمش حساب دفعة واحدة">👥 إنشاء حسابات جماعى</button>
@@ -5820,7 +5918,7 @@ function renderSettings(){
     <label class="gray-note" style="display:block;margin-bottom:6px">البوابات المسموحة للمستخدم الجديد (الرئيسية متاحة دائمًا — الإعدادات للمدير فقط):</label>
     <div class="perm-list" id="nuPerms">
       <label><input type="checkbox" value="dashStats"> 📊 أرقام لوحة التحكم</label>
-      ${SCREENS.filter(([id])=>id!=='dashboard'&&id!=='settings'&&id!=='customers').map(([id,lb])=>`<label><input type="checkbox" value="${id}"> ${lb}</label>`).join('')}
+      ${SCREENS.filter(([id])=>!['dashboard','settings','customers','wallets','news'].includes(id)).map(([id,lb])=>`<label><input type="checkbox" value="${id}"> ${lb}</label>`).join('')}
       <span class="gray-note" style="flex:1 0 100%">👥 قاعدة العملاء للمدير وحده — مش بتتمنح لأى موظف.</span>
     </div></div>
     <h3 style="margin-top:14px">🔑 تغيير كلمة سر المدير</h3>
@@ -6644,7 +6742,7 @@ function editUser(id){
   if(!isAdmin()){toast('للمدير فقط 🔒','err');return;}
   const perms=u.perms||[];
   const opts=[['dashStats','📊 أرقام لوحة التحكم']]
-    .concat(SCREENS.filter(([k])=>k!=='dashboard'&&k!=='settings'&&k!=='customers'))
+    .concat(SCREENS.filter(([k])=>!['dashboard','settings','customers','wallets','news'].includes(k)))
     .map(([k,lb])=>`<label><input type="checkbox" value="${k}" ${perms.includes(k)?'checked':''}> ${lb}</label>`).join('');
   const html=`<div class="grid g2" style="margin-bottom:10px">
       <div class="form-row"><label>👤 اسم المستخدم</label><input id="euName" value="${esc(u.name)}"></div>
@@ -8781,7 +8879,13 @@ function renderCustomerFile(saleId){
       '<div class="toolbar no-print svcBack"><button class="btn ghost" onclick="apClientGo(\'home\')">↩️ الرئيسية</button></div>';
     el.innerHTML=back+apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
     try{ apBellRender(s); }catch(e){}
-    if(AP_CTAB==='home'){ try{ apVidBoot(); }catch(e){} }
+    if(AP_CTAB==='home'){
+      try{ apVidBoot(); }catch(e){}
+      /* v61.46: الأخبار + تلميحة التلات نقط */
+      try{ apNewsFetch(); }catch(e){}
+      try{ apFeedBoot(); }catch(e){}
+      try{ apSvcHint(); }catch(e){}
+    }
     if(AP_SVCSUB==='pay:park'){ try{ pkMount(); }catch(e){} }
     return;
   }
@@ -9617,12 +9721,16 @@ function apInviteCopy(){
    بدونها كان المتصفح يعيد تقديم الفيديو القديم من المخزَّن بعد الترقية. */
 const AP_MV = '?v=' + APP_VER.replace(/[^0-9.]/g,'');
 const AP_VID='intro.mp4'+AP_MV, AP_VID_WEBM='intro.webm'+AP_MV, AP_VID_POSTER='intro.jpg'+AP_MV;
-function apVideoHTML(cap){
+function apVideoHTML(cap,dots){
+  /* v61.46: dots=true يحطّ زرار ⋮ فى آخر الشريط الأزرق (ناحية الشمال فى RTL).
+     الفيديو نفسه sticky، فالزرار بيفضل تحت إيد العميل وهو بيسكرول فى الأخبار. */
+  const d=dots?'<button type="button" class="apVidDots no-print" id="apVidDots" title="الخدمات"'+
+    ' aria-label="قائمة الخدمات" onclick="event.stopPropagation();apSvcOpenPanel(event)">⋮</button>':'';
   return `<div class="apVid">
     <video id="apVidEl" playsinline loop muted preload="auto" poster="${AP_VID_POSTER}">
       <source src="${AP_VID}" type="video/mp4">
       <source src="${AP_VID_WEBM}" type="video/webm"></video>
-    ${cap?`<div class="apVidCap">${cap}</div>`:''}
+    ${cap?`<div class="apVidCap${dots?' apCapRow':''}">${dots?'<span class="capTxt">'+cap+'</span>':cap}${d}</div>`:''}
   </div>`;
 }
 /* يبدأ التشغيل بعد رسم الشاشة، ويعالج منع التشغيل التلقائى بصوت */
@@ -10717,6 +10825,9 @@ const AP_GUIDE={
   ['✏️ التعديل الجماعى','من «قاعدة العملاء» زرار ✏️ تعديل جنب عدد النتائج: بيفتح العملاء الظاهرين بالفلتر فى جدول واحد تعدّل فيه الاسم والتليفون والرقم القومى والإيميل وباقة التشطيب. رقم الوحدة للعرض فقط، والإيميل مقفول لمن له حساب مربوط. وقبل الحفظ بيوريك كشف بكل تغيير.'],
   ['✉️ عدّاد الدعوات','الرقم الأحمر على زرار INVITATION بيقول كام مرة اتفتحت الدعوة على الواتساب لهذا العميل، واضغط عليه تشوف تاريخ ووقت كل مرة ومين بعتها. النظام مش بيعرف لو ضغطت «إرسال» جوّه الواتساب نفسه.'],
   ['⚠️ وحدات مباعة بلا عميل','لو رقم «المباعة» أكبر من عدد العملاء، هتلاقى علامة حمرا على كارت المباعة بتوريك الوحدات اللى حالتها مباعة من غير عملية بيع، وترجّعها «متاحة» بضغطة.'],
+  ['📢 الأخبار والعروض','تاب مستقل للمدير وحده. تضيف منه الخبر: عنوان ونص وصورة اختيارية ونوع (خبر / عرض / تنبيه) وتاريخ بداية، وللعروض تاريخ انتهاء ينزل بيه العرض لوحده. وتقدر تثبّت خبر فوق الفيد أو توقفه مؤقتًا من غير ما تمسحه. الحفظ بينشر للعملاء على طول، وفيه زرار «إعادة النشر» لو احتجته. وجنب الجدول معاينة بتوريك شكل الفيد عند العميل بالظبط.'],
+  ['📱 شاشة العميل الجديدة','الخدمات العشرة بقت جوّه زرار ⋮ فى آخر الشريط الأزرق اللى على الفيديو — دوسة تفتح لوحة فيها الخدمات سطر سطر، ودوسة برّه أو زرار الرجوع تقفلها. ولأن الفيديو ثابت وهو بيسكرول، الزرار بيفضل فى متناول إيده دايمًا. ومكان الأيقونات القديم بقى فيد الأخبار: الأحدث فوق، ويسكرول لتحت للأقدم، واللى ماشفوش عليه علامة «جديد». ولو مفيش أخبار منشورة، الأيقونات بترجع مكانها زى الأول.'],
+  ['🧹 الشريط العلوى','اتشال منه «الوحدات المباعة» و«الوحدات المرتجعة» و«استيراد البيانات» عشان زحمته. الشاشات التلاتة زى ما هى ومحدش فقد صلاحية: المباعة والمرتجعة من مربعاتهم فى الرئيسية، والاستيراد من الإعدادات ← «⬆️ استيراد البيانات».'],
   ['💰 رصيد العملاء','تاب مستقل فيه أرصدة كل العملاء وسجل موحّد بكل حركات الشحن والصرف، وبحث بالاسم أو الوحدة، وسجل مستقل لكل عميل. الأرصدة دى للخدمات فقط ومالهاش أى علاقة بأقساط الوحدات — مش داخلة فى المحصل ولا المتبقى ولا حسابات الشركاء ولا الزكاة.'],
   ['⇅ ترتيب جدول الأرصدة','جنب «العمارة» و«الوحدة» و«الرصيد الحالى» فى رأس الجدول سهم: أول ضغطة ترتيب تنازلى (▼) وتانى ضغطة تصاعدى (▲). الترتيب والبحث بيشتغلوا مع بعض — تقدر تبحث وترتّب فى نفس الوقت، وسطر الإجمالى بيفضل تحت دايمًا.'],
   ['💵 شحن رصيد يدوى (كاش)','من تاب «رصيد العملاء» جنب زرار السجل فى كل صف فيه زرار «💵 شحن» بيفتح شاشة زى تسجيل دفعة القسط: المبلغ والتاريخ وطريقة الدفع (كاش / إنستاباى / محفظة / تحويل بنكى) والبيان ومربع مرفقات بيقبل رفع ملف أو سحب وإفلات أو لصق سكرين شوت بـ Ctrl+V. تستعمله لما العميل يدفع كاش فى المكتب. الشحن اليدوى مابيتسجّلش كدفعة قسط ولا بياخد رقم إيصال ولا بيعمل حركة بنك — محفظة خدمات بس.'],
@@ -11110,6 +11221,334 @@ function apHomeIconsHTML(){
     '<button class="svcTile" style="--c:#4a5560" onclick="apUserSettings()">'+
     svcIconHTML('cog','#4a5560')+'<span class="svcLb">الإعدادات</span></button></div>';
 }
+/* ===================================================================
+   v61.46 — لوحة الخدمات من التلات نقط ⋮
+   اللوحة عبارة عن .modal-back عشان زرار الرجوع فى الموبايل يقفلها
+   تلقائيًا (apBackTopModal بيدوّر على .modal-back.open).
+   =================================================================== */
+function apSvcPanelList(){
+  if(typeof apPartnerMode==='function'&&apPartnerMode()&&typeof AP_PARTNER_MENU!=='undefined')
+    return AP_PARTNER_MENU;
+  return AP_CLIENT_MENU;
+}
+function apSvcPanelHTML(){
+  return apSvcPanelList().map(it=>
+    '<button type="button" class="svcRow" onclick="apSvcClose();'+it[3]+'">'+
+    svcIconHTML(it[0],it[2])+'<b>'+esc(it[1])+'</b></button>').join('');
+}
+function apSvcPos(){
+  const p=document.getElementById('apSvcPanel'); if(!p) return;
+  const btn=document.getElementById('apVidDots');
+  const vw=window.innerWidth, vh=window.innerHeight;
+  const w=p.offsetWidth||280, h=Math.min(p.scrollHeight+14, vh*0.62);
+  let left=12, top=70;
+  if(btn&&btn.getBoundingClientRect){
+    const r=btn.getBoundingClientRect();
+    left=Math.min(Math.max(8,r.left), Math.max(8,vw-w-8));
+    top=r.bottom+8;
+    if(top+h>vh-8) top=Math.max(8, r.top-h-8);
+  }
+  p.style.left=left+'px'; p.style.top=top+'px'; p.style.insetInlineStart='auto';
+}
+function apSvcOpenPanel(){
+  const p=document.getElementById('apSvcPanel'); if(!p) return;
+  p.innerHTML=apSvcPanelHTML();
+  document.getElementById('apSvcModal').classList.add('open');
+  apSvcPos();
+  if(!window.__apSvcBound){
+    window.__apSvcBound=true;
+    window.addEventListener('resize',()=>{ if(apSvcIsOpen()) apSvcPos(); });
+    window.addEventListener('scroll',()=>{ if(apSvcIsOpen()) apSvcPos(); },{passive:true});
+  }
+  try{ apBackPush(); }catch(e){}
+}
+function apSvcIsOpen(){ const m=document.getElementById('apSvcModal'); return !!(m&&m.classList.contains('open')); }
+function apSvcClose(){ const m=document.getElementById('apSvcModal'); if(m) m.classList.remove('open'); }
+/* أول مرة بعد التحديث: اللوحة تفتح لوحدها مرة واحدة والنقط تنبض، عشان
+   العميل يعرف إن ده مكان الخدمات. بتتقفل بأول لمسة أو بعد ثانيتين ونص. */
+const SVC_HINT='apSvcHint46';
+function apSvcHint(){
+  try{ if(localStorage.getItem(SVC_HINT)) return; }catch(e){ return; }
+  const btn=document.getElementById('apVidDots'); if(!btn) return;
+  try{ localStorage.setItem(SVC_HINT,'1'); }catch(e){}
+  btn.classList.add('pulse');
+  setTimeout(()=>{
+    if(!document.getElementById('apVidDots')) return;
+    apSvcOpenPanel();
+    const kill=()=>{ apSvcClose(); document.removeEventListener('pointerdown',kill,true); };
+    document.addEventListener('pointerdown',kill,true);
+    setTimeout(kill,2500);
+  },900);
+}
+
+/* ===================================================================
+   v61.46 — الأخبار والعروض
+   تتكتب عند المدير فى DB.news، وتتنشر نسخة واحدة على pub/news فى
+   Firebase (عقدة عامة موجودة أصلًا: قراءة للكل وكتابة للمدير وحده)،
+   فكل العملاء بيقروا نفس النسخة بدل ما تتكرّر فى مساحة كل عميل.
+   مالهاش أى علاقة بأى رقم مالى — داتا منفصلة تمامًا.
+   =================================================================== */
+const NEWS_SEEN='apNewsSeen', NEWS_CACHE='apNewsCache';
+let AP_NEWS=[];              /* نسخة العميل اللى جاية من السحابة */
+let AP_NEWS_AT=0;            /* آخر مرة جبنا فيها الأخبار — عشان ما نضربش السحابة كل دوسة */
+let AP_FEED_N=8;
+function apNewsAll(){ if(!Array.isArray(DB.news)) DB.news=[]; return DB.news; }
+function apNewsLive(src){
+  const t=todayISO();
+  return (src||apNewsAll()).filter(n=> n && n.id && n.on!==false
+      && (!n.start || String(n.start)<=t)
+      && !(n.type==='offer' && n.end && String(n.end)<t))
+    .sort((a,b)=> (Number(b.pin||0)-Number(a.pin||0)) ||
+                  (String(a.at||'')<String(b.at||'')?1:-1));
+}
+function apNewsSeenSet(){
+  try{ return new Set(JSON.parse(localStorage.getItem(NEWS_SEEN)||'[]')); }catch(e){ return new Set(); }
+}
+function apNewsMarkSeen(ids){
+  if(!ids||!ids.length) return;
+  const s=apNewsSeenSet(); let add=0;
+  ids.forEach(i=>{ if(!s.has(i)){ s.add(i); add++; } });
+  if(!add) return;
+  try{ localStorage.setItem(NEWS_SEEN,JSON.stringify([...s].slice(-400))); }catch(e){}
+}
+function apAgo(iso){
+  const d=new Date(iso); if(isNaN(d)) return '';
+  const s=Math.max(0,(Date.now()-d.getTime())/1000);
+  if(s<90) return 'دلوقتى';
+  const m=Math.floor(s/60); if(m<60) return 'من '+fmtN(m)+' دقيقة';
+  const h=Math.floor(m/60); if(h<24) return 'من '+fmtN(h)+' ساعة';
+  const dd=Math.floor(h/24);
+  if(dd===1) return 'إمبارح';
+  if(dd<30) return 'من '+fmtN(dd)+' يوم';
+  return fmtD(String(iso).slice(0,10));
+}
+const AP_NW_TYPE={news:'خبر',offer:'عرض',alert:'تنبيه'};
+function apPostHTML(n,seen){
+  const ty=AP_NW_TYPE[n.type]?n.type:'news';
+  return '<button type="button" class="apPost" onclick="apNewsOpen(\''+esc(n.id)+'\')">'+
+    (n.img?'<img src="'+n.img+'" alt="" loading="lazy" onerror="this.remove()">':'')+
+    '<div class="bd"><div class="hd">'+
+      '<span class="npTag '+ty+'">'+AP_NW_TYPE[ty]+'</span>'+
+      (n.pin?'<span class="npTag news">📌 مثبّت</span>':'')+
+      (seen&&!seen.has(n.id)?'<span class="npNew">جديد</span>':'')+
+    '</div><h4>'+esc(n.title||'')+'</h4>'+
+    (n.body?'<p>'+esc(n.body)+'</p>':'')+
+    '<div class="meta">'+esc(apAgo(n.at))+
+      (ty==='offer'&&n.end?' · ينتهى '+esc(fmtD(n.end)):'')+'</div></div></button>';
+}
+function apFeedList(){ return apNewsLive(apIsClientSession()?AP_NEWS:null); }
+function apFeedHTML(){
+  const list=apFeedList();
+  if(!list.length) return '';
+  const seen=apNewsSeenSet();
+  const shown=list.slice(0,AP_FEED_N);
+  return '<div class="apFeed" id="apFeed">'+shown.map(n=>apPostHTML(n,seen)).join('')+'</div>'+
+    (list.length>shown.length
+      ? '<div class="apFeedEnd" id="apFeedEnd"><button class="btn ghost" onclick="apFeedMore()">عرض أخبار أقدم</button></div>'
+      : '<div class="apFeedEnd">— وصلت لآخر الأخبار —</div>');
+}
+function apFeedMore(){
+  AP_FEED_N+=8;
+  if(apIsClientSession()) renderCustomerFile(cfSaleId); else renderNewsScr();
+}
+/* تحميل تلقائى وإنت بتسكرول + تعليم المعروض كمقروء زى فيسبوك */
+function apFeedBoot(){
+  const f=document.getElementById('apFeed'); if(!f) return;
+  apNewsMarkSeen(apFeedList().slice(0,AP_FEED_N).map(n=>n.id));
+  if(window.__apFeedScroll) window.removeEventListener('scroll',window.__apFeedScroll);
+  window.__apFeedScroll=function(){
+    if(!document.getElementById('apFeedEnd')) return;
+    const r=document.getElementById('apFeedEnd').getBoundingClientRect();
+    if(r.top<window.innerHeight+160) apFeedMore();
+  };
+  window.addEventListener('scroll',window.__apFeedScroll,{passive:true});
+}
+function apNewsFind(id){
+  return apFeedList().find(n=>n.id===id) || apNewsAll().find(n=>n.id===id) || null;
+}
+function apNewsOpen(id){
+  const n=apNewsFind(id); if(!n) return;
+  apNewsMarkSeen([id]);
+  const ty=AP_NW_TYPE[n.type]?n.type:'news';
+  confirmBox(AP_NW_TYPE[ty]+' — '+(n.title||''),
+    (n.img?'<img src="'+n.img+'" alt="" style="width:100%;border-radius:12px;margin-bottom:10px">':'')+
+    '<div class="gray-note" style="margin:0 0 8px">'+esc(apAgo(n.at))+
+      (ty==='offer'&&n.end?' · العرض ينتهى '+esc(fmtD(n.end)):'')+'</div>'+
+    '<div style="white-space:pre-wrap;line-height:1.85;font-size:.95rem">'+esc(n.body||'')+'</div>',
+    'تمام',function(){
+      if(apIsClientSession()) renderCustomerFile(cfSaleId); else renderNewsScr();
+    });
+}
+/* ---- جهة العميل: جلب الأخبار من pub/news مع كاش للعمل بلا إنترنت ---- */
+function apNewsCacheLoad(){
+  try{ const r=localStorage.getItem(NEWS_CACHE); if(r){ const v=JSON.parse(r); if(Array.isArray(v)) AP_NEWS=v; } }catch(e){}
+}
+async function apNewsFetch(force){
+  /* تحديث كل ٥ دقايق كحد أقصى: لو نشرت خبر والعميل فاتح التطبيق، هيوصله
+     أول ما يرجع للرئيسية بعد المدة دى من غير ما يقفل ويفتح. */
+  if(!force && AP_NEWS_AT && (Date.now()-AP_NEWS_AT)<300000) return;
+  AP_NEWS_AT=Date.now();
+  try{
+    if(typeof window.apNewsGet!=='function') return;
+    const L=await window.apNewsGet();
+    if(!Array.isArray(L)) return;
+    AP_NEWS=L;
+    try{ localStorage.setItem(NEWS_CACHE,JSON.stringify(L)); }catch(e){}
+    if(apIsClientSession()&&AP_CTAB==='home') renderCustomerFile(cfSaleId);
+  }catch(e){}
+}
+/* ---- جهة المدير: شاشة الأخبار والعروض ---- */
+function renderNewsScr(){
+  const all=apNewsAll();
+  const live=apNewsLive();
+  const off=all.length-live.length;
+  $('#scr-news').innerHTML=`
+  <h2 class="screen-title">الأخبار والعروض</h2>
+  <div class="toolbar no-print">
+    <button class="btn green" onclick="apNwOpen()">➕ خبر جديد</button>
+    <button class="btn gold" onclick="apNewsPublish(1)">☁️ إعادة النشر للعملاء</button>
+    <span class="gray-note">${fmtN(live.length)} ظاهر عند العملاء${off>0?' · '+fmtN(off)+' موقوف أو منتهى':''}</span>
+    <button class="btn ghost" style="margin-inline-start:auto" onclick="printScreen()">🖨️ طباعة</button>
+  </div>
+  <p class="gray-note" style="margin:-4px 0 12px">الأخبار بتظهر للعملاء فى الرئيسية، الأحدث فوق والأقدم بينزل تحته
+    لوحده — زى فيسبوك. العروض بس هى اللى بتنتهى بتاريخ. مالهاش أى علاقة بأى رقم مالى.</p>
+  <div class="grid" style="grid-template-columns:1.25fr .75fr;gap:14px;align-items:start">
+    <div class="card"><h3>📋 كل الأخبار</h3>
+    ${all.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>العنوان</th><th>النوع</th><th>النشر</th><th>الحالة</th><th class="no-print">تحكم</th>
+    </tr></thead><tbody>
+    ${all.slice().sort((a,b)=>String(a.at||'')<String(b.at||'')?1:-1).map(n=>{
+      const ty=AP_NW_TYPE[n.type]?n.type:'news';
+      const shown=live.some(x=>x.id===n.id);
+      const why=n.on===false?'موقوف':(n.start&&n.start>todayISO()?'لسه مانزلش':(ty==='offer'&&n.end&&n.end<todayISO()?'العرض انتهى':'ظاهر'));
+      return `<tr>
+        <td data-label="العنوان"><b>${esc(n.title||'')}</b>${n.pin?' 📌':''}${n.img?' 🖼️':''}</td>
+        <td data-label="النوع"><span class="npTag ${ty}">${AP_NW_TYPE[ty]}</span></td>
+        <td data-label="النشر">${esc(fmtD(String(n.at||'').slice(0,10)))}</td>
+        <td data-label="الحالة"><span class="badge ${shown?'av':'ret'}">${esc(why)}</span></td>
+        <td data-label="تحكم" class="no-print"><div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn sm ghost" onclick="apNwOpen('${esc(n.id)}')">✏️ تعديل</button>
+          <button class="btn sm ${n.on===false?'green':'ghost'}" onclick="apNwToggle('${esc(n.id)}')">${n.on===false?'تشغيل':'إيقاف'}</button>
+          <button class="btn sm red" onclick="apNwDel('${esc(n.id)}')">🗑️</button>
+        </div></td></tr>`;
+    }).join('')}
+    </tbody></table></div>`:'<p class="gray-note">لسه مفيش أخبار. اضغط «➕ خبر جديد».</p>'}
+    </div>
+    <div class="card apNwPrev"><h3>👁️ شكلها عند العميل</h3>
+      ${live.length?apFeedHTML():'<p class="gray-note">مفيش حاجة ظاهرة دلوقتى — فالعميل هيشوف أيقونات الخدمات زى الأول.</p>'}
+    </div>
+  </div>`;
+}
+let AP_NW_ID='', AP_NW_IMG='';
+function apNwTypeSync(){
+  const t=$('#apNwType'), r=$('#apNwEndRow');
+  if(t&&r) r.style.display=(t.value==='offer')?'':'none';
+}
+function apNwOpen(id){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const n=id?apNewsAll().find(x=>x.id===id):null;
+  AP_NW_ID=n?n.id:''; AP_NW_IMG=n?(n.img||''):'';
+  $('#apNwTitle').textContent=n?'تعديل الخبر':'خبر جديد';
+  $('#apNwTtl').value=n?(n.title||''):'';
+  $('#apNwBody').value=n?(n.body||''):'';
+  $('#apNwType').value=(n&&AP_NW_TYPE[n.type])?n.type:'news';
+  $('#apNwStart').value=(n&&n.start)||todayISO();
+  $('#apNwEnd').value=(n&&n.end)||'';
+  $('#apNwPin').value=(n&&n.pin)?'1':'';
+  apNwTypeSync();
+  attMount('apNwAttHost','nwimg','صورة الخبر (اختيارية — صورة واحدة)');
+  apNwImgSync();
+  openModal('apNwModal');
+}
+function apNwImgSync(){
+  const h=$('#apNwImgNow'); if(!h) return;
+  h.innerHTML=AP_NW_IMG
+    ? '<div class="gray-note" style="margin-bottom:5px">الصورة الحالية:</div>'+
+      '<img src="'+AP_NW_IMG+'" style="max-width:220px;border-radius:10px;border:1px solid var(--line)">'+
+      ' <button class="btn sm red" type="button" onclick="AP_NW_IMG=\'\';apNwImgSync()">حذف الصورة</button>'
+    : '';
+}
+/* الصور بتتصغّر تانى قبل النشر: نسخة واحدة بتروح لكل العملاء، فكل
+   كيلوبايت زيادة بيتحمّله كل موبايل بيفتح التطبيق. */
+function apNwShrink(dataUrl,cb){
+  if(!/^data:image\//i.test(dataUrl||'')) { cb(dataUrl||''); return; }
+  const img=new Image();
+  img.onerror=()=>cb(dataUrl);
+  img.onload=()=>{
+    const MX=1100;
+    let w=img.width,h=img.height;
+    if(w>MX||h>MX){ const r=Math.min(MX/w,MX/h); w=Math.round(w*r); h=Math.round(h*r); }
+    try{
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      cb(c.toDataURL('image/jpeg',0.72));
+    }catch(e){ cb(dataUrl); }
+  };
+  img.src=dataUrl;
+}
+function apNwSave(){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const ttl=($('#apNwTtl').value||'').trim();
+  if(!ttl){ toast('اكتب عنوان الخبر','err'); return; }
+  const picked=attGet('nwimg').filter(a=>/^data:image\//i.test(a.data||''));
+  const raw=picked.length?picked[picked.length-1].data:AP_NW_IMG;
+  apNwShrink(raw,function(img){
+    const list=apNewsAll();
+    const type=$('#apNwType').value||'news';
+    const rec={
+      id: AP_NW_ID||uid(),
+      title: ttl,
+      body: ($('#apNwBody').value||'').trim(),
+      type: AP_NW_TYPE[type]?type:'news',
+      img: img||'',
+      start: $('#apNwStart').value||todayISO(),
+      end: (type==='offer')?($('#apNwEnd').value||''):'',
+      pin: $('#apNwPin').value==='1'?1:0,
+      on: true,
+      at: new Date().toISOString(),
+      by: (CURRENT_USER&&CURRENT_USER.name)||'—'
+    };
+    const i=list.findIndex(x=>x.id===rec.id);
+    if(i>=0){ rec.at=list[i].at||rec.at; rec.on=list[i].on!==false; list[i]=rec; }
+    else list.unshift(rec);
+    save();
+    closeModal('apNwModal'); attClear('nwimg');
+    AP_NW_ID=''; AP_NW_IMG='';
+    renderNewsScr();
+    apNewsPublish(1);
+  });
+}
+function apNwToggle(id){
+  const n=apNewsAll().find(x=>x.id===id); if(!n) return;
+  n.on=(n.on===false); save(); renderNewsScr(); apNewsPublish(1);
+}
+function apNwDel(id){
+  const n=apNewsAll().find(x=>x.id===id); if(!n) return;
+  confirmBox('حذف الخبر','هيتشال من التطبيق عند كل العملاء. متأكد؟','🗑️ حذف',()=>{
+    DB.news=apNewsAll().filter(x=>x.id!==id);
+    save(); renderNewsScr(); apNewsPublish(1);
+  },true);
+}
+/* النشر: نسخة واحدة على pub/news — بالنص والصورة، بلا أى بيانات عملاء */
+async function apNewsPublish(loud){
+  const items=apNewsLive().slice(0,25).map(n=>({
+    id:n.id,title:n.title||'',body:n.body||'',type:n.type||'news',
+    img:n.img||'',end:n.end||'',pin:n.pin?1:0,at:n.at||''
+  }));
+  const size=JSON.stringify(items).length;
+  if(size>2200000){
+    toast('الأخبار كبيرة جدًا ('+Math.round(size/1024)+' ك.ب) — امسح صورة أو اتنين','err');
+    return;
+  }
+  if(typeof window.apNewsPut!=='function'){
+    if(loud) toast('⚠️ اتحفظ عندك بس — السحابة مش مهيأة، فالعملاء لسه ماشافوهوش','err');
+    return;
+  }
+  const r=await window.apNewsPut(items);
+  if(r&&r.ok) toast('اتنشر '+fmtN(items.length)+' خبر للعملاء ✔ ('+Math.round(size/1024)+' ك.ب)','ok');
+  else toast('⚠️ اتحفظ عندك بس ولسه ماوصلش العملاء: '+((r&&r.err)||'تعذر النشر')+
+    ' — جرّب «إعادة النشر» بعدين','err');
+}
 function apTopUpOpen(){
   if(apIsClientSession()){ AP_CTAB='pay'; AP_SVCSUB='pay:bal'; buildTabs(); renderCustomerFile(cfSaleId); window.scrollTo({top:0}); }
   else toast('المحفظة للعملاء فقط','err');
@@ -11393,10 +11832,14 @@ function apWalChipRender(){
 
 /* شاشة «الرئيسية» للعميل والشريك */
 function apHomeHTML(title){
+  /* v61.46: عند العميل الخدمات بقت جوّه زرار ⋮ فوق الفيديو، ومكانها فيد الأخبار.
+     لو مفيش أخبار منشورة، الأيقونات بترجع مكانها زى الأول فمفيش فراغ. */
+  const cli=apIsClientSession();
+  const feed=cli?apFeedHTML():'';
   return `<div class="apHome">
     <h2 class="screen-title">${esc(title||(S().projectName||'الرئيسية'))}</h2>
-    <div class="apVidStick">${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''))}</div>
-    ${apHomeIconsHTML()}
+    <div class="apVidStick">${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''),cli)}</div>
+    ${feed||apHomeIconsHTML()}
   </div>`;
 }
 
@@ -12702,6 +13145,7 @@ async function boot(){
 }
 document.addEventListener('DOMContentLoaded',()=>{boot();
   try{ apBackInit(); }catch(e){}
+  try{ apNewsCacheLoad(); }catch(e){}   /* v61.46: آخر أخبار محفوظة تبان فورًا حتى بلا إنترنت */
   setTimeout(()=>{
     if(DB&&DB.lastAutoBk!==todayISO()){
       document.addEventListener('click',autoBackupDaily,{once:true,capture:true});
@@ -15777,6 +16221,26 @@ function apSetAttUrl(key,url){
   window.apTopupDrop = async function (k, id) {
     if (!rtdb || !isCloudAdmin()) return false;
     try { await rtdb.ref('topups/' + k + '/' + id).remove(); return true; } catch (e) { return false; }
+  };
+
+  /* v61.46 — الأخبار والعروض: نسخة واحدة مشتركة على pub/news.
+     pub أصلًا قراءتها للكل وكتابتها للمدير وحده، فمحتاجة ولا تغيير فى القواعد.
+     بننشر نسخة واحدة بدل ما تتكرّر فى مساحة كل عميل (١٠٧ نسخ من كل صورة). */
+  window.apNewsPut = async function (items) {
+    if (!rtdb) return { err: 'السحابة غير مهيأة' };
+    if (!isCloudAdmin()) return { err: 'للمدير فقط' };
+    try {
+      await rtdb.ref('pub/news').set({ at: new Date().toISOString(), items: items || [] });
+      return { ok: true };
+    } catch (e) { return { err: (e && (e.code || e.message)) || 'تعذر النشر' }; }
+  };
+  window.apNewsGet = async function () {
+    if (!rtdb) return null;
+    try {
+      const sn = await rtdb.ref('pub/news').get();
+      const v = sn.val();
+      return (v && Array.isArray(v.items)) ? v.items : [];
+    } catch (e) { return null; }
   };
 
   window.apSignupFlag = async function () {
