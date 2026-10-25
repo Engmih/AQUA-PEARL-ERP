@@ -237,6 +237,26 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 @media(max-width:620px){.walRow{grid-template-columns:1fr}}
 .walLog{border:1px solid var(--line);border-radius:var(--r);padding:12px 13px;background:var(--card);min-width:0}
 .walLog h4{margin:0 0 8px;font-size:.9rem;color:var(--navy2)}
+/* v61.45 — أسهم ترتيب أعمدة شاشة أرصدة العملاء */
+.walSort{background:transparent;border:0;color:inherit;cursor:pointer;font-size:11px;
+  opacity:.5;padding:0 3px;line-height:1;vertical-align:middle;font-family:inherit}
+.walSort:hover{opacity:1}
+.walSort.on{opacity:1;color:#F2C94C;font-size:12px}
+/* على الموبايل رؤوس الجداول بتختفى (الصفوف بتبقى كروت) — فالترتيب بيبقى
+   من شريط أزرار ظاهر فوق الجدول بدل الأسهم اللى فى الرأس. */
+.walSortBar{display:none}
+@media screen and (max-width:760px){
+  .walSortBar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin:2px 0 0}
+  .walSortBar .t{font-size:12px;color:var(--muted)}
+  .wsChip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;
+    font-size:12.5px;font-family:inherit;color:var(--navy2);cursor:pointer;min-height:32px}
+  .wsChip.on{background:var(--navy2);color:#fff;border-color:var(--navy2);font-weight:700}
+  .wsChip.clr{color:#b00}
+}
+/* v61.45 — عدّاد طلبات الشحن الواقفة */
+.tuBadge{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;
+  margin-inline-start:6px;border-radius:10px;background:#C62828;color:#fff;
+  font-size:11px;font-weight:800;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.55)}
 .svcEmpty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 10px;
   color:var(--muted);font-size:.84rem;text-align:center;
   border:1px dashed #cfdfea;border-radius:11px;background:#fbfdff}
@@ -1413,6 +1433,28 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       <button class="btn green" onclick="savePayment(false)">💾 حفظ الدفعة</button>
       <button class="btn aqua" onclick="savePayment(true)">🖨️ حفظ وطباعة إيصال</button>
       <button class="btn ghost" onclick="closeModal('payModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- v61.45: شحن رصيد يدوى (كاش/تحويل) — محفظة الخدمات فقط، لا علاقة له بالأقساط -->
+<div class="modal-back" id="apWtModal">
+  <div class="modal">
+    <h3><span id="apWtTitle">شحن رصيد</span><button class="x" onclick="closeModal('apWtModal')">✕</button></h3>
+    <div id="apWtHead"></div>
+    <div class="grid g2">
+      <div class="form-row"><label>💵 قيمة الشحن (ج.م) *</label><input type="number" id="apWtAmount" min="1"></div>
+      <div class="form-row"><label>📅 تاريخ الشحن</label><input type="date" id="apWtDate"></div>
+      <div class="form-row"><label>💳 طريقة الدفع</label>
+        <select id="apWtMethod"><option>كاش</option><option>إنستاباى</option><option>محفظة</option><option>تحويل بنكي</option></select></div>
+      <div class="form-row"><label>📝 بيان / رقم العملية</label><input id="apWtNote" placeholder="اختيارى"></div>
+      <div id="apWtAttHost" style="grid-column:1/-1"></div>
+    </div>
+    <p class="gray-note" style="margin:4px 0 0">ده شحن لمحفظة الخدمات — مش دفعة قسط، ومابيدخلش فى المحصّل
+      ولا المتبقى ولا حركة البنك ولا حسابات الشركاء.</p>
+    <div class="actions">
+      <button class="btn green" onclick="apWtSave()">💾 حفظ الشحن</button>
+      <button class="btn ghost" onclick="closeModal('apWtModal')">إلغاء</button>
     </div>
   </div>
 </div>
@@ -4353,7 +4395,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.44';
+const APP_VER  = 'v61.45';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5910,7 +5952,8 @@ function instapayCardHTML(){
     </div>
     <div class="toolbar" style="margin-top:8px">
       <button class="btn" onclick="saveSettings()">💾 حفظ</button>
-      <button class="btn gold" onclick="apTuReview()">📥 طلبات الشحن${pend?' ('+fmtN(pend)+')':''}</button>
+      <button class="btn gold" onclick="apTuReview()">📥 طلبات الشحن<span class="tuBadge"
+        id="setTuBadge" style="display:${pend?'':'none'}">${fmtN(pend)}</span></button>
       <span class="gray-note">العميل بيحوّل على العنوان ده ويبعتلك طلب بالمبلغ ورقم العملية وصورة التحويل.
         الرصيد مابيزيدش غير بموافقتك.</span>
     </div>
@@ -10190,8 +10233,43 @@ function apWalletLog(){
   out.sort((a,b)=>String(a.date)<String(b.date)?1:-1);
   return out;
 }
+/* v61.45 — ترتيب أعمدة الجدول: تنازلى أولًا ثم تصاعدى، ويشتغل مع البحث */
+let AP_WAL_SORT={col:'',dir:-1};
+function apWalSort(col){
+  if(AP_WAL_SORT.col===col) AP_WAL_SORT.dir=-AP_WAL_SORT.dir;
+  else { AP_WAL_SORT.col=col; AP_WAL_SORT.dir=-1; }
+  renderWallets();
+}
+function apWalArrow(col){
+  const on=AP_WAL_SORT.col===col;
+  const sym=!on?'⇅':(AP_WAL_SORT.dir<0?'▼':'▲');
+  const t=!on?'ترتيب تنازلى':(AP_WAL_SORT.dir<0?'تنازلى — اضغط للتصاعدى':'تصاعدى — اضغط للتنازلى');
+  return '<button type="button" class="walSort no-print'+(on?' on':'')+
+    '" onclick="apWalSort(\''+col+'\')" title="'+t+'">'+sym+'</button>';
+}
+function apWalSortClear(){ AP_WAL_SORT={col:'',dir:-1}; renderWallets(); }
+function apWalSortBar(){
+  const cols=[['b','العمارة'],['unit','الوحدة'],['bal','الرصيد']];
+  return '<div class="walSortBar no-print"><span class="t">⇅ ترتيب:</span>'+
+    cols.map(c=>{
+      const on=AP_WAL_SORT.col===c[0];
+      return '<button type="button" class="wsChip'+(on?' on':'')+'" onclick="apWalSort(\''+c[0]+'\')">'+
+        c[1]+' '+(on?(AP_WAL_SORT.dir<0?'▼':'▲'):'⇅')+'</button>';
+    }).join('')+
+    (AP_WAL_SORT.col?'<button type="button" class="wsChip clr" onclick="apWalSortClear()" title="إلغاء الترتيب">✖</button>':'')+
+    '</div>';
+}
+function apWalSortRows(rows){
+  const sc=AP_WAL_SORT.col; if(!sc) return rows;
+  const dir=AP_WAL_SORT.dir;
+  return rows.slice().sort((a,b)=>{
+    if(sc==='bal'||sc==='tin'||sc==='tout') return ((Number(a[sc])||0)-(Number(b[sc])||0))*dir;
+    const x=String(a[sc]||''), y=String(b[sc]||'');
+    return x.localeCompare(y,'ar',{numeric:true,sensitivity:'base'})*dir;
+  });
+}
 function renderWallets(){
-  const rows=apWalletRows();
+  const rows=apWalSortRows(apWalletRows());
   const log=apWalletLog();
   const tb=rows.reduce((a,r)=>a+r.bal,0);
   const ti=rows.reduce((a,r)=>a+r.tin,0);
@@ -10202,8 +10280,10 @@ function renderWallets(){
   <div class="toolbar no-print">
     <input id="walSearch" placeholder="🔍 بحث بالاسم / الوحدة / العمارة" style="min-width:250px">
     <span class="gray-note" id="walCount"></span>
-    <button class="btn gold" onclick="apTuReview()">📥 طلبات الشحن</button>
+    <button class="btn gold" onclick="apTuReview()">📥 طلبات الشحن<span class="tuBadge"
+      id="walTuBadge" style="display:none">0</span></button>
     <button class="btn ghost" style="margin-inline-start:auto" onclick="printScreen()">🖨️ طباعة</button>
+    ${apWalSortBar()}
   </div>
   <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">
     <div class="stat"><span class="ic">💰</span><div><div class="tt">إجمالى أرصدة العملاء</div>
@@ -10219,7 +10299,8 @@ function renderWallets(){
     ومش داخلة فى المحصل ولا المتبقى ولا حسابات الشركاء ولا الزكاة.</p>
   <div class="card"><h3>💰 أرصدة العملاء</h3>
   <div class="tbl-wrap"><table class="tbl" id="walTbl"><thead><tr>
-    <th>العميل</th><th>العمارة</th><th>الوحدة</th><th>الرصيد الحالى</th>
+    <th>العميل</th><th>العمارة ${apWalArrow('b')}</th><th>الوحدة ${apWalArrow('unit')}</th>
+    <th>الرصيد الحالى ${apWalArrow('bal')}</th>
     <th>إجمالى الشحن</th><th>إجمالى المصروف</th><th class="no-print">سجل الدفع</th>
   </tr></thead><tbody>
   ${rows.map(r=>`<tr>
@@ -10229,15 +10310,18 @@ function renderWallets(){
     <td data-label="الرصيد الحالى" class="${r.bal>0?'pos':''}"><b>${fmtM(r.bal)}</b></td>
     <td data-label="إجمالى الشحن">${fmtM(r.tin)}</td>
     <td data-label="إجمالى المصروف">${fmtM(r.tout)}</td>
-    <td data-label="سجل الدفع" class="no-print">
-      <button class="btn sm ghost" onclick="apWalOne('${r.sid}')">📜 السجل${r.n?' ('+fmtN(r.n)+')':''}</button></td>
+    <td data-label="سجل الدفع" class="no-print"><div style="display:flex;gap:5px;flex-wrap:wrap">
+      <button class="btn sm ghost" onclick="apWalOne('${r.sid}')">📜 السجل${r.n?' ('+fmtN(r.n)+')':''}</button>
+      <button class="btn sm green" onclick="apWtOpen('${r.sid}')" title="شحن رصيد يدوى (كاش أو تحويل)">💵 شحن</button>
+    </div></td>
   </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">لا عملاء</td></tr>'}
   ${rows.length?`<tr style="background:#FBF3D9"><td colspan="3"><b>الإجمالي</b></td>
     <td><b>${fmtM(tb)}</b></td><td><b>${fmtM(ti)}</b></td><td><b>${fmtM(to)}</b></td><td class="no-print"></td></tr>`:''}
   </tbody></table></div></div>
   <div class="card"><h3>📜 سجل المدفوعات</h3>
   ${log.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr>
-    <th>التاريخ</th><th>العميل</th><th>الوحدة</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th>بواسطة</th>
+    <th>التاريخ</th><th>العميل</th><th>الوحدة</th><th>النوع</th><th>البيان</th><th>المبلغ</th>
+    <th>بواسطة</th><th class="no-print">مرفقات</th>
   </tr></thead><tbody>
   ${log.slice(0,300).map(r=>`<tr>
     <td data-label="التاريخ">${esc(fmtD(r.date))}</td>
@@ -10247,11 +10331,14 @@ function renderWallets(){
     <td data-label="البيان">${esc(r.note||'—')}</td>
     <td data-label="المبلغ" class="${r.kind==='in'?'pos':'warn-red'}"><b>${fmtM(Number(r.amount)||0)}</b></td>
     <td data-label="بواسطة">${esc(r.by||'—')}</td>
+    <td data-label="مرفقات" class="no-print">${attViewChips(r.files||[])}</td>
   </tr>`).join('')}
   </tbody></table></div>${log.length>300?'<p class="gray-note">معروض أحدث ٣٠٠ حركة من '+fmtN(log.length)+'.</p>':''}`
    :'<p class="gray-note">لسه مفيش أى حركات شحن أو صرف.</p>'}</div>`;
   const si=$('#walSearch'); if(si) si.addEventListener('input',walFilter);
   walFilter();
+  apTuBadgePaint(AP_TU_PEND.length);
+  apTuRefresh();                 // يحدّث العدّاد من السحابة بعد ما الشاشة تظهر
 }
 function walFilter(){
   const raw=(($('#walSearch')&&$('#walSearch').value)||'').trim();
@@ -10270,9 +10357,11 @@ function apWalOne(sid){
   const w=apWallet(s);
   const u=unitById(s.unitId)||{};
   const tbl=(list,kind)=> list.length
-    ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th><th>بواسطة</th></tr></thead><tbody>'+
+    ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th>'+
+      '<th>بواسطة</th><th>مرفقات</th></tr></thead><tbody>'+
       list.map(r=>'<tr><td>'+esc(fmtD(r.date))+'</td><td>'+esc(r.note||'—')+'</td><td class="'+
-        (kind==='in'?'pos':'warn-red')+'"><b>'+fmtM(Number(r.amount)||0)+'</b></td><td>'+esc(r.by||'—')+'</td></tr>').join('')+
+        (kind==='in'?'pos':'warn-red')+'"><b>'+fmtM(Number(r.amount)||0)+'</b></td><td>'+esc(r.by||'—')+'</td>'+
+        '<td>'+attViewChips(r.files||[])+'</td></tr>').join('')+
       '</tbody></table></div>'
     : '<p class="gray-note">لا حركات.</p>';
   confirmBox('📜 سجل الدفع — '+(s.customer&&s.customer.name||''),
@@ -10282,13 +10371,72 @@ function apWalOne(sid){
     '<h4 style="margin:12px 0 5px;font-size:13.5px">⬇️ المصروفات</h4>'+tbl(w.spends,'out')+'</div>',
     'تمام',function(){});
 }
+/* ===================================================================
+   v61.45 — شحن رصيد يدوى (كاش أو تحويل مباشر) من شاشة أرصدة العملاء.
+   شاشة على نفس شكل «تسجيل دفعة قسط» — بمرفقات (رفع / سحب / Ctrl+V).
+   مهم: ده بيكتب فى sale.wallet بس. مافيش DB.payments ولا bankCredit
+   ولا رقم إيصال من سلسلة الإيصالات — فمالوش أى أثر على الأقساط.
+   =================================================================== */
+let AP_WT_SID='';
+function apWtOpen(sid){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const s=saleById(sid); if(!s) return;
+  AP_WT_SID=sid;
+  const u=unitById(s.unitId)||{}, w=apWallet(s);
+  const t=$('#apWtTitle'); if(t) t.textContent='💵 شحن رصيد يدوى — '+((s.customer&&s.customer.name)||'');
+  const h=$('#apWtHead');
+  if(h) h.innerHTML='<p class="gray-note" style="margin:0 0 9px">الوحدة <b>'+
+    esc((u.building||'')+'-'+(u.unitNo||''))+'</b> · الرصيد الحالى <b>'+fmtM(w.balance)+'</b></p>';
+  $('#apWtAmount').value='';
+  $('#apWtDate').value=todayISO();
+  $('#apWtMethod').value='كاش';
+  $('#apWtNote').value='';
+  attMount('apWtAttHost','wtop','مرفقات الشحن (إيصال / تحويل / سكرين شوت)');
+  openModal('apWtModal');
+}
+function apWtSave(){
+  const s=saleById(AP_WT_SID); if(!s) return;
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const amt=Math.round(Number($('#apWtAmount').value)||0);
+  if(!(amt>0)){ toast('أدخل قيمة الشحن','err'); return; }
+  const meth=($('#apWtMethod').value||'كاش').trim();
+  const nt=($('#apWtNote').value||'').trim();
+  const files=attGet('wtop');
+  if(!s.wallet) s.wallet={balance:0,topups:[],spends:[]};
+  if(!Array.isArray(s.wallet.topups)) s.wallet.topups=[];
+  const rec={id:uid(), date:$('#apWtDate').value||todayISO(), amount:amt,
+    note:meth+(nt?' — '+nt:''), by:(CURRENT_USER&&CURRENT_USER.name)||'—', files:[]};
+  s.wallet.balance=(Number(s.wallet.balance)||0)+amt;
+  s.wallet.topups.unshift(rec);
+  if(files.length)
+    attOffload(files,'شحن رصيد — '+((s.customer&&s.customer.name)||''),
+      {customer:(s.customer&&s.customer.name)||'',contractNo:s.contractNo||'',
+       saleId:s.id,unitId:s.unitId,date:rec.date})
+    .then(fr=>{ rec.files=fr; save(); if(currentScreen==='wallets') renderWallets(); })
+    .catch(()=>{});
+  save();
+  try{ apPushAccess(); }catch(e){}
+  closeModal('apWtModal'); attClear('wtop');
+  toast('اتشحن '+fmtN(amt)+' ج.م لـ'+((s.customer&&s.customer.name)||'')+' ✔','ok');
+  if(currentScreen==='wallets') renderWallets();
+}
 /* ---- جهة المدير: مراجعة طلبات الشحن ---- */
 let AP_TU_PEND=[];
+/* v61.45 — عدّاد الطلبات الواقفة: بادچ أحمر على كل زرار «طلبات الشحن» */
+function apTuBadgePaint(n){
+  const v=Number(n)||0;
+  ['walTuBadge','setTuBadge'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.textContent=fmtN(v);
+    el.style.display=v?'':'none';
+  });
+}
 async function apTuRefresh(){
   try{
-    if(typeof window.apTopupsList!=='function') return 0;
+    if(typeof window.apTopupsList!=='function'){ apTuBadgePaint(0); return 0; }
     const L=await window.apTopupsList();
     AP_TU_PEND=L||[];
+    apTuBadgePaint(AP_TU_PEND.length);
     return AP_TU_PEND.length;
   }catch(e){ return 0; }
 }
@@ -10361,14 +10509,25 @@ async function apTuApprove(key){
       if(!sale.wallet) sale.wallet={balance:0,topups:[],spends:[]};
       if(!Array.isArray(sale.wallet.topups)) sale.wallet.topups=[];
       sale.wallet.balance=(Number(sale.wallet.balance)||0)+amt;
-      sale.wallet.topups.unshift({date:todayISO(),amount:amt,
+      const rec={id:uid(),date:todayISO(),amount:amt,
         note:'إنستاباى — عملية '+(r.ref||'—'),
-        by:(CURRENT_USER&&CURRENT_USER.name)||'—'});
+        by:(CURRENT_USER&&CURRENT_USER.name)||'—',files:[]};
+      sale.wallet.topups.unshift(rec);
       save();
+      /* v61.45: صورة التحويل تتحفظ كمرفق دائم بدل ما تضيع مع مسح الطلب */
+      if(r.img){
+        attOffload([{id:uid(),name:'تحويل إنستاباى '+(r.ref||''),data:r.img,ts:new Date().toISOString()}],
+          'شحن رصيد — '+(sale.customer&&sale.customer.name||''),
+          {customer:(sale.customer&&sale.customer.name)||'',contractNo:sale.contractNo||'',
+           saleId:sale.id,unitId:sale.unitId,date:rec.date})
+        .then(fr=>{ rec.files=fr; save(); if(currentScreen==='wallets') renderWallets(); })
+        .catch(()=>{});
+      }
       try{ await window.apTopupDrop(it.k,it.id); }catch(e){}
       apPushAccess();
       toast('اتشحن '+fmtN(amt)+' ج.م لـ'+sale.customer.name+' ✔','ok');
       apTuReview();
+      if(currentScreen==='wallets') renderWallets();
     });
 }
 async function apTuReject(key){
@@ -10559,7 +10718,10 @@ const AP_GUIDE={
   ['✉️ عدّاد الدعوات','الرقم الأحمر على زرار INVITATION بيقول كام مرة اتفتحت الدعوة على الواتساب لهذا العميل، واضغط عليه تشوف تاريخ ووقت كل مرة ومين بعتها. النظام مش بيعرف لو ضغطت «إرسال» جوّه الواتساب نفسه.'],
   ['⚠️ وحدات مباعة بلا عميل','لو رقم «المباعة» أكبر من عدد العملاء، هتلاقى علامة حمرا على كارت المباعة بتوريك الوحدات اللى حالتها مباعة من غير عملية بيع، وترجّعها «متاحة» بضغطة.'],
   ['💰 رصيد العملاء','تاب مستقل فيه أرصدة كل العملاء وسجل موحّد بكل حركات الشحن والصرف، وبحث بالاسم أو الوحدة، وسجل مستقل لكل عميل. الأرصدة دى للخدمات فقط ومالهاش أى علاقة بأقساط الوحدات — مش داخلة فى المحصل ولا المتبقى ولا حسابات الشركاء ولا الزكاة.'],
-  ['💰 شحن رصيد العملاء','من الإعدادات ← «شحن رصيد العملاء — إنستاباى»: حطّ عنوان إنستاباى اللى هتستقبل عليه. وزرار «📥 طلبات الشحن» بيوريك طلبات العملاء بالمبلغ ورقم العملية وصورة التحويل. راجع التحويل على حسابك الأول — النظام مابيشوفش حسابك — وبعدين وافق فيزيد الرصيد ويتسجّل فى كشفه.'],
+  ['⇅ ترتيب جدول الأرصدة','جنب «العمارة» و«الوحدة» و«الرصيد الحالى» فى رأس الجدول سهم: أول ضغطة ترتيب تنازلى (▼) وتانى ضغطة تصاعدى (▲). الترتيب والبحث بيشتغلوا مع بعض — تقدر تبحث وترتّب فى نفس الوقت، وسطر الإجمالى بيفضل تحت دايمًا.'],
+  ['💵 شحن رصيد يدوى (كاش)','من تاب «رصيد العملاء» جنب زرار السجل فى كل صف فيه زرار «💵 شحن» بيفتح شاشة زى تسجيل دفعة القسط: المبلغ والتاريخ وطريقة الدفع (كاش / إنستاباى / محفظة / تحويل بنكى) والبيان ومربع مرفقات بيقبل رفع ملف أو سحب وإفلات أو لصق سكرين شوت بـ Ctrl+V. تستعمله لما العميل يدفع كاش فى المكتب. الشحن اليدوى مابيتسجّلش كدفعة قسط ولا بياخد رقم إيصال ولا بيعمل حركة بنك — محفظة خدمات بس.'],
+  ['📎 مرفقات الشحن','كل حركة شحن بتحتفظ بمرفقاتها: صورة إيصال الكاش اللى بترفعها بنفسك، وصورة تحويل إنستاباى اللى العميل بعتها (بتتحفظ تلقائيًا أول ما توافق على الطلب، فمابتضيعش مع مسح الطلب). بتلاقيها فى عمود «مرفقات» فى سجل المدفوعات الموحّد وفى سجل كل عميل، وبتتخزّن زى باقى مرفقات البرنامج (الصور بتتضغط والملفات بتترفع للسحابة).'],
+  ['💰 شحن رصيد العملاء','من الإعدادات ← «شحن رصيد العملاء — إنستاباى»: حطّ عنوان إنستاباى اللى هتستقبل عليه. وزرار «📥 طلبات الشحن» بيوريك طلبات العملاء بالمبلغ ورقم العملية وصورة التحويل، وعليه عدّاد أحمر بعدد الطلبات اللى لسه واقفة مستنية مراجعتك. راجع التحويل على حسابك الأول — النظام مابيشوفش حسابك — وبعدين وافق فيزيد الرصيد ويتسجّل فى كشفه.'],
   ['👥 إنشاء حسابات جماعى','من «الإعدادات ← المستخدمون»: بيعرض كل عميل مالوش حساب باسم مستخدم مقترح من عمارته ووحدته وكلمة سر مولّدة. تراجع وتعدّل وتدوس إنشاء، وكل صف بيقولك اتعمل ولا لأ وليه.'],
   ['📨 روابط كلمة السر','تبعت لمجموعة مستخدمين روابط يغيّروا بيها كلمة سرهم بنفسهم على بريدهم.'],
   ['🎟️ كود التفعيل','من ملف العميل: زرار «كود تفعيل» بيولّد كود لمرة واحدة ورمز QR ورابط، تبعتهم على الواتساب. العميل يفتح الرابط ويكتب الكود ويختار اسم المستخدم وكلمة السر بنفسه. الكود صالح أسبوعين ولمرة واحدة، وحسابه بيتربط عندك أول ما تفتح النظام.'],
