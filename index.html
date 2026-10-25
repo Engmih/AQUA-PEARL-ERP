@@ -328,6 +328,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .apDaily .dT{font-size:.74rem;opacity:.78;line-height:1.5}
 .apDaily .dV{font-size:1rem;font-weight:800;line-height:1.45}
 .apDaily .dV small{font-weight:600;font-size:.78rem;opacity:.85}
+/* v61.52: العدّاد ما ينكسرش فى نص الكلمة — ينزل سطر كامل لو ما وسعش */
+.apDaily .dV .dLeft{display:inline-block;white-space:nowrap}
 .apDaily .dSide{flex:0 0 auto;text-align:center;font-size:.78rem;opacity:.9;line-height:1.5}
 .apDaily .dSide b{display:block;font-size:.95rem;font-weight:800}
 .apDaily .dBtn{flex:0 0 auto;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);
@@ -4584,7 +4586,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.51';
+const APP_VER  = 'v61.52';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -11918,7 +11920,8 @@ function apDailyHTML(){
       '</div>':'')+
     (np?'<div class="dRow"><span class="dIc">🕌</span>'+
       '<div class="dMain"><div class="dT">الصلاة الجاية'+(AP_DAILY.hijri?' · '+esc(AP_DAILY.hijri):'')+'</div>'+
-      '<div class="dV">'+esc(np.ar)+' '+esc(ap12(np.at))+' <small>'+esc(apLeftTxt(np.left))+'</small></div></div>'+
+      '<div class="dV">'+esc(np.ar)+' '+esc(ap12(np.at))+
+        ' <small class="dLeft">'+esc(apLeftTxt(np.left))+'</small></div></div>'+
       '<button type="button" class="dBtn" onclick="event.stopPropagation();apPrayOpen()">كل المواقيت</button>'+
       '</div>':'')+
     (hasMoney?'<div class="dRow"><span class="dIc">💵</span><div class="dMain dMoney">'+
