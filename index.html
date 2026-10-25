@@ -1463,6 +1463,18 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   </div>
 </div>
 
+<!-- v61.43: طلب شحن رصيد بتحويل إنستاباى -->
+<div class="modal-back" id="apTuModal">
+  <div class="modal" style="max-width:420px">
+    <h3><span>💳 شحن الرصيد</span><button class="x" onclick="closeModal('apTuModal')">✕</button></h3>
+    <div id="apTuBody"></div>
+    <div class="actions">
+      <button class="btn green" id="tuGo" onclick="apTuSend()">📨 إرسال الطلب</button>
+      <button class="btn ghost" onclick="closeModal('apTuModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <!-- v61.36: طلب حساب جديد (التسجيل الذاتى) -->
 <div class="modal-back" id="apSuModal">
   <div class="modal" style="max-width:420px">
@@ -4340,7 +4352,7 @@ window.PLAN_IMGS={"FF_3": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.42';
+const APP_VER  = 'v61.43';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4419,7 +4431,7 @@ function tafqit(num){
 }
 
 /* ---------- Store ---------- */
-const DEFAULT_SETTINGS={companyName:'Trust Group',projectName:'Aqua Pearl City',deliveryDeposit:50000,depositPct:7.5,reservePct:1,commissionPct:2.5,zakatPct:2.5,depositClubToPartners:true,receiptPrefix:'TR',logoAqua:'',logoTrust:'',ffPdfPath:'CRM/FULLY FINISHED.pdf',sfPdfPath:'CRM/semi finished .pdf',gsUrl:'',gsEnabled:false};
+const DEFAULT_SETTINGS={instapay:'',instapayName:'',companyName:'Trust Group',projectName:'Aqua Pearl City',deliveryDeposit:50000,depositPct:7.5,reservePct:1,commissionPct:2.5,zakatPct:2.5,depositClubToPartners:true,receiptPrefix:'TR',logoAqua:'',logoTrust:'',ffPdfPath:'CRM/FULLY FINISHED.pdf',sfPdfPath:'CRM/semi finished .pdf',gsUrl:'',gsEnabled:false};
 let DB=null;
 function pHash(s){let a=5381,b=52711;s='AQP¤'+s+'¤TG';for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=((a*33)^c)>>>0;b=((b*31)+c)>>>0;}return a.toString(36)+'.'+b.toString(36);}
 function defaultUsers(){return [{id:'u_admin',name:'admin',pass:pHash('admin'),admin:true,perms:[]}];}
@@ -5691,6 +5703,7 @@ function renderSettings(){
   ${pushCardHTML()}
   ${guideCardHTML()}
   ${supportCardHTML()}
+  ${instapayCardHTML()}
   ${musicCardHTML()}
   ${bioCardHTML()}
   <div class="card"><h3>👥 المستخدمون والصلاحيات</h3>
@@ -5879,6 +5892,30 @@ function supportCardHTML(){
       <span class="gray-note">شكاوى العملاء ومقترحاتهم هتتبعت على الرقم ده من داخل التطبيق.</span></div>
   </div>`;
 }
+/* ===================================================================
+   v61.43 — شحن رصيد المحفظة بتحويل إنستاباى
+   العميل بيحوّل بنفسه، وبيبعت طلب فيه المبلغ ورقم العملية وصورة
+   التحويل. الطلب بيستنى موافقتك — مفيش رصيد بيزيد من غير ما توافق.
+   =================================================================== */
+function instapayCardHTML(){
+  const v=esc(String(S().instapay||'')), n=esc(String(S().instapayName||''));
+  const pend=AP_TU_PEND.length;
+  return `<div class="card"><h3>💰 شحن رصيد العملاء — إنستاباى</h3>
+    <div class="grid g2" style="max-width:640px">
+      <div class="form-row"><label>عنوان إنستاباى</label>
+        <input id="stInstapay" style="direction:ltr" value="${v}" placeholder="name@instapay"></div>
+      <div class="form-row"><label>الاسم اللى هيظهر للعميل</label>
+        <input id="stInstapayName" value="${n}" placeholder="Trust Group"></div>
+    </div>
+    <div class="toolbar" style="margin-top:8px">
+      <button class="btn" onclick="saveSettings()">💾 حفظ</button>
+      <button class="btn gold" onclick="apTuReview()">📥 طلبات الشحن${pend?' ('+fmtN(pend)+')':''}</button>
+      <span class="gray-note">العميل بيحوّل على العنوان ده ويبعتلك طلب بالمبلغ ورقم العملية وصورة التحويل.
+        الرصيد مابيزيدش غير بموافقتك.</span>
+    </div>
+    ${v?'':'<p class="warn-red" style="margin:6px 0 0">⚠️ من غير عنوان إنستاباى، زرار الشحن عند العميل هيقوله يكلّم الإدارة.</p>'}
+  </div>`;
+}
 function musicCardHTML(){
   const on=apMusicOn();
   return `<div class="card"><h3>🎵 موسيقى الخلفية</h3>
@@ -6007,6 +6044,8 @@ function saveSettings(){
   /* v61.20: إعدادات الإشعارات */
   const vk=$('#stVapid'); if(vk) s.vapidKey=(vk.value||'').trim();
   const sw=$('#stSupportWa'); if(sw) s.supportWa=(sw.value||'').trim();
+  const ip=$('#stInstapay'); if(ip) s.instapay=(ip.value||'').trim();
+  const ipn=$('#stInstapayName'); if(ipn) s.instapayName=(ipn.value||'').trim();
   const po=$('#stPushOn'); if(po) s.pushOn=(po.value==='1');
   const seq=Math.max(0,Math.floor(Number($('#stSeq').value)||0));DB.seq.counter=seq;
   save();toast('تم حفظ الإعدادات','ok');
@@ -6721,8 +6760,10 @@ function syncHeaderBtns(){
     setTimeout(async()=>{ try{
       await apSignupLoad();
       const n=await apSuRefresh();
-      if(n){ toast('📝 فيه '+fmtN(n)+' طلب تسجيل مستنى مراجعتك','err');
-             try{ if(currentScreen==='settings') renderSettings(); }catch(e){} }
+      if(n){ toast('📝 فيه '+fmtN(n)+' طلب تسجيل مستنى مراجعتك','err'); }
+      const t=await apTuRefresh();
+      if(t){ toast('📥 فيه '+fmtN(t)+' طلب شحن رصيد مستنى مراجعتك','err'); }
+      try{ if((n||t)&&currentScreen==='settings') renderSettings(); }catch(e){}
     }catch(e){} },7000);
   }
   const show = !!CURRENT_USER && !AP_CLIENT;
@@ -10107,10 +10148,202 @@ function apWalletHTML(sale){
         <div class="n">${fmtN(w.balance)}<i>ج.م</i></div></div>
       <div class="chip">الرصيد بيغطى كل الخدمات ما عدا أقساط الشقة</div>
     </div>
+    <div class="toolbar no-print" style="margin:10px 0 2px">
+      <button class="btn green" onclick="apTuOpen()">💳 اشحن رصيدك</button>
+      <span class="gray-note">بتحويل إنستاباى — الرصيد بيزيد بعد مراجعة الإدارة.</span>
+    </div>
     <div class="walRow">
       <div class="walLog"><h4>سجل تغذية الرصيد</h4>${rows(w.topups,'topup')}</div>
       <div class="walLog"><h4>سجل المصروفات</h4>${rows(w.spends,'spend')}</div>
     </div>`;
+}
+/* ---- جهة المدير: مراجعة طلبات الشحن ---- */
+let AP_TU_PEND=[];
+async function apTuRefresh(){
+  try{
+    if(typeof window.apTopupsList!=='function') return 0;
+    const L=await window.apTopupsList();
+    AP_TU_PEND=L||[];
+    return AP_TU_PEND.length;
+  }catch(e){ return 0; }
+}
+function apTuSaleOf(mail){
+  const m=String(mail||'').toLowerCase();
+  const u=(DB.users||[]).find(x=>x.client&&String(x.email||'').toLowerCase()===m);
+  if(!u) return null;
+  return (DB.sales||[]).find(x=>x.unitId===u.unitId)||null;
+}
+async function apTuReview(){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  await apTuRefresh();
+  const body=$('#apBaBody'), note=$('#apBaNote');
+  if(!body) return;
+  const rb=$('#apBaRun'); if(rb) rb.style.display='none';
+  const ttl=document.querySelector('#apBaModal h3 span'); if(ttl) ttl.textContent='📥 طلبات شحن الرصيد';
+  if(!AP_TU_PEND.length){
+    body.innerHTML='<p class="gray-note" style="text-align:center;padding:22px 0">مفيش طلبات شحن.</p>';
+    if(note) note.textContent='';
+    openModal('apBaModal'); return;
+  }
+  if(note) note.innerHTML='<b>'+fmtN(AP_TU_PEND.length)+'</b> طلب. <b>راجع التحويل على حسابك فى إنستاباى الأول</b> '+
+    'قبل ما توافق — النظام مابيتأكدش من التحويل، إنت اللى بتأكّده.';
+  body.innerHTML='<table><thead><tr>'+
+    '<th style="width:19%">العميل</th><th style="width:9%">الوحدة</th>'+
+    '<th style="width:11%">المبلغ</th><th style="width:16%">رقم العملية</th>'+
+    '<th style="width:13%">التاريخ</th><th style="width:10%">الصورة</th>'+
+    '<th style="width:22%"></th></tr></thead><tbody>'+
+    AP_TU_PEND.map(it=>{
+      const r=it.rec||{};
+      const sale=apTuSaleOf(r.mail);
+      const d=new Date(r.at);
+      const key=esc(it.k)+'|'+esc(it.id);
+      return '<tr data-k="'+esc(it.k)+'" data-id="'+esc(it.id)+'">'+
+        '<td><b>'+esc(r.name||'')+'</b><br><span class="gray-note" style="direction:ltr">'+esc(r.mail||'')+'</span>'+
+          (sale?'':'<br><span class="warn-red">⚠️ مش لاقى عميل بالبريد ده</span>')+'</td>'+
+        '<td style="direction:ltr">'+esc(r.unit||'—')+'</td>'+
+        '<td><b>'+fmtN(Number(r.amount)||0)+'</b> ج.م</td>'+
+        '<td style="direction:ltr">'+esc(r.ref||'—')+'</td>'+
+        '<td>'+(isNaN(d)?'—':esc(d.toLocaleDateString('ar-EG')+' '+d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})))+'</td>'+
+        '<td>'+(r.img?'<button class="btn sm ghost" onclick="apTuImg(\''+key+'\')">👁️ عرض</button>':'<span class="gray-note">—</span>')+'</td>'+
+        '<td><div style="display:flex;gap:5px">'+
+          (sale?'<button class="btn sm green" onclick="apTuApprove(\''+key+'\')">موافقة</button>':'')+
+          '<button class="btn sm red" onclick="apTuReject(\''+key+'\')">رفض</button></div>'+
+          (r.note?'<div class="gray-note" style="margin-top:3px">'+esc(r.note)+'</div>':'')+'</td></tr>';
+    }).join('')+'</tbody></table>';
+  openModal('apBaModal');
+}
+function apTuFind(key){
+  const [k,id]=String(key).split('|');
+  return AP_TU_PEND.find(x=>x.k===k&&x.id===id)||null;
+}
+function apTuImg(key){
+  const it=apTuFind(key); if(!it||!it.rec||!it.rec.img) return;
+  confirmBox('🖼️ صورة التحويل — '+((it.rec.name)||''),
+    '<img src="'+it.rec.img+'" style="max-width:100%;border-radius:10px;border:1px solid var(--line)">',
+    'تمام',function(){});
+}
+async function apTuApprove(key){
+  const it=apTuFind(key); if(!it) return;
+  const r=it.rec||{};
+  const sale=apTuSaleOf(r.mail);
+  if(!sale){ toast('مش لاقى عميل بالبريد ده','err'); return; }
+  const amt=Math.round(Number(r.amount)||0);
+  if(!(amt>0)){ toast('المبلغ غير صحيح','err'); return; }
+  confirmBox('تأكيد شحن الرصيد',
+    '<p class="gray-note" style="margin:0 0 8px">هتضيف <b>'+fmtN(amt)+' ج.م</b> لرصيد <b>'+esc(sale.customer.name)+'</b>.'+
+    '<br>اتأكد إن التحويل وصل فعلًا على إنستاباى — النظام مابيشوفش حسابك.</p>',
+    '✅ أكّد الشحن', async ()=>{
+      if(!sale.wallet) sale.wallet={balance:0,topups:[],spends:[]};
+      if(!Array.isArray(sale.wallet.topups)) sale.wallet.topups=[];
+      sale.wallet.balance=(Number(sale.wallet.balance)||0)+amt;
+      sale.wallet.topups.unshift({date:todayISO(),amount:amt,
+        note:'إنستاباى — عملية '+(r.ref||'—'),
+        by:(CURRENT_USER&&CURRENT_USER.name)||'—'});
+      save();
+      try{ await window.apTopupDrop(it.k,it.id); }catch(e){}
+      apPushAccess();
+      toast('اتشحن '+fmtN(amt)+' ج.م لـ'+sale.customer.name+' ✔','ok');
+      apTuReview();
+    });
+}
+async function apTuReject(key){
+  const it=apTuFind(key); if(!it) return;
+  confirmBox('رفض الطلب','هيتمسح الطلب ومش هيزيد أى رصيد. بلّغ العميل بنفسك بالسبب.',
+    '🗑️ رفض', async ()=>{
+      try{ await window.apTopupDrop(it.k,it.id); }catch(e){}
+      toast('اترفض الطلب','ok');
+      apTuReview();
+    }, true);
+}
+/* ---- جهة العميل: طلب شحن ---- */
+let AP_TU_IMG='';
+function apTuOpen(){
+  const ip=String(S().instapay||'').trim();
+  const b=$('#apTuBody'); if(!b) return;
+  AP_TU_IMG='';
+  if(!ip){
+    b.innerHTML='<p class="warn-red">الشحن مش متاح دلوقتى — كلّم الإدارة من «شكاوى».</p>';
+    const g=$('#tuGo'); if(g) g.style.display='none';
+    openModal('apTuModal'); return;
+  }
+  const g=$('#tuGo'); if(g) g.style.display='';
+  b.innerHTML=`
+    <div class="card" style="margin:0 0 11px;background:#f6fbfd">
+      <div class="gray-note" style="margin-bottom:4px">حوّل المبلغ على عنوان إنستاباى ده:</div>
+      <div style="font-size:17px;font-weight:900;direction:ltr;color:var(--navy);word-break:break-all">${esc(ip)}</div>
+      ${S().instapayName?('<div class="gray-note" style="margin-top:3px">باسم: '+esc(S().instapayName)+'</div>'):''}
+      <button class="btn sm ghost" style="margin-top:7px" onclick="apTuCopy()">📋 نسخ العنوان</button>
+    </div>
+    <div class="form-row"><label>💵 المبلغ المحوَّل (ج.م)</label>
+      <input id="tuAmt" type="number" inputmode="numeric" min="1" placeholder="مثال: 500"></div>
+    <div class="form-row"><label>🔢 رقم عملية التحويل</label>
+      <input id="tuRef" style="direction:ltr" placeholder="الرقم اللى ظهرلك بعد التحويل"></div>
+    <div class="form-row"><label>🖼️ صورة التحويل (مهمة عشان نراجع بسرعة)</label>
+      <input id="tuImg" type="file" accept="image/*" onchange="apTuPick(this)"></div>
+    <div id="tuPrev"></div>
+    <div class="form-row"><label>📝 ملاحظة (اختيارى)</label><input id="tuNote"></div>
+    <div id="tuMsg" class="gray-note" style="min-height:18px"></div>`;
+  openModal('apTuModal');
+}
+function apTuCopy(){
+  const t=String(S().instapay||'');
+  try{ navigator.clipboard.writeText(t); toast('اتنسخ ✔','ok'); }
+  catch(e){ toast('انسخه بإيدك: '+t,'err'); }
+}
+/* تصغير الصورة قبل الرفع — صور الموبايل ٣–٥ ميجا وماينفعش ترفع كده */
+function apTuPick(inp){
+  const f=inp&&inp.files&&inp.files[0]; if(!f) return;
+  const msg=$('#tuMsg');
+  if(msg){ msg.textContent='⏳ بنجهّز الصورة...'; msg.className='gray-note'; }
+  const fr=new FileReader();
+  fr.onload=()=>{
+    const im=new Image();
+    im.onload=()=>{
+      const MX=1100;
+      let w=im.width, h=im.height;
+      if(w>MX||h>MX){ const r=Math.min(MX/w,MX/h); w=Math.round(w*r); h=Math.round(h*r); }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(im,0,0,w,h);
+      let q=0.72, out=c.toDataURL('image/jpeg',q);
+      while(out.length>420000 && q>0.35){ q-=0.1; out=c.toDataURL('image/jpeg',q); }
+      if(out.length>420000){ if(msg){ msg.textContent='⛔ الصورة كبيرة أوى — جرّب صورة أوضح وأصغر'; msg.className='warn-red'; } return; }
+      AP_TU_IMG=out;
+      const pv=$('#tuPrev');
+      if(pv) pv.innerHTML='<img src="'+out+'" style="max-width:100%;max-height:190px;border-radius:10px;border:1px solid var(--line)">';
+      if(msg){ msg.textContent='✔ الصورة جاهزة ('+Math.round(out.length/1024)+' ك.ب)'; msg.className='gray-note'; }
+    };
+    im.onerror=()=>{ if(msg){ msg.textContent='⛔ مش قادرين نقرا الصورة'; msg.className='warn-red'; } };
+    im.src=fr.result;
+  };
+  fr.onerror=()=>{ if(msg){ msg.textContent='⛔ مش قادرين نقرا الملف'; msg.className='warn-red'; } };
+  fr.readAsDataURL(f);
+}
+async function apTuSend(){
+  const g=id=>($('#'+id)&&$('#'+id).value)||'';
+  const msg=$('#tuMsg'), btn=$('#tuGo');
+  const set=(t,bad)=>{ if(msg){ msg.textContent=t; msg.className=bad?'warn-red':'gray-note'; } };
+  const amt=Math.round(Number(g('tuAmt'))||0);
+  const ref=String(g('tuRef')).trim();
+  if(!(amt>0)){ set('اكتب المبلغ',1); return; }
+  if(amt>500000){ set('المبلغ كبير أوى — راجع الإدارة',1); return; }
+  if(ref.length<4){ set('اكتب رقم عملية التحويل',1); return; }
+  if(typeof window.apTopupSend!=='function'){ set('محتاج اتصال بالإنترنت',1); return; }
+  if(btn){ btn.disabled=true; btn.textContent='⏳ جارٍ الإرسال...'; }
+  try{
+    const sale=(DB.sales||[])[0]||{};
+    const u=unitById(sale.unitId)||{};
+    const r=await window.apTopupSend({
+      amount:amt, ref:ref, note:String(g('tuNote')).trim(),
+      unit:(u.building&&u.unitNo)?(u.building+'-'+u.unitNo):'',
+      name:(sale.customer&&sale.customer.name)||'',
+      img:AP_TU_IMG||''
+    });
+    if(!r||!r.ok){ set((r&&r.err)||'تعذر الإرسال',1); return; }
+    set('✔ وصل طلبك. هيتراجع والرصيد هيزيد بعد الموافقة.');
+    AP_TU_IMG='';
+    setTimeout(()=>closeModal('apTuModal'),2300);
+  }catch(e){ set('تعذر الإرسال: '+((e&&e.message)||''),1); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='📨 إرسال الطلب'; } }
 }
 /* v61.31: حساب اتحاد الملاك — إيراد ومدفوع، قراءة فقط لحين ضبط الإدخال */
 function apUnion(sale){
@@ -10157,6 +10390,7 @@ const AP_GUIDE={
   ['⚖️ البونص والغرامات','بتظهر لك وحدها كل ما تدخل، وتقفلها بعلامة ✕. بتقولك عليك غرامة تأخير ولا ليك بونص سداد مبكّر — ولو سدادك منتظم بتقولك كده. وتقدر تفتحها وقت ما تحب من جوّه «أقساطى».'],
   ['💰 إيصالاتى','كل إيصال اتسجّل لك، ومعاه زرار طباعة الإيصال.'],
   ['💳 المدفوعات','رصيد محفظتك، وشحن الكهرباء والمياه والتكييف والغاز والتليفون الأرضى والإنترنت، وحجز الجراج.'],
+  ['💰 شحن الرصيد','من «المدفوعات ← الرصيد» اضغط «اشحن رصيدك»: هيظهرلك عنوان إنستاباى — حوّل عليه، وبعدين اكتب المبلغ ورقم العملية وارفع صورة التحويل وابعت. الرصيد بيزيد بعد ما الإدارة تراجع التحويل وتوافق.'],
   ['🅿️ حجز الجراج','اختر الدور، كبّر البلان بإصبعين، واضغط على السيارة تشوف رقم المكان وسعره السنوى.'],
   ['🛍️ مشتريات','مطاعم وكافيهات · المول · ماركت · الجيم · السبا · خدمة منزلية · كيدز إيريا/حضانة · جليسة أطفال · صيدلية · طبيب طوارئ منزلى · دراى كلين · دار المناسبات.'],
   ['🧰 طلب فنى صيانة','من داخل «مشتريات». اختر التخصص (كهربائى · سبّاك · نقّاش · IT · تليفونات · مصاعد) والوقت المناسب، واكتب العطل، وابعت.'],
@@ -10199,6 +10433,7 @@ const AP_GUIDE={
   ['✏️ التعديل الجماعى','من «قاعدة العملاء» زرار ✏️ تعديل جنب عدد النتائج: بيفتح العملاء الظاهرين بالفلتر فى جدول واحد تعدّل فيه الاسم والتليفون والرقم القومى والإيميل وباقة التشطيب. رقم الوحدة للعرض فقط، والإيميل مقفول لمن له حساب مربوط. وقبل الحفظ بيوريك كشف بكل تغيير.'],
   ['✉️ عدّاد الدعوات','الرقم الأحمر على زرار INVITATION بيقول كام مرة اتفتحت الدعوة على الواتساب لهذا العميل، واضغط عليه تشوف تاريخ ووقت كل مرة ومين بعتها. النظام مش بيعرف لو ضغطت «إرسال» جوّه الواتساب نفسه.'],
   ['⚠️ وحدات مباعة بلا عميل','لو رقم «المباعة» أكبر من عدد العملاء، هتلاقى علامة حمرا على كارت المباعة بتوريك الوحدات اللى حالتها مباعة من غير عملية بيع، وترجّعها «متاحة» بضغطة.'],
+  ['💰 شحن رصيد العملاء','من الإعدادات ← «شحن رصيد العملاء — إنستاباى»: حطّ عنوان إنستاباى اللى هتستقبل عليه. وزرار «📥 طلبات الشحن» بيوريك طلبات العملاء بالمبلغ ورقم العملية وصورة التحويل. راجع التحويل على حسابك الأول — النظام مابيشوفش حسابك — وبعدين وافق فيزيد الرصيد ويتسجّل فى كشفه.'],
   ['👥 إنشاء حسابات جماعى','من «الإعدادات ← المستخدمون»: بيعرض كل عميل مالوش حساب باسم مستخدم مقترح من عمارته ووحدته وكلمة سر مولّدة. تراجع وتعدّل وتدوس إنشاء، وكل صف بيقولك اتعمل ولا لأ وليه.'],
   ['📨 روابط كلمة السر','تبعت لمجموعة مستخدمين روابط يغيّروا بيها كلمة سرهم بنفسهم على بريدهم.'],
   ['🎟️ كود التفعيل','من ملف العميل: زرار «كود تفعيل» بيولّد كود لمرة واحدة ورمز QR ورابط، تبعتهم على الواتساب. العميل يفتح الرابط ويكتب الكود ويختار اسم المستخدم وكلمة السر بنفسه. الكود صالح أسبوعين ولمرة واحدة، وحسابه بيتربط عندك أول ما تفتح النظام.'],
@@ -15222,6 +15457,40 @@ function apSetAttUrl(key,url){
      /signups/<مفتاح البريد> : طلب تسجيل ينتظر موافقة المدير. العميل
      لا يرى أى بيانات قبل الموافقة — الطلب مجرد إخطار لك.
      =================================================================== */
+  /* ===================================================================
+     v61.43 — طلبات شحن الرصيد /topups
+     العميل يكتب تحت مفتاح بريده هو وحده، والمدير يقرا الكل ويوافق.
+     لا يزيد رصيد أحد إلا من جهاز المدير بعد مراجعته.
+     =================================================================== */
+  window.apTopupSend = async function (rec) {
+    if (!rtdb || !cloudUser) return { err: 'مش متصل' };
+    try {
+      const k = mailKey(cloudUser.email);
+      const id = 'T' + Date.now().toString(36);
+      await rtdb.ref('topups/' + k + '/' + id).set(Object.assign({}, rec, {
+        mail: String(cloudUser.email).toLowerCase(), at: new Date().toISOString()
+      }));
+      return { ok: true };
+    } catch (e) { return { err: (e && (e.code || e.message)) || 'تعذر الإرسال' }; }
+  };
+  window.apTopupsList = async function () {
+    if (!rtdb || !isCloudAdmin()) return null;
+    try {
+      const sn = await rtdb.ref('topups').get();
+      const v = sn.val() || {};
+      const out = [];
+      Object.keys(v).forEach(k => Object.keys(v[k] || {}).forEach(id => {
+        out.push({ k: k, id: id, rec: v[k][id] });
+      }));
+      out.sort((a, b) => String(a.rec && a.rec.at) < String(b.rec && b.rec.at) ? 1 : -1);
+      return out;
+    } catch (e) { return null; }
+  };
+  window.apTopupDrop = async function (k, id) {
+    if (!rtdb || !isCloudAdmin()) return false;
+    try { await rtdb.ref('topups/' + k + '/' + id).remove(); return true; } catch (e) { return false; }
+  };
+
   window.apSignupFlag = async function () {
     if (!rtdb) return null;
     try { const sn = await rtdb.ref('pub/signup').get(); return sn.val() === true; }
