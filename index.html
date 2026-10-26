@@ -4586,7 +4586,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.52';
+const APP_VER  = 'v61.53';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -7091,6 +7091,7 @@ function syncHeaderBtns(){
     window.__unameSeeded=true;
     setTimeout(()=>{ try{ unameSeed(); }catch(e){} },4000);
     setTimeout(()=>{ try{ apInvCollect(); }catch(e){} },6000);
+    setTimeout(()=>{ try{ apStmtDue(); }catch(e){} },9000);   /* v61.53: كشوف الشركاء الشهرية */
     setTimeout(async()=>{ try{
       await apSignupLoad();
       const n=await apSuRefresh();
@@ -11217,6 +11218,7 @@ const AP_GUIDE={
   ['✏️ التعديل الجماعى','من «قاعدة العملاء» زرار ✏️ تعديل جنب عدد النتائج: بيفتح العملاء الظاهرين بالفلتر فى جدول واحد تعدّل فيه الاسم والتليفون والرقم القومى والإيميل وباقة التشطيب. رقم الوحدة للعرض فقط، والإيميل مقفول لمن له حساب مربوط. وقبل الحفظ بيوريك كشف بكل تغيير.'],
   ['✉️ عدّاد الدعوات','الرقم الأحمر على زرار INVITATION بيقول كام مرة اتفتحت الدعوة على الواتساب لهذا العميل، واضغط عليه تشوف تاريخ ووقت كل مرة ومين بعتها. النظام مش بيعرف لو ضغطت «إرسال» جوّه الواتساب نفسه.'],
   ['⚠️ وحدات مباعة بلا عميل','لو رقم «المباعة» أكبر من عدد العملاء، هتلاقى علامة حمرا على كارت المباعة بتوريك الوحدات اللى حالتها مباعة من غير عملية بيع، وترجّعها «متاحة» بضغطة.'],
+  ['📧 كشف الشريك على الإيميل','من شركاء وبنوك ← افتح الشريك ← «📧 إرسال بالإيميل» يوصله كشف حسابه المفصل على إيميله — نفس محتوى الكشف المطبوع بالظبط. وأول مرة تفتح البرنامج فى شهر جديد بيسألك تبعت لكل الشركاء مرة واحدة، وتقدر تشيل علامة الصح من أى حد. كل شريك بياخد أرقامه هو بس: وحداته اللى ليه فيها نسبة، ودفعاته، وودائعه — مفيش أى بيانات شريك تانى ولا أرقام الشركة الكلية. الإيميل بيروح من بريدك إنت عبر Apps Script، فلو الشريك رد هيوصلك. والشريك اللى مالوش إيميل مسجّل بيبان فى القايمة مكتوب جنبه «مفيش إيميل».'],
   ['📢 الأخبار والعروض','تاب مستقل للمدير وحده. تضيف منه الخبر: عنوان ونص وصورة اختيارية ونوع (خبر / عرض / تنبيه) وتاريخ بداية، وللعروض تاريخ انتهاء ينزل بيه العرض لوحده. وتقدر تثبّت خبر فوق الفيد أو توقفه مؤقتًا من غير ما تمسحه. الحفظ بيخزّنه عندك بس ومابينشرش — تشوف المعاينة الأول وتعدّل، ولما تطمن تضغط «☁️ نشر للعملاء». وعمود «عند العميل» بيقولك حالة كل خبر: ✔ منشور · ⏳ ماتنشرش · ⏳ فيه تعديل · ⏳ لسه عندهم (ده خبر مسحته أو وقفته ولسه ظاهر عندهم لحد ما تنشر). وفوق بيبان عدد التغييرات اللى لسه ماوصلتش.'],
   ['🛒 الشراء من العرض','لما تعمل خبر نوعه «عرض» وتحطّله سعر، بيظهر للعميل زرار «اشترِ الآن» على الكارت. يدوس → رسالة تأكيد فيها السعر ورصيده والرصيد بعد الشراء → يأكّد → الخصم بيتمّ فى أقل من ثانية. ولو رصيده مش كفاية بتقوله ناقصه كام وبتوديه لشاشة الشحن. ولو شغّلت «الكمية محدودة» بيبان عدّاد «فاضل كذا» بيقلّ عند كل العملاء فى نفس اللحظة، وأول ما يخلص الزرار يتحوّل لـ«خلص العرض». وزرار ↺ جنب العرض فى جدول الأخبار بيرجّع العدّاد لأوله.'],
   ['💰 الرصيد بقى على السحابة','الرصيد الحقيقى بقى مخزّن على السحابة مش فى ملفك — عشان الخصم يحصل فورًا والعدّاد يبقى مظبوط لكل الناس. والقواعد على السيرفر بتمنع أى عميل إنه يزوّد رصيده أو ينزل تحت الصفر أو يلمس رصيد حد تانى. والنظام بيسحب الأرصدة والحركات وينزّلها فى ملفك تلقائيًا فنسختك الاحتياطية تفضل كاملة، وفيه زرار «🔄 مزامنة» فى تاب رصيد العملاء. ولو ظهر تحذير إن رصيد عميل مش مطابق لمجموع حركاته، اضغط مزامنة.'],
@@ -15080,6 +15082,7 @@ function renderPartnerFile(id){
    <span style="margin-inline-start:auto"></span>
    <button class="btn gold" onclick="viewPartnerStmt('${p.id}','brief')">📄 كشف حساب مختصر</button>
    <button class="btn aqua" onclick="viewPartnerStmt('${p.id}','detail')">📄 كشف حساب مفصل</button>
+   <button class="btn green" onclick="apStmtOpen('${p.id}')" title="يبعتله الكشف المفصل على إيميله">📧 إرسال بالإيميل</button>
   </div>
   <div class="grid g4">
    ${fld('💰','نصيبه من كل المحصل',fmtM(c.share),'money')}
@@ -15217,6 +15220,183 @@ function stmtCardsApp(c){
    ${fld('💼','رأس المال الحالي',fmtM(c.capital),'money')}
    ${fld('📌','متبقي التزام الودائع والنادي',fmtM(c.obligationLeft),'money')}
   </div>`;
+}
+/* ===================================================================
+   v61.53 — كشف حساب الشريك على الإيميل
+   نفس محتوى الكشف المطبوع، مبنى من أربع مصادر بس كلها بتاعة الشريك
+   نفسه: partnerCalc(p) و partnerUnitRows(p) و p.payouts و
+   p.depositReturns — و partnerUnitRows بتلفّ على عماراته اللى ليه
+   فيها نسبة > 0 وبس، فمفيش طريق أصلًا لبيانات شريك تانى.
+   الإرسال عبر Apps Script (نفس اللى بيعمل النسخ الاحتياطى على Drive).
+   =================================================================== */
+function apStmtMailHTML(pid){
+  const p=partnerById(pid); if(!p) return null;
+  const c=partnerCalc(p);
+  const units=partnerUnitRows(p);
+  const ref=stmtRef(p.id,'detail');
+  const E=s=>esc(s), M=n=>fmtM(n);
+  const NAVY='#0b2a4a', NAVY2='#123e63', LINE='#dbe6ee', SOFT='#f6fafc', GOLD='#FBF3D9';
+  const box=(ic,lb,val,hi)=>
+    '<td width="50%" valign="top" style="padding:5px">'+
+      '<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid '+LINE+';'+
+        'border-radius:10px;background:'+(hi?GOLD:'#ffffff')+'"><tr>'+
+        '<td style="padding:10px 12px;font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right">'+
+          '<div style="font-size:11px;color:#61788c;line-height:1.5">'+ic+' '+E(lb)+'</div>'+
+          '<div style="font-size:16px;font-weight:bold;color:'+NAVY+';line-height:1.5">'+E(val)+'</div>'+
+        '</td></tr></table></td>';
+  /* الأنماط المتكررة فى <style> مش على كل خلية: كشف الشريك الكبير كان
+     بيوصل ٩٧ ك.ب، وجيميل بيقصّ الرسالة بعد ١٠٢ ك.ب. كده بقى الثلث. */
+  const th=t=>'<th class="h">'+E(t)+'</th>';
+  const td=(t,b2,nw)=>'<td class="d'+(nw?' n':'')+(b2?' b':'')+'">'+t+'</td>';
+  const tot=(t,span)=>'<td'+(span?' colspan="'+span+'"':'')+' class="t">'+t+'</td>';
+  const card=(ttl,inner)=>
+    '<table width="100%" cellpadding="0" cellspacing="0" style="margin:14px 0;border:1px solid '+LINE+';'+
+      'border-radius:11px;background:#fff"><tr><td style="padding:12px 13px;font-family:Tahoma,Arial,sans-serif;direction:rtl">'+
+      '<div style="font-size:14px;font-weight:bold;color:'+NAVY+';margin-bottom:9px">'+E(ttl)+'</div>'+inner+'</td></tr></table>';
+
+  const cards='<table width="100%" cellpadding="0" cellspacing="0"><tr>'+
+      box('💰','إجمالى نصيبه من كل المحصل',M(c.share))+
+      box('🧾','خصم عمولات بيع '+c.commPct+'٪ (من نصيبه فى تعاقدات '+M(c.commBase)+')',M(c.commission))+
+    '</tr><tr>'+
+      box('💸','إجمالى المصروف له من الأرباح',M(c.payouts))+
+      box('🧾','خصم مصروفات عامة',M(c.expShare||0))+
+    '</tr><tr>'+
+      box('⚖️','الرصيد النهائى',M(Math.abs(c.balance))+' '+(c.balance>=0?'دائن له':'مدين عليه'),1)+
+      box('💼','رأس المال الحالى',M(c.capital))+
+    '</tr><tr>'+
+      box('📌','متبقى التزام الودائع والنادى',M(c.obligationLeft))+'<td width="50%"></td>'+
+    '</tr></table>';
+
+  const notice='<table width="100%" cellpadding="0" cellspacing="0" style="margin:14px 0;'+
+    'background:'+GOLD+';border:1px solid #e6d9a8;border-radius:10px"><tr>'+
+    '<td style="padding:11px 13px;font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right;'+
+    'font-size:12px;line-height:1.9;color:#6b5516"><b>تنبيه:</b> يُرجى مراجعة الدفعات والأرصدة الواردة '+
+    'بهذا الكشف، وموافاتنا بأى ملاحظات خلال <b>سبعة أيام</b> من تاريخ إرساله. وفى حال عدم ورود اعتراض '+
+    'خلال هذه المدة، يُعد الكشف مقبولًا ومعتمدًا من الشريك.</td></tr></table>';
+
+  const unitsTbl=card('🏢 تفصيل الوحدات والمحصل ونصيب الشريك',
+    '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;direction:rtl"><tr>'+
+    ['العمارة','الوحدة','العميل','النوع','المحصل','نسبته','نصيبه'].map(th).join('')+'</tr>'+
+    (units.length?units.map(r=>'<tr>'+td(E(r.b),0,1)+td(E(r.unit),0,1)+td(E(r.customer))+
+      td(r.kind==='غرامة فسخ'?'<b style="color:#b3261e">غرامة فسخ</b>':E(r.kind||'وحدة'))+
+      td(M(r.col),0,1)+td(r.pc+'٪',0,1)+td(M(r.sh),1,1)+'</tr>').join('')
+     :'<tr>'+td('لا يوجد')+'<td colspan="6"></td></tr>')+
+    '<tr style="background:'+GOLD+'">'+tot('إجمالى نصيبه من المحصل',6)+tot(M(c.share))+'</tr></table>');
+
+  const mrow=m=>'<tr>'+td(E(fmtD(m.date)),0,1)+td(M(m.amount),1,1)+td(E(m.method||''),0,1)+td(E(m.note||''))+'</tr>';
+  const payTbl=card('💸 دفعات الأرباح المصروفة له',
+    '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;direction:rtl"><tr>'+
+    ['التاريخ','المبلغ','الطريقة','الملاحظات'].map(th).join('')+'</tr>'+
+    ((p.payouts||[]).length?(p.payouts||[]).slice().sort((a,b)=>a.date<b.date?-1:1).map(mrow).join('')
+      :'<tr>'+td('لا يوجد')+'<td colspan="3"></td></tr>')+
+    '<tr style="background:'+SOFT+'">'+tot('الإجمالى')+tot(M(c.payouts),3)+'</tr></table>');
+
+  const depTbl=card('↩️ رد الودائع للشركة',
+    '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;direction:rtl"><tr>'+
+    ['التاريخ','المبلغ','الطريقة','الملاحظات'].map(th).join('')+'</tr>'+
+    ((p.depositReturns||[]).length?(p.depositReturns||[]).slice().sort((a,b)=>a.date<b.date?-1:1).map(mrow).join('')
+      :'<tr>'+td('لا يوجد')+'<td colspan="3"></td></tr>')+
+    '<tr style="background:'+SOFT+'">'+tot('متبقى الالتزام')+tot(M(c.obligationLeft),3)+'</tr></table>');
+
+  const CSS='<style>'+
+    'th.h{background:'+NAVY2+';color:#fff;font-size:11.5px;font-weight:bold;padding:7px 8px;text-align:right;border:0}'+
+    'td.d{padding:6px 8px;font-size:11.5px;border-bottom:1px solid '+LINE+';text-align:right;color:#16324c}'+
+    'td.d.n{white-space:nowrap}td.d.b{font-weight:bold}'+
+    'td.t{padding:7px 8px;font-size:12px;font-weight:bold;text-align:right;white-space:nowrap;color:'+NAVY+'}'+
+    '</style>';
+  const html='<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1">'+CSS+'</head>'+
+  '<body style="margin:0;padding:0;background:#eef3f7">'+
+  '<table width="100%" cellpadding="0" cellspacing="0" style="background:#eef3f7"><tr><td align="center" style="padding:16px 10px">'+
+  '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid '+LINE+'">'+
+    '<tr><td style="padding:0"><img src="cid:aphdr" width="720" style="width:100%;display:block;border:0" alt="Aqua Pearl City"></td></tr>'+
+    '<tr><td style="padding:14px 16px 0;font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right">'+
+      '<div style="font-size:18px;font-weight:bold;color:'+NAVY+'">كشف حساب مفصل — '+E(p.name)+'</div>'+
+      '<div style="font-size:12px;color:#61788c;margin-top:4px">بتاريخ '+E(fmtD(todayISO()))+
+        ' · رقم مرجعى: <b style="color:'+NAVY2+'">'+E(ref)+'</b></div>'+
+      '<div style="height:3px;background:#1195b2;width:92px;border-radius:2px;margin:10px 0 2px"></div>'+
+    '</td></tr><tr><td style="padding:6px 11px 16px">'+cards+notice+unitsTbl+payTbl+depTbl+
+      '<div style="font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:center;font-size:11px;'+
+      'color:#7c96ab;padding:8px 4px 2px;line-height:1.9;border-top:1px solid '+LINE+';margin-top:6px">'+
+      'هذا الكشف صادر آليًا من نظام Aqua Pearl ERP — TRUST GROUP<br>'+
+      'لأى استفسار يُرجى الرد على هذه الرسالة.</div></td></tr>'+
+  '</table></td></tr></table></body></html>';
+  return {html, ref, name:p.name,
+    subject:'كشف حساب — '+p.name+' — '+fmtD(todayISO())+' ('+ref+')'};
+}
+/* الشركاء اللى ليهم حساب وإيميل */
+function apStmtPeople(){
+  return (DB.partners||[]).map(p=>{
+    const u=(DB.users||[]).find(x=>x.partner&&x.partnerId===p.id&&x.email);
+    return {id:p.id, name:p.name, mail:u?String(u.email).trim():'',
+            last:(p.stmtSentAt||''), share:partnerCalc(p).share};
+  });
+}
+function apStmtPeriod(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function apStmtOpen(one){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  const L=apStmtPeople().filter(x=>!one||x.id===one);
+  const body=$('#apBaBody'), note=$('#apBaNote'), rb=$('#apBaRun');
+  const ttl=document.querySelector('#apBaModal h3 span'); if(ttl) ttl.textContent='📧 إرسال كشوف الشركاء';
+  const ready=L.filter(x=>x.mail);
+  if(!ready.length){
+    body.innerHTML='<p class="gray-note" style="text-align:center;padding:20px 0">'+
+      (L.length?'مفيش شريك له إيميل مسجّل. ضيف الإيميل من الإعدادات ← المستخدمون.':'مفيش شركاء.')+'</p>';
+    if(note) note.textContent=''; if(rb) rb.style.display='none';
+    openModal('apBaModal'); return;
+  }
+  if(note) note.innerHTML='كل شريك بياخد كشفه هو بس. الإيميل بيروح من بريدك إنت عبر Apps Script.';
+  body.innerHTML='<table><thead><tr><th style="width:34px"></th><th style="width:28%">الشريك</th>'+
+    '<th style="width:32%">الإيميل</th><th style="width:20%">نصيبه</th><th style="width:20%">آخر إرسال</th>'+
+    '</tr></thead><tbody>'+L.map(x=>
+      '<tr><td>'+(x.mail?'<input type="checkbox" class="stmtChk" value="'+esc(x.id)+'" checked style="width:auto">':'')+'</td>'+
+      '<td><b>'+esc(x.name)+'</b></td>'+
+      '<td style="direction:ltr">'+(x.mail?esc(x.mail):'<span class="warn-red">مفيش إيميل</span>')+'</td>'+
+      '<td>'+fmtM(x.share)+'</td>'+
+      '<td class="gray-note">'+(x.last?esc(fmtD(String(x.last).slice(0,10))):'—')+'</td></tr>').join('')+
+    '</tbody></table>';
+  if(rb){ rb.style.display=''; rb.textContent='📧 إرسال'; rb.onclick=apStmtSend; }
+  openModal('apBaModal');
+}
+async function apStmtSend(){
+  const ids=$$('.stmtChk').filter(c=>c.checked).map(c=>c.value);
+  if(!ids.length){ toast('اختار شريك على الأقل','err'); return; }
+  const st=S();
+  if(!st.gsUrl){ toast('محتاج رابط Apps Script — الإعدادات ← مزامنة Google','err'); return; }
+  const rb=$('#apBaRun'); if(rb){ rb.disabled=true; rb.textContent='⏳ جارٍ الإرسال...'; }
+  let ok=0, fail=0;
+  for(const id of ids){
+    const m=apStmtMailHTML(id); if(!m){ fail++; continue; }
+    const pr=apStmtPeople().find(x=>x.id===id);
+    if(!pr||!pr.mail){ fail++; continue; }
+    try{
+      await drivePost({type:'stmtmail', to:pr.mail, subject:m.subject, html:m.html,
+        name:m.name, ref:m.ref, hdr:window.ASSETS.header});
+      const p=partnerById(id); if(p){ p.stmtSentAt=new Date().toISOString(); p.stmtPeriod=apStmtPeriod(); }
+      ok++;
+      await new Promise(r=>setTimeout(r,400));   /* مهلة صغيرة بين الرسائل */
+    }catch(e){ fail++; }
+  }
+  save();
+  if(rb){ rb.disabled=false; rb.textContent='📧 إرسال'; }
+  closeModal('apBaModal');
+  toast(ok?('اتبعت '+fmtN(ok)+' كشف'+(fail?' · فشل '+fmtN(fail):'')+' ✔'):'ماتبعتش ولا كشف','ok');
+  if(ok) toast('ملحوظة: المتصفح مايقدرش يقرا رد السكريبت — اتأكد من وصولها من «Sent» فى جيميل','err');
+}
+/* أول مرة تفتح البرنامج فى شهر جديد */
+function apStmtDue(){
+  if(!isAdmin()||AP_CLIENT) return;
+  const per=apStmtPeriod();
+  if(DB.stmtAsked===per) return;
+  const L=apStmtPeople().filter(x=>x.mail&&x.stmtPeriod!==per&&partnerById(x.id).stmtPeriod!==per);
+  if(!L.length) return;
+  DB.stmtAsked=per; save();
+  setTimeout(()=>{
+    confirmBox('📧 كشوف الشركاء الشهرية',
+      '<p style="line-height:1.9;margin:0">بدأ شهر جديد، و<b>'+fmtN(L.length)+'</b> شريك لسه ماوصلهمش كشف هذا الشهر.'+
+      '<br>تحب تبعتهم دلوقتى؟</p>',
+      '📧 افتح القائمة', function(){ apStmtOpen(); });
+  },3500);
 }
 /* ===== كشف حساب الشريك: رقم مرجعي + تنبيه المراجعة + توقيع اختياري ===== */
 function stmtRef(pid,type){
