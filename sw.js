@@ -20,7 +20,7 @@
    ٤) امتلاء مساحة التخزين (QuotaExceeded) لم يعد يُسقط التخزين كله:
       عند الفشل تُمسح الوسائط وحدها ويبقى ملف النظام.
    ===================================================================== */
-const VER   = 'v61.58';
+const VER   = 'v61.59';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
@@ -131,16 +131,26 @@ self.addEventListener('message', e => {
   }
 });
 
-/* هل النسخة اللى على السيرفر اتغيّرت عن المحفوظة؟ */
-function stamp(r) {
+/* =====================================================================
+   هل النسخة اللى على السيرفر اتغيّرت عن المحفوظة؟
+   ---------------------------------------------------------------------
+   v61.59: كانت المقارنة بترويسات السيرفر (ETag / Last-Modified /
+   Content-Length). واتثبت من صفحة التشخيص على موبايل حقيقى إن
+   كلاودفلير بيدجز **مابيبعتش ولا واحدة منهم** — بيضغط الملف ويبعته
+   مقطّع (chunked). فالمقارنة كانت بتتم بين فاضى وفاضى، ونتيجتها
+   دايمًا «مفيش جديد»: التحديث ما كانش بيتكتشف أبدًا، لا شريط ولا
+   تحديث تلقائى، والمستخدم يفضل شايف النسخة اللى قبلها لحد ما يفتح
+   مرة تانية.
+
+   دلوقتى المقارنة على رقم النسخة المكتوب جوّه الملف نفسه. ده
+   مابيعتمدش على السيرفر ولا على إعداداته خالص.
+   ===================================================================== */
+async function docVer(r) {
   try {
-    return r.headers.get('etag') || r.headers.get('last-modified') ||
-           r.headers.get('content-length') || '';
+    const t = await r.text();
+    const m = t.match(/APP_VER\s*=\s*'([^']+)'/);
+    return m ? m[1] : ('len:' + t.length);
   } catch (e) { return ''; }
-}
-function changed(a, b) {
-  const x = stamp(a), y = stamp(b);
-  return !!(x && y && x !== y);
 }
 let AP_UPD_READY = false;
 async function notifyUpdate() {
@@ -176,11 +186,14 @@ async function handleDoc(evt, req) {
   } catch (e) { net = Promise.resolve(null); }
 
   if (cached) {
+    /* لازم ناخد نسخة للقراءة قبل ما نرجّع الأصل للمتصفح */
+    const probe = cached.clone();
     try {
       evt.waitUntil((async () => {
         const res = await net;
         if (!res || !res.ok) return;
-        if (changed(cached, res)) notifyUpdate(); else AP_UPD_READY = false;
+        const [was, now] = await Promise.all([docVer(probe), docVer(res.clone())]);
+        if (was && now && was !== now) notifyUpdate(); else AP_UPD_READY = false;
       })());
     } catch (e) {}
     return cached;
