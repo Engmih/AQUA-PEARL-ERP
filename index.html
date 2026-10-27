@@ -269,13 +269,31 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   padding:0;transition:.15s;-webkit-tap-highlight-color:transparent}
 /* v61.54: تلات نقط أفقية مرسومة، مش حرف من خط الجهاز */
 .apVidDots i{width:4.5px;height:4.5px;border-radius:50%;background:#fff;display:block;flex:0 0 auto}
-/* v61.54: الشريط الأزرق لوحده على الشاشات الفرعية */
-.apBar{display:flex;align-items:center;gap:10px;color:#fff;font-size:.95rem;letter-spacing:.4px;
-  background:linear-gradient(90deg,var(--navy) 0%,#17496f 100%);
-  border-radius:13px;padding:9px 13px;margin-bottom:12px;
-  box-shadow:0 3px 12px rgba(11,42,74,.18)}
-.apBar .capTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.apBar .apVidDots{width:34px;height:34px}
+/* =================================================================
+   v61.56 — التلات نقط على سطر العنوان نفسه
+   مكانها: فى آخر الخط الأزرق الرفيع اللى جنب العنوان (أقصى الشمال
+   فى RTL)، على كل الشاشات. الشريط الكحلى اللى كان بيتحط فوق
+   الشاشات الفرعية فى v61.54 اتشال خالص.
+   الحجم نص اللى كان، ومساحة اللمس فضلت ٤٠px بـ::after شفاف عشان
+   الصغر ما يصعّبش الضغط على الموبايل.
+   ================================================================= */
+h2.screen-title.apTR::after{display:none}
+h2.screen-title > .ttLine{flex:1;min-width:18px;height:2px;
+  background:linear-gradient(90deg,var(--aqua2),transparent)}
+h2.screen-title > .apTDots{flex:0 0 auto;position:relative;
+  width:19px;height:19px;border-radius:50%;cursor:pointer;padding:0;
+  border:1px solid rgba(11,42,74,.34);background:transparent;
+  display:flex;align-items:center;justify-content:center;gap:2px;
+  transition:.15s;-webkit-tap-highlight-color:transparent}
+h2.screen-title > .apTDots i{width:2.6px;height:2.6px;border-radius:50%;
+  background:var(--navy);display:block;flex:0 0 auto}
+h2.screen-title > .apTDots::after{content:"";position:absolute;inset:-11px}
+h2.screen-title > .apTDots:hover,h2.screen-title > .apTDots:focus{
+  border-color:var(--navy);background:rgba(11,42,74,.07);outline:none}
+/* سطر العنوان يفضل ثابت فوق فى الشاشات الفرعية، فالقائمة فى الإيد دايمًا */
+h2.screen-title.apStickT{position:sticky;top:var(--hdrH,0px);z-index:18;
+  background:var(--bg);padding-top:6px;margin-top:0}
+@media print{ h2.screen-title.apStickT{position:static!important;background:none!important} }
 .apVidDots:hover,.apVidDots:focus{background:rgba(9,26,43,.8);border-color:#fff;outline:none}
 .apVidDots.pulse{animation:apDotsPulse 1.5s ease-out 3}
 @keyframes apDotsPulse{
@@ -474,6 +492,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 /* v61.33: الفيديو يفضل ثابت تحت الهيدر والأيقونات تعدّى من تحته */
 .apHome .apVidStick{position:sticky;top:var(--hdrH,0px);z-index:20;
   background:var(--bg);padding:4px 0 9px;margin-top:-4px}
+/* v61.56: العنوان جوّه الحاوية المثبّتة — فهو والفيديو بيفضلوا فوق سوا */
+.apHome .apVidStick > h2.screen-title{margin:0 0 9px}
 /* v61.33: اتنين فى الصف — بارتفاع موحّد حتى لو اتلف اسم سطرين */
 .apHomeIcons{display:grid!important;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
 .apHomeIcons .svcTile{flex-direction:row;justify-content:flex-start;align-items:center;
@@ -4595,7 +4615,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.55';
+const APP_VER  = 'v61.56';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5651,9 +5671,7 @@ function renderDashboard(){
        <video id="apVidEl" playsinline loop muted preload="auto" poster="${AP_VID_POSTER}">
          <source src="${AP_VID}" type="video/mp4">
          <source src="${AP_VID_WEBM}" type="video/webm"></video>
-       <div class="apVidCap${apDotsOn()?' apCapRow':''}">${apDotsOn()
-          ? '<span class="capTxt"><b>Aqua Pearl City</b> — City for elite life</span>'+apDotsHTML()
-          : '<b>Aqua Pearl City</b> — City for elite life'}</div>
+       <div class="apVidCap"><b>Aqua Pearl City</b> — City for elite life</div>
      </div>
      <div class="dash-col"${SH?'':' style="display:none"'}>
        <div class="stat" data-k="collected" onclick="nav('collected')"><span class="ic">💵</span><div><div class="tt">إجمالي المحصل</div><div class="nm">${fmtM(st.collected)}</div></div></div>
@@ -5666,6 +5684,7 @@ function renderDashboard(){
    ${apDotsRole()==='staff'?apDailyHTML():''}
    ${apHomeIconsHTML()}`;
   try{ apVidBoot(); }catch(e){}
+  try{ apBarMount(); }catch(e){}   /* v61.56: التلات نقط على سطر العنوان */
 }
 
 /* =====================================================================
@@ -9999,34 +10018,62 @@ const AP_VID='intro.mp4'+AP_MV, AP_VID_WEBM='intro.webm'+AP_MV, AP_VID_POSTER='i
    الباك فى الموبايل بيرجّع للرئيسية أصلًا.
    =================================================================== */
 function apDotsHTML(){
-  return '<button type="button" class="apVidDots no-print" id="apVidDots" title="القائمة"'+
+  return '<button type="button" class="apTDots no-print" id="apVidDots" title="القائمة"'+
     ' aria-label="القائمة" onclick="event.stopPropagation();apSvcOpenPanel(event)">'+
     '<i></i><i></i><i></i></button>';
 }
-/* يحطّ الشريط الأزرق فوق أى شاشة فرعية مفيهاش فيديو، ويخفى عنوانها
-   المكرّر. بيتنادى بعد كل رسم، فأى شاشة جديدة بتاخده تلقائيًا. */
+/* v61.56: بيحطّ التلات نقط فى آخر سطر العنوان (بعد الخط الأزرق
+   الرفيع، يعنى أقصى الشمال فى RTL) على كل شاشة. بيتنادى بعد كل رسم،
+   فأى شاشة جديدة بتاخدها تلقائيًا. المدير مابياخدهاش.
+   الشريط الكحلى بتاع v61.54 اتشال — ولو لسه موجود من رسم قديم بيتشال. */
 function apBarMount(){
   try{
-    if(!apDotsOn()) return;
-    let sc=document.querySelector('.screen.active');
+    const sc=document.querySelector('.screen.active');
     if(!sc) return;
-    const old=sc.querySelector(':scope > .apBar');
-    if(sc.querySelector('.apVid')){ if(old) old.remove(); return; }   /* الرئيسية فيها الفيديو */
-    if(old) return;
-    const h=sc.querySelector('.screen-title');
-    const txt=h?h.textContent.trim():'';
-    if(h) h.style.display='none';
-    const box=document.createElement('div');
-    box.innerHTML=apBarHTML(txt);
-    const bar=box.firstElementChild;
-    if(bar) sc.insertBefore(bar, sc.firstChild);
+    sc.querySelectorAll('.apBar').forEach(b=>b.remove());
+    if(!apDotsOn()) return;
+    const h=sc.querySelector('h2.screen-title');
+    if(!h) return;
+    h.style.display='';                       /* v61.54 كانت بتخفيه */
+    /* الشاشات القديمة بتفضل فى الصفحة مخفية، وزرارها بياخد نفس الـ id.
+       لازم يتشال، وإلا getElementById يرجّع زرار شاشة مخفية فتفتح
+       القائمة فى مكان غلط. */
+    document.querySelectorAll('.apTDots').forEach(d=>{ if(d.parentElement!==h) d.remove(); });
+    document.querySelectorAll('h2.screen-title > .ttLine').forEach(l=>{
+      if(l.parentElement!==h){ l.parentElement.classList.remove('apTR'); l.remove(); } });
+    if(!h.querySelector(':scope > .apTDots')){
+      /* ::after بيتحسب آخر عنصر دايمًا، فلو سبناه هيقع بعد الزرار
+         والنقط تقعد جنب العنوان. فبنوقفه ونحطّ الخط عنصر حقيقى
+         قبل الزرار — وساعتها النقط تبقى فى أقصى الشمال فعلًا. */
+      h.classList.add('apTR');
+      const ln=document.createElement('span'); ln.className='ttLine';
+      h.appendChild(ln);
+      const box=document.createElement('div');
+      box.innerHTML=apDotsHTML();
+      const b=box.firstElementChild;
+      if(b) h.appendChild(b);
+    }
+    /* على الرئيسية العنوان جوّه حاوية الفيديو المثبّتة، فمايتثبّتش مرتين */
+    const inStick=!!(h.parentElement&&h.parentElement.classList.contains('apVidStick'));
+    h.classList.toggle('apStickT', !inStick);
+    apBarWatch();
   }catch(e){}
 }
-/* الشريط الأزرق لوحده — للشاشات الفرعية (من غير فيديو) */
-function apBarHTML(title){
-  return '<div class="apBar no-print"><span class="capTxt">'+
-    (title?esc(title):'<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''))+
-    '</span>'+apDotsHTML()+'</div>';
+/* v61.56: فيه شاشات بتتعاد رسمها بعد ما تخلص (المخططات بتتحمّل بعدين،
+   والكارت اليومى بيتحدّث)، وساعتها كان سطر العنوان يترسم من أول
+   وتضيع معاه النقط. المراقب ده بيرجّعها مكانها بعد أى إعادة رسم.
+   النداء نفسه idempotent: لو النقط موجودة مابيعملش حاجة، فمفيش لفّة. */
+let AP_BAR_T=null;
+function apBarWatch(){
+  if(window.__apBarObs) return;
+  try{
+    const obs=new MutationObserver(()=>{
+      if(AP_BAR_T) return;
+      AP_BAR_T=setTimeout(()=>{ AP_BAR_T=null; try{ apBarMount(); }catch(e){} }, 120);
+    });
+    obs.observe(document.body,{childList:true,subtree:true});
+    window.__apBarObs=obs;
+  }catch(e){}
 }
 function apVideoHTML(cap,dots){
   /* v61.46: dots=true يحطّ زرار ⋮ فى آخر الشريط الأزرق (ناحية الشمال فى RTL).
@@ -11228,8 +11275,8 @@ function apRole(){
 }
 const AP_GUIDE={
  client:{t:'دليل العميل',s:[
-  ['🏠 الرئيسية','كل حاجة بتبدأ من هنا. الفيديو بيفضل ثابت فوق والأيقونات بتعدّى من تحته اتنين فى الصف — اضغط على أى واحدة تفتح، ولما تخلص اضغط زرار الرجوع فى موبايلك ترجع للرئيسية.'],
-  ['⋯ قائمة التلات نقط','فى أقصى شمال الشريط الأزرق اللى فوق فيه تلات نقط جوه دايرة — دوس عليها تفتح قائمة كل الشاشات، واختار منها اللى تحبه. الشريط الأزرق ده موجود فى كل شاشة مش الرئيسية بس، فالقائمة فى إيدك على طول. ولو دوست برّه القائمة بتقفل.'],
+  ['🏠 الرئيسية','العنوان والفيديو بيفضلوا ثابتين فوق، وتحتيهم بيعدّى الكارت اليومى وأخبار المشروع. كل الشاشات مدخلها التلات نقط اللى على سطر العنوان، ولما تخلص اضغط زرار الرجوع فى موبايلك ترجع للرئيسية.'],
+  ['⋯ قائمة التلات نقط','فى أقصى شمال الخط الأزرق الرفيع اللى جنب عنوان الشاشة فيه تلات نقط صغيّرة جوّه دايرة — دوس عليها تفتح قائمة كل الشاشات واختار منها اللى تحبه. موجودة على سطر العنوان فى كل شاشة، وعلى الرئيسية بتفضل ثابتة فوق وإنت بتسكرول. ولو دوست برّه القائمة بتقفل.'],
   ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['📡 لو النت قطع','النظام بيشتغل من غير نت لأنه محفوظ على جهازك. ولو الاتصال اتقطع فى لحظة التحميل هتلاقى صفحة زرقا مكتوب عليها «مفيش اتصال» وفيها زرار «حاول تانى» — دوس عليه وهيفتح. وفيه زرار تانى «إصلاح التخزين» للحالات النادرة: بيعيد تحميل ملفات النظام من أول وجديد، و«مش بيمسح أى بيانات».'],
   ['📄 ملفى','بياناتك وبيانات وحدتك والتعاقد، وكارت البونص والغرامات. اضغط على الكارت تشوف تفاصيل كل بند.'],
@@ -11251,8 +11298,8 @@ const AP_GUIDE={
   ['🆔 اسم المستخدم','تقدر تدخل التطبيق باسم المستخدم بدل البريد. حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة، وبيتكتب كابيتال. لو الاسم محجوز لحد تانى النظام هيقولك تختار غيره.']
  ]},
  partner:{t:'دليل الشريك',s:[
-  ['🏠 الرئيسية','كل الأقسام تحت الفيديو، كل واحد فى سطر. ولما تخلص من أى شاشة اضغط زرار الرجوع فى موبايلك ترجع للرئيسية.'],
-  ['⋯ قائمة التلات نقط','فى أقصى شمال الشريط الأزرق اللى فوق فيه تلات نقط جوه دايرة — دوس عليها تفتح قائمة كل الشاشات، واختار منها اللى تحبه. الشريط الأزرق ده موجود فى كل شاشة مش الرئيسية بس، فالقائمة فى إيدك على طول. ولو دوست برّه القائمة بتقفل.'],
+  ['🏠 الرئيسية','العنوان والفيديو ثابتين فوق وتحتيهم الكارت اليومى. وكل أقسامك جوّه التلات نقط اللى على سطر العنوان، ولما تخلص من أى شاشة اضغط زرار الرجوع فى موبايلك ترجع للرئيسية.'],
+  ['⋯ قائمة التلات نقط','فى أقصى شمال الخط الأزرق الرفيع اللى جنب عنوان الشاشة فيه تلات نقط صغيّرة جوّه دايرة — دوس عليها تفتح قائمة كل الشاشات واختار منها اللى تحبه. موجودة على سطر العنوان فى كل شاشة، وعلى الرئيسية بتفضل ثابتة فوق وإنت بتسكرول. ولو دوست برّه القائمة بتقفل.'],
   ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام.'],
   ['📊 ملخصى','رصيدك الإجمالى ونصيبك من المشروع.'],
   ['🏢 الوحدات المباعة','كل عمارة: نسبتك فيها وعدد وحداتها المباعة وإجمالى المحصل ونصيبك منه.'],
@@ -11266,8 +11313,8 @@ const AP_GUIDE={
  ]},
  staff:{t:'دليل الموظف',s:[
   ['🏠 الرئيسية','أرقام المشروع تظهر لك فقط لو عندك صلاحية «أرقام لوحة التحكم».'],
-  ['⋯ قائمة التلات نقط','فى أقصى شمال الشريط الأزرق اللى فوق فيه تلات نقط جوه دايرة — دوس عليها تفتح قائمة كل الشاشات، واختار منها اللى تحبه. الشريط الأزرق ده موجود فى كل شاشة مش الرئيسية بس، فالقائمة فى إيدك على طول. ولو دوست برّه القائمة بتقفل.'],
-  ['الشاشات المتاحة','كل شاشاتك بقت جوّه قائمة التلات نقط — الشريط الطويل اللى كان فوق اتشال. وبتشوف الشاشات اللى المدير سمح لك بيها بس، أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
+  ['⋯ قائمة التلات نقط','فى أقصى شمال الخط الأزرق الرفيع اللى جنب عنوان الشاشة فيه تلات نقط صغيّرة جوّه دايرة — دوس عليها تفتح قائمة كل الشاشات واختار منها اللى تحبه. موجودة على سطر العنوان فى كل شاشة، وعلى الرئيسية بتفضل ثابتة فوق وإنت بتسكرول. ولو دوست برّه القائمة بتقفل.'],
+  ['الشاشات المتاحة','كل شاشاتك جوّه قائمة التلات نقط — الشريط الطويل اللى كان فوق اتشال. وبتشوف الشاشات اللى المدير سمح لك بيها بس، أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
   ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام.'],
   ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['👥 بيانات العملاء','قاعدة العملاء وملفاتهم للمدير وحده ومش ظاهرة لأى موظف.'],
@@ -11674,6 +11721,9 @@ const AP_CLIENT_MENU=[
   ['voice','شكاوى','#1195b2',"apClientGo('voice')"]
 ];
 function apHomeIconsHTML(){
+  /* v61.56: العميل والشريك والموظف — مدخلهم الوحيد التلات نقط،
+     فمفيش أيقونات على الرئيسية خالص. المدير زى ما هو. */
+  if(apDotsOn()) return '';
   const isAdminHere = !!(CURRENT_USER && CURRENT_USER.admin);
   if(typeof apPartnerMode==='function'&&apPartnerMode()&&typeof apPartnerMenuHTML==='function')
     return apPartnerMenuHTML();
@@ -12335,6 +12385,7 @@ function renderNewsScr(){
       ${apNwPhoneHTML()}
     </div>
   </div>`;
+  try{ apBarMount(); }catch(e){}   /* v61.56 */
 }
 let AP_NW_ID='', AP_NW_IMG='';
 function apNwTypeSync(){
@@ -12796,9 +12847,13 @@ function apHomeHTML(title){
   /* v61.54: الكارت اليومى بقى جزء من الفيد، فكان بيمنع رجوع الأيقونات لما
      ما يكونش فيه أخبار منشورة. المعيار بقى: فيه أخبار فعلًا ولا لأ. */
   const hasNews=cli&&apFeedList().length>0;
+  /* v61.56: العنوان جوّه الحاوية المثبّتة — العنوان والفيديو بيفضلوا
+     فوق والكارت والأخبار بيعدّوا من تحتيهم. */
   return `<div class="apHome">
-    <h2 class="screen-title">${esc(title||(S().projectName||'الرئيسية'))}</h2>
-    <div class="apVidStick">${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''),apDotsOn())}</div>
+    <div class="apVidStick">
+      <h2 class="screen-title">${esc(title||(S().projectName||'الرئيسية'))}</h2>
+      ${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''),false)}
+    </div>
     ${feed||''}${hasNews?'':apHomeIconsHTML()}
   </div>`;
 }
