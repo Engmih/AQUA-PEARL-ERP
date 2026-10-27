@@ -4,7 +4,7 @@
    استراتيجية: الشبكة أولًا للملف الرئيسى (ليصل التحديث فورًا) مع الرجوع
    للنسخة المخزّنة عند انقطاع الشبكة، والمخزّن أولًا للأيقونات.
    ===================================================================== */
-const CACHE = 'aqua-pearl-erp-v61.53';
+const CACHE = 'aqua-pearl-erp-v61.54';
 /* v61.50: المخططات (٩ ميجا) فى مخزن مستقل عن رقم النسخة، فما تتنزّلش
    تانى مع كل تحديث للبرنامج. */
 const PLANS = 'aqua-pearl-plans';
@@ -103,8 +103,14 @@ self.addEventListener('fetch', e => {
         })());
         return cached;
       }
+      /* v61.54: مانرجّعش Response.error() — دى بتطلّع «الموقع مش موجود»
+         وبتخوّف المستخدم. لو مفيش مخزّن ولا شبكة، بنسيب الطلب يروح
+         للمتصفح عادى فيطلّع صفحة «مفيش إنترنت» المعروفة. */
       const res = await net;
-      return res || (await cache.match('./')) || Response.error();
+      if (res) return res;
+      const alt = await cache.match('./');
+      if (alt) return alt;
+      return fetch(req);
     })());
     return;
   }

@@ -263,10 +263,19 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
    =================================================================== */
 .apVid .apVidCap.apCapRow{display:flex;align-items:center;gap:10px}
 .apCapRow .capTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.apVidDots{flex:0 0 auto;width:36px;height:36px;border-radius:50%;cursor:pointer;
+.apVidDots{flex:0 0 auto;width:38px;height:38px;border-radius:50%;cursor:pointer;
   border:1px solid rgba(255,255,255,.5);background:rgba(9,26,43,.45);color:#fff;
-  font-size:20px;line-height:1;display:grid;place-items:center;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:3.5px;
   padding:0;transition:.15s;-webkit-tap-highlight-color:transparent}
+/* v61.54: تلات نقط أفقية مرسومة، مش حرف من خط الجهاز */
+.apVidDots i{width:4.5px;height:4.5px;border-radius:50%;background:#fff;display:block;flex:0 0 auto}
+/* v61.54: الشريط الأزرق لوحده على الشاشات الفرعية */
+.apBar{display:flex;align-items:center;gap:10px;color:#fff;font-size:.95rem;letter-spacing:.4px;
+  background:linear-gradient(90deg,var(--navy) 0%,#17496f 100%);
+  border-radius:13px;padding:9px 13px;margin-bottom:12px;
+  box-shadow:0 3px 12px rgba(11,42,74,.18)}
+.apBar .capTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.apBar .apVidDots{width:34px;height:34px}
 .apVidDots:hover,.apVidDots:focus{background:rgba(9,26,43,.8);border-color:#fff;outline:none}
 .apVidDots.pulse{animation:apDotsPulse 1.5s ease-out 3}
 @keyframes apDotsPulse{
@@ -4586,7 +4595,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.53';
+const APP_VER  = 'v61.54';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -4949,6 +4958,9 @@ function buildTabs(){
     tabs.innerHTML=''; tabs.style.display='none';   /* القائمة كلها فى الرئيسية */
     return;
   }
+  /* v61.54: الموظف زى العميل — شاشاته من التلات نقط، فالشريط الطويل
+     مابقاش له لزمة. المدير شاشته زى ما هى بالظبط. */
+  if(CURRENT_USER && !CURRENT_USER.admin){ tabs.innerHTML=''; tabs.style.display='none'; return; }
   tabs.style.display='';
   tabs.innerHTML=SCREENS.filter(([id,lb,hid])=>!hid&&allowed(id)).map(([id,lb])=>`<button data-s="${id}" onclick="nav('${id}')">${lb}</button>`).join('');
 }
@@ -5551,6 +5563,7 @@ function nav(id,arg){
     customerFile:()=>renderCustomerFile(arg),due:renderDue,collected:renderCollected,sold:renderSold,returnedScr:renderReturned,
     wallets:renderWallets,news:renderNewsScr,reports:renderReports,attach:()=>renderAttachScreen(arg),importScr:renderImport,settings:renderSettings,partners:()=>renderPartnersPortal(arg),expenses:()=>renderExpenses(arg),zakat:renderZakat,cashflow:renderCashflow}[id];
   r&&r();
+  try{ apBarMount(); }catch(e){}          /* v61.54: الشريط والتلات نقط للموظف */
   const fab=$('#shareFab');
   if(fab)fab.style.display=['dashboard','unitView','sales','customers','customerFile','due','collected','sold','returnedScr','reports','attach','expenses'].includes(id)?'flex':'none';
   window.scrollTo({top:0});
@@ -5623,6 +5636,7 @@ function canSeeStats(){
 function renderDashboard(){
   const st=stats();
   const SH=canSeeStats();
+  if(apDotsRole()==='staff'){ try{ apDailyPull(); apDailyTick(); }catch(e){} }   /* v61.54 */
   $('#scr-dashboard').innerHTML=`
    <h2 class="screen-title">لوحة التحكم</h2>
    <div class="dash-wrap${SH?'':' dash-nostats'}">
@@ -5637,7 +5651,9 @@ function renderDashboard(){
        <video id="apVidEl" playsinline loop muted preload="auto" poster="${AP_VID_POSTER}">
          <source src="${AP_VID}" type="video/mp4">
          <source src="${AP_VID_WEBM}" type="video/webm"></video>
-       <div class="apVidCap"><b>Aqua Pearl City</b> — City for elite life</div>
+       <div class="apVidCap${apDotsOn()?' apCapRow':''}">${apDotsOn()
+          ? '<span class="capTxt"><b>Aqua Pearl City</b> — City for elite life</span>'+apDotsHTML()
+          : '<b>Aqua Pearl City</b> — City for elite life'}</div>
      </div>
      <div class="dash-col"${SH?'':' style="display:none"'}>
        <div class="stat" data-k="collected" onclick="nav('collected')"><span class="ic">💵</span><div><div class="tt">إجمالي المحصل</div><div class="nm">${fmtM(st.collected)}</div></div></div>
@@ -5647,6 +5663,7 @@ function renderDashboard(){
        <div class="stat green" data-k="inst" onclick="nav('sold')"><span class="ic">🗓️</span><div><div class="tt">مبيعات تقسيط</div><div class="nm">${fmtN(st.inst)}</div></div></div>
      </div>
    </div>
+   ${apDotsRole()==='staff'?apDailyHTML():''}
    ${apHomeIconsHTML()}`;
   try{ apVidBoot(); }catch(e){}
 }
@@ -9115,10 +9132,11 @@ function renderCustomerFile(saleId){
   if(cfEdit&&!AP_CLIENT){renderCustomerFileEdit(s,u);return;}
   /* v61.16: العميل يرى ملفه للقراءة فقط — بلا أزرار تعديل أو قبض */
   if(AP_CLIENT){
-    const back = AP_CTAB==='home' ? '' :
-      '<div class="toolbar no-print svcBack"><button class="btn ghost" onclick="apClientGo(\'home\')">↩️ الرئيسية</button></div>';
-    el.innerHTML=back+apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
+    /* v61.54: زرار «الرجوع للرئيسية» اتشال — الشريط الأزرق والتلات نقط
+       فى كل شاشة، وزرار الباك فى الموبايل بيرجّع للرئيسية. */
+    el.innerHTML=apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
     try{ apBellRender(s); }catch(e){}
+    try{ apBarMount(); }catch(e){}          /* v61.54 */
     if(AP_CTAB==='home'){
       try{ apVidBoot(); }catch(e){}
       /* v61.46: الأخبار + تلميحة التلات نقط */
@@ -9497,7 +9515,8 @@ function apPartnerMenuHTML(){
 }
 /* زرار الرجوع أعلى كل شاشة داخلية عند الشريك */
 function apPBack(){
-  return '<div class="toolbar no-print"><button class="btn ghost" onclick="apPartnerGo(\'home\')">↩️ الرئيسية</button></div>';
+  /* v61.54: اتشال — الشريط الأزرق والتلات نقط بقوا فى كل شاشة */
+  return '';
 }
 function apPartnerGo(tab){
   AP_PTAB=tab;
@@ -9519,7 +9538,11 @@ function apPartnerRender(){
                :                     apPartnerSumHTML(P);
   if(AP_PTAB==='flow'){ try{ apPFlowDraw(); }catch(e){} }
   const fab=$('#shareFab'); if(fab) fab.style.display='flex';
-  if(AP_PTAB==='home'){ try{ apVidBoot(); }catch(e){} }
+  try{ apBarMount(); }catch(e){}            /* v61.54 */
+  if(AP_PTAB==='home'){
+    try{ apVidBoot(); }catch(e){}
+    try{ apDailyPull(); apDailyTick(); }catch(e){}   /* v61.54: الكارت اليومى للشريك */
+  }
 }
 function apPartnerSumHTML(P){
   const t=P.totals||{};
@@ -9967,11 +9990,48 @@ function apInviteCopy(){
    بدونها كان المتصفح يعيد تقديم الفيديو القديم من المخزَّن بعد الترقية. */
 const AP_MV = '?v=' + APP_VER.replace(/[^0-9.]/g,'');
 const AP_VID='intro.mp4'+AP_MV, AP_VID_WEBM='intro.webm'+AP_MV, AP_VID_POSTER='intro.jpg'+AP_MV;
+/* ===================================================================
+   v61.54 — زرار القائمة (تلات نقط أفقية) والشريط الأزرق الثابت
+   النقط بقت عناصر HTML مش حرف، عشان ما تعتمدش على خط الجهاز
+   (نفس درس ⏻ اللى طلع مربع فاضى على السامسونج).
+   والشريط الأزرق بقى موجود فى كل الشاشات مش الرئيسية بس، فالقائمة
+   فى متناول الإيد دايمًا وأزرار «الرجوع للرئيسية» اتشالت — زرار
+   الباك فى الموبايل بيرجّع للرئيسية أصلًا.
+   =================================================================== */
+function apDotsHTML(){
+  return '<button type="button" class="apVidDots no-print" id="apVidDots" title="القائمة"'+
+    ' aria-label="القائمة" onclick="event.stopPropagation();apSvcOpenPanel(event)">'+
+    '<i></i><i></i><i></i></button>';
+}
+/* يحطّ الشريط الأزرق فوق أى شاشة فرعية مفيهاش فيديو، ويخفى عنوانها
+   المكرّر. بيتنادى بعد كل رسم، فأى شاشة جديدة بتاخده تلقائيًا. */
+function apBarMount(){
+  try{
+    if(!apDotsOn()) return;
+    let sc=document.querySelector('.screen.active');
+    if(!sc) return;
+    const old=sc.querySelector(':scope > .apBar');
+    if(sc.querySelector('.apVid')){ if(old) old.remove(); return; }   /* الرئيسية فيها الفيديو */
+    if(old) return;
+    const h=sc.querySelector('.screen-title');
+    const txt=h?h.textContent.trim():'';
+    if(h) h.style.display='none';
+    const box=document.createElement('div');
+    box.innerHTML=apBarHTML(txt);
+    const bar=box.firstElementChild;
+    if(bar) sc.insertBefore(bar, sc.firstChild);
+  }catch(e){}
+}
+/* الشريط الأزرق لوحده — للشاشات الفرعية (من غير فيديو) */
+function apBarHTML(title){
+  return '<div class="apBar no-print"><span class="capTxt">'+
+    (title?esc(title):'<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''))+
+    '</span>'+apDotsHTML()+'</div>';
+}
 function apVideoHTML(cap,dots){
   /* v61.46: dots=true يحطّ زرار ⋮ فى آخر الشريط الأزرق (ناحية الشمال فى RTL).
      الفيديو نفسه sticky، فالزرار بيفضل تحت إيد العميل وهو بيسكرول فى الأخبار. */
-  const d=dots?'<button type="button" class="apVidDots no-print" id="apVidDots" title="الخدمات"'+
-    ' aria-label="قائمة الخدمات" onclick="event.stopPropagation();apSvcOpenPanel(event)">⋮</button>':'';
+  const d=dots?apDotsHTML():'';
   return `<div class="apVid">
     <video id="apVidEl" playsinline loop muted preload="auto" poster="${AP_VID_POSTER}">
       <source src="${AP_VID}" type="video/mp4">
@@ -11168,7 +11228,8 @@ function apRole(){
 }
 const AP_GUIDE={
  client:{t:'دليل العميل',s:[
-  ['🏠 الرئيسية','كل حاجة بتبدأ من هنا. الفيديو بيفضل ثابت فوق والأيقونات بتعدّى من تحته اتنين فى الصف — اضغط على أى واحدة تفتح، ومن جوّه اضغط «↩️ الرئيسية» ترجع.'],
+  ['🏠 الرئيسية','كل حاجة بتبدأ من هنا. الفيديو بيفضل ثابت فوق والأيقونات بتعدّى من تحته اتنين فى الصف — اضغط على أى واحدة تفتح، ولما تخلص اضغط زرار الرجوع فى موبايلك ترجع للرئيسية.'],
+  ['⋯ قائمة التلات نقط','فى أقصى شمال الشريط الأزرق اللى فوق فيه تلات نقط جوه دايرة — دوس عليها تفتح قائمة كل الشاشات، واختار منها اللى تحبه. الشريط الأزرق ده موجود فى كل شاشة مش الرئيسية بس، فالقائمة فى إيدك على طول. ولو دوست برّه القائمة بتقفل.'],
   ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['📄 ملفى','بياناتك وبيانات وحدتك والتعاقد، وكارت البونص والغرامات. اضغط على الكارت تشوف تفاصيل كل بند.'],
   ['📅 أقساطى','جدول أقساطك: رقم القسط وتاريخ استحقاقه وقيمته وحالته. وجنب زرار الطباعة هتلاقى «⚖️ البونص والغرامات» بيفتح لك نفس الشاشة اللى بتظهر أول ما تدخل.'],
@@ -11189,19 +11250,25 @@ const AP_GUIDE={
   ['🆔 اسم المستخدم','تقدر تدخل التطبيق باسم المستخدم بدل البريد. حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة، وبيتكتب كابيتال. لو الاسم محجوز لحد تانى النظام هيقولك تختار غيره.']
  ]},
  partner:{t:'دليل الشريك',s:[
-  ['🏠 الرئيسية','كل الأقسام تحت الفيديو، كل واحد فى سطر. ومن جوّه أى شاشة اضغط «↩️ الرئيسية» ترجع.'],
+  ['🏠 الرئيسية','كل الأقسام تحت الفيديو، كل واحد فى سطر. ولما تخلص من أى شاشة اضغط زرار الرجوع فى موبايلك ترجع للرئيسية.'],
+  ['⋯ قائمة التلات نقط','فى أقصى شمال الشريط الأزرق اللى فوق فيه تلات نقط جوه دايرة — دوس عليها تفتح قائمة كل الشاشات، واختار منها اللى تحبه. الشريط الأزرق ده موجود فى كل شاشة مش الرئيسية بس، فالقائمة فى إيدك على طول. ولو دوست برّه القائمة بتقفل.'],
+  ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام.'],
   ['📊 ملخصى','رصيدك الإجمالى ونصيبك من المشروع.'],
   ['🏢 الوحدات المباعة','كل عمارة: نسبتك فيها وعدد وحداتها المباعة وإجمالى المحصل ونصيبك منه.'],
   ['🅿️ الوحدات المتاحة','الوحدات اللى لسه ما اتباعتش فى عماراتك، وإجمالى أسعارها ونصيبك المتوقّع منها. رقم تقديرى بيتغيّر مع الأسعار والمبيعات.'],
   ['📄 كشف مفصّل','كل وحدة ونصيبك منها وما تم تحصيله.'],
   ['📈 التدفقات النقدية','نصيبك من الأقساط اللى لسه ما اتحصّلتش، مرسومة بالشهر. حدّد المدة بـ«من/إلى» أو اضغط «الكل»، واضغط على أى نقطة تشوف بنودها: تاريخ الاستحقاق والعمارة ورقم الوحدة ونصيبك.'],
   ['💸 الأرباح','دفعات الأرباح المصروفة لك والمردود من الودائع.'],
+  ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['⚙️ الإعدادات','اسم المستخدم وكلمة السر والبصمة وموسيقى الخلفية.'],
   ['🔐 الدخول بالبصمة','بتطلب كلمة سرك مرة واحدة وتحفظها مشفّرة على موبايلك، وبعدها تدخل ببصمتك من شاشة الدخول.']
  ]},
  staff:{t:'دليل الموظف',s:[
   ['🏠 الرئيسية','أرقام المشروع تظهر لك فقط لو عندك صلاحية «أرقام لوحة التحكم».'],
-  ['الشاشات المتاحة','بتشوف الشاشات اللى المدير سمح لك بيها بس — أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
+  ['⋯ قائمة التلات نقط','فى أقصى شمال الشريط الأزرق اللى فوق فيه تلات نقط جوه دايرة — دوس عليها تفتح قائمة كل الشاشات، واختار منها اللى تحبه. الشريط الأزرق ده موجود فى كل شاشة مش الرئيسية بس، فالقائمة فى إيدك على طول. ولو دوست برّه القائمة بتقفل.'],
+  ['الشاشات المتاحة','كل شاشاتك بقت جوّه قائمة التلات نقط — الشريط الطويل اللى كان فوق اتشال. وبتشوف الشاشات اللى المدير سمح لك بيها بس، أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
+  ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام.'],
+  ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['👥 بيانات العملاء','قاعدة العملاء وملفاتهم للمدير وحده ومش ظاهرة لأى موظف.'],
   ['🏢 عرض وحدة','تشوف بيانات الوحدة ومساحتها وسعرها وحالتها.'],
   ['⚙️ الإعدادات','من أيقونة الإعدادات فى الرئيسية: كلمة سرك واسم المستخدم والبصمة والموسيقى.'],
@@ -11624,11 +11691,34 @@ function apHomeIconsHTML(){
    اللوحة عبارة عن .modal-back عشان زرار الرجوع فى الموبايل يقفلها
    تلقائيًا (apBackTopModal بيدوّر على .modal-back.open).
    =================================================================== */
+/* v61.54: أيقونة ولون لكل شاشة فى قائمة الموظف */
+const AP_STAFF_IC={
+  dashboard:['union','#1195b2'], unitView:['garage','#2f5675'], sales:['doc','#1e9e6a'],
+  customers:['guest','#157a8c'],  due:['cal','#d64545'],        collected:['receipt','#1e9e6a'],
+  wallets:['wallet','#c8a24b'],   news:['book','#1195b2'],      cashflow:['coins','#157a8c'],
+  partners:['union','#2f5675'],   expenses:['card','#d8a257'],  zakat:['spa','#1e9e6a'],
+  reports:['doc','#2f5675'],      attach:['doc','#4a5560'],     settings:['cog','#4a5560']
+};
 function apSvcPanelList(){
   if(typeof apPartnerMode==='function'&&apPartnerMode()&&typeof AP_PARTNER_MENU!=='undefined')
     return AP_PARTNER_MENU;
-  return AP_CLIENT_MENU;
+  if(apIsClientSession()) return AP_CLIENT_MENU;
+  /* v61.54: الموظف — شاشاته المسموح له بيها جوّه القائمة زى العميل،
+     والإعدادات الشخصية معاها (كلمة السر والبصمة). */
+  return [['cog','الإعدادات','#4a5560',"apUserSettings()"]].concat(
+    SCREENS.filter(x=>!x[2]&&allowed(x[0]))
+      .map(x=>{ const m=AP_STAFF_IC[x[0]]||['doc','#2f5675'];
+        return [m[0], x[1].replace(/^[^\s]+\s/,''), m[1], "nav('"+x[0]+"')"]; }));
 }
+function apDotsRole(){
+  if(apIsClientSession()) return 'client';
+  if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER) return 'partner';
+  if(CURRENT_USER&&CURRENT_USER.admin) return 'admin';
+  if(CURRENT_USER) return 'staff';
+  return '';
+}
+/* القائمة والشريط للعميل والشريك والموظف — المدير شاشته زى ما هى */
+function apDotsOn(){ const r=apDotsRole(); return r==='client'||r==='partner'||r==='staff'; }
 function apSvcPanelHTML(){
   return apSvcPanelList().map(it=>
     '<button type="button" class="svcRow" onclick="apSvcClose();'+it[3]+'">'+
@@ -11833,8 +11923,17 @@ async function apDailyPull(force){
   AP_DAILY_BUSY=false;
   apDailySave();
   if(apDailySig()===sig0) return;          /* مافيش جديد — مفيش داعى لإعادة رسم */
+  /* v61.54: نبدّل الكارت مكانه مهما كان الدور، بدل إعادة رسم الشاشة كلها */
+  const cur=document.querySelector('.apDaily');
+  if(cur){
+    const box=document.createElement('div'); box.innerHTML=apDailyHTML();
+    if(box.firstElementChild) cur.replaceWith(box.firstElementChild);
+    return;
+  }
   if(apIsClientSession()&&AP_CTAB==='home') renderCustomerFile(cfSaleId);
   else if(currentScreen==='news') renderNewsScr();
+  else if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER&&AP_PTAB==='home') apPartnerRender();
+  else if(apDotsRole()==='staff'&&currentScreen==='dashboard') renderDashboard();
 }
 function apHM(s){
   const m=String(s||'').match(/(\d{1,2}):(\d{2})/);
@@ -11954,8 +12053,8 @@ function apPrayOpen(){
 function apDailyTick(){
   if(AP_DAILY_TICK) clearInterval(AP_DAILY_TICK);
   AP_DAILY_TICK=setInterval(function(){
-    if(!apIsClientSession()||AP_CTAB!=='home'){ clearInterval(AP_DAILY_TICK); AP_DAILY_TICK=null; return; }
-    const el=document.querySelector('.apDaily'); if(!el) return;
+    const el=document.querySelector('.apDaily');
+    if(!el){ clearInterval(AP_DAILY_TICK); AP_DAILY_TICK=null; return; }
     const tmp=document.createElement('div'); tmp.innerHTML=apDailyHTML();
     if(tmp.firstChild) el.replaceWith(tmp.firstChild);
   },30000);
@@ -12690,11 +12789,15 @@ function apHomeHTML(title){
   /* v61.46: عند العميل الخدمات بقت جوّه زرار ⋮ فوق الفيديو، ومكانها فيد الأخبار.
      لو مفيش أخبار منشورة، الأيقونات بترجع مكانها زى الأول فمفيش فراغ. */
   const cli=apIsClientSession();
-  const feed=cli?apFeedHTML():'';
+  /* v61.54: الشريك كمان بياخد الكارت اليومى والتلات نقط */
+  const feed=cli?apFeedHTML():(apDotsRole()==='partner'?apDailyHTML():'');
+  /* v61.54: الكارت اليومى بقى جزء من الفيد، فكان بيمنع رجوع الأيقونات لما
+     ما يكونش فيه أخبار منشورة. المعيار بقى: فيه أخبار فعلًا ولا لأ. */
+  const hasNews=cli&&apFeedList().length>0;
   return `<div class="apHome">
     <h2 class="screen-title">${esc(title||(S().projectName||'الرئيسية'))}</h2>
-    <div class="apVidStick">${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''),cli)}</div>
-    ${feed||apHomeIconsHTML()}
+    <div class="apVidStick">${apVideoHTML('<b>'+esc(S().companyName||'')+'</b> — '+esc(S().projectName||''),apDotsOn())}</div>
+    ${feed||''}${hasNews?'':apHomeIconsHTML()}
   </div>`;
 }
 
