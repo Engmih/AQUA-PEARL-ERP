@@ -20,7 +20,7 @@
    ٤) امتلاء مساحة التخزين (QuotaExceeded) لم يعد يُسقط التخزين كله:
       عند الفشل تُمسح الوسائط وحدها ويبقى ملف النظام.
    ===================================================================== */
-const VER   = 'v61.56';
+const VER   = 'v61.57';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
@@ -156,13 +156,21 @@ async function notifyUpdate() {
    لا يمكن لأى مسار فيه أن ينتهى بخطأ شبكة خام.
    --------------------------------------------------------------------- */
 async function handleDoc(evt, req) {
+  /* v61.57: أى تحميل جديد للصفحة بيصفّر علم «فيه تحديث». من غيره كان
+     العلم يفضل مرفوع بعد ما التحديث يتركّب فعلًا، فيرجع الشريط يظهر
+     للمستخدم وهو أصلًا على آخر نسخة. الفحص اللى تحت بيرفعه تانى لو
+     فيه فرق حقيقى. */
+  AP_UPD_READY = false;
   let cached = null;
   try { cached = await cacheMatch(DOC, DOC_KEY); } catch (e) {}
 
   let net;
   try {
-    net = fetch(req).then(res => {
-      if (res && res.ok) { cachePut(DOC, DOC_KEY, res.clone()); }
+    /* v61.57: ننتظر التخزين يخلص قبل ما نقول للصفحة «فيه تحديث».
+       من غير الانتظار ده كانت الصفحة ممكن تعيد التحميل قبل ما النسخة
+       الجديدة تتحفظ، فترجع تعرض القديمة تانى. */
+    net = fetch(req).then(async res => {
+      if (res && res.ok) { await cachePut(DOC, DOC_KEY, res.clone()); }
       return res;
     }).catch(() => null);
   } catch (e) { net = Promise.resolve(null); }
@@ -171,7 +179,8 @@ async function handleDoc(evt, req) {
     try {
       evt.waitUntil((async () => {
         const res = await net;
-        if (res && res.ok && changed(cached, res)) notifyUpdate();
+        if (!res || !res.ok) return;
+        if (changed(cached, res)) notifyUpdate(); else AP_UPD_READY = false;
       })());
     } catch (e) {}
     return cached;
