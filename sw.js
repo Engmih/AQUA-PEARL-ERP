@@ -19,8 +19,26 @@
       مبنيّة داخل الـ SW نفسه — فلا يوجد طريق ينتهى بـ ERR_FAILED.
    ٤) امتلاء مساحة التخزين (QuotaExceeded) لم يعد يُسقط التخزين كله:
       عند الفشل تُمسح الوسائط وحدها ويبقى ملف النظام.
+
+   v61.60 — أهم إصلاح فيهم كلهم: الملف الناقص مابيتحفظش
+   ---------------------------------------------------------------------
+   صفحة التشخيص على موبايل حقيقى أثبتت إن الملف المحفوظ على الجهاز كان
+   ١٠ كيلو بدل ٣.٣ ميجا — يعنى تحميل اتقطع فى نصّه واتحفظ وكأنه كامل،
+   والنظام بيفتح منه كل مرة فيطلع باظ.
+
+   ليه المتصفح ما حسّش؟ كلاودفلير بيدجز مابيبعتش حجم الملف
+   (Content-Length) — بيبعته مقطّع (chunked). ولما الحجم مش معروف،
+   الاتصال اللى بيتقطع فى النص بيبان للمتصفح وكأن الملف خلص.
+
+   العلاج: ما نحفظش ولا نعرض أى نسخة إلا بعد ما نتأكد إنها كاملة:
+     • حجمها معقول (أكبر من ٣٠٠ كيلو)
+     • فيها رقم النسخة APP_VER
+     • وآخرها </html>
+   ولو النسخة المحفوظة على الجهاز طلعت ناقصة بتتمسح لوحدها وبينزّل
+   غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
+   أى تدخل.
    ===================================================================== */
-const VER   = 'v61.59';
+const VER   = 'v61.60';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
@@ -30,7 +48,8 @@ const DOC_KEY = './index.html';
    عمدًا: حجمها كبير ولا يحتاجها كل مستخدم فورًا، ومعالج fetch يخزّنها أول
    مرة تُطلب فعلًا. */
 const CORE = [
-  './',
+  /* v61.60: الجذر './' اتشال من هنا — المستند مصدره مخزن DOC وحده بعد
+     التحقق منه، فما ينفعش يكون فيه نسخة تانية غير متحقَّق منها. */
   './reset.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
@@ -96,10 +115,17 @@ async function cachePut(name, key, res) {
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
-    /* ملف النظام أولًا وفى مخزنه الثابت — لو فشل يفضل القديم مكانه سليمًا */
+    /* ملف النظام أولًا وفى مخزنه الثابت — وما يتحفظش إلا لو كامل.
+       لو التحميل اتقطع، القديم بيفضل مكانه ولا بيتلمس. */
     try {
       const r = await fetch(DOC_KEY, { cache: 'reload' });
-      if (r && r.ok) await cachePut(DOC, DOC_KEY, r.clone());
+      if (r && r.ok) {
+        const t = await r.text();
+        if (docCheckText(t)) {
+          await cachePut(DOC, DOC_KEY, new Response(t, { status: 200,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+        }
+      }
     } catch (e2) {}
     /* الباقى: كل ملف لوحده. addAll كانت بتفشل كلها لو ملف واحد ناقص. */
     const c = await openCache(CACHE);
@@ -145,12 +171,19 @@ self.addEventListener('message', e => {
    دلوقتى المقارنة على رقم النسخة المكتوب جوّه الملف نفسه. ده
    مابيعتمدش على السيرفر ولا على إعداداته خالص.
    ===================================================================== */
-async function docVer(r) {
+const DOC_MIN = 300000;   /* الملف الحقيقى ٣.٣ ميجا — أى حاجة أقل من ٣٠٠ كيلو ناقصة أكيد */
+/* بيرجّع رقم النسخة لو الملف كامل، وnull لو ناقص أو مش ملف النظام */
+function docCheckText(t) {
   try {
-    const t = await r.text();
+    if (!t || t.length < DOC_MIN) return null;
     const m = t.match(/APP_VER\s*=\s*'([^']+)'/);
-    return m ? m[1] : ('len:' + t.length);
-  } catch (e) { return ''; }
+    if (!m) return null;
+    if (!/<\/html>/i.test(t.slice(-3000))) return null;   /* لازم يكون قافل */
+    return m[1];
+  } catch (e) { return null; }
+}
+async function docCheck(r) {
+  try { return docCheckText(await r.text()); } catch (e) { return null; }
 }
 let AP_UPD_READY = false;
 async function notifyUpdate() {
@@ -168,46 +201,56 @@ async function notifyUpdate() {
 async function handleDoc(evt, req) {
   /* v61.57: أى تحميل جديد للصفحة بيصفّر علم «فيه تحديث». من غيره كان
      العلم يفضل مرفوع بعد ما التحديث يتركّب فعلًا، فيرجع الشريط يظهر
-     للمستخدم وهو أصلًا على آخر نسخة. الفحص اللى تحت بيرفعه تانى لو
-     فيه فرق حقيقى. */
+     للمستخدم وهو أصلًا على آخر نسخة. */
   AP_UPD_READY = false;
-  let cached = null;
-  try { cached = await cacheMatch(DOC, DOC_KEY); } catch (e) {}
 
+  /* ١ — النسخة المحفوظة، بشرط إنها كاملة.
+     لو ناقصة (تحميل اتقطع فى نصّه واتحفظ) بتتمسح هنا، فالجهاز بيصلّح
+     نفسه من غير أى تدخل من المستخدم. */
+  let cached = null, cachedVer = null;
+  try {
+    cached = await cacheMatch(DOC, DOC_KEY);
+    if (cached) {
+      cachedVer = await docCheck(cached.clone());
+      if (!cachedVer) {
+        try { const c = await openCache(DOC); if (c) await c.delete(DOC_KEY); } catch (e) {}
+        cached = null;
+      }
+    }
+  } catch (e) { cached = null; cachedVer = null; }
+
+  /* ٢ — النسخة اللى على السيرفر: بنقراها مرة واحدة ونتحقق منها، وما
+     بنحفظش إلا الكاملة. */
   let net;
   try {
-    /* v61.57: ننتظر التخزين يخلص قبل ما نقول للصفحة «فيه تحديث».
-       من غير الانتظار ده كانت الصفحة ممكن تعيد التحميل قبل ما النسخة
-       الجديدة تتحفظ، فترجع تعرض القديمة تانى. */
     net = fetch(req).then(async res => {
-      if (res && res.ok) { await cachePut(DOC, DOC_KEY, res.clone()); }
-      return res;
+      if (!res || !res.ok) return null;
+      const t = await res.text();
+      const ver = docCheckText(t);
+      const resp = new Response(t, { status: 200,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      if (ver) { await cachePut(DOC, DOC_KEY, resp.clone()); }
+      return { ver: ver, resp: resp };
     }).catch(() => null);
   } catch (e) { net = Promise.resolve(null); }
 
+  /* ٣ — عندنا نسخة محفوظة سليمة: نعرضها فورًا ونقارن فى الخلفية */
   if (cached) {
-    /* لازم ناخد نسخة للقراءة قبل ما نرجّع الأصل للمتصفح */
-    const probe = cached.clone();
     try {
       evt.waitUntil((async () => {
-        const res = await net;
-        if (!res || !res.ok) return;
-        const [was, now] = await Promise.all([docVer(probe), docVer(res.clone())]);
-        if (was && now && was !== now) notifyUpdate(); else AP_UPD_READY = false;
+        const r = await net;
+        if (!r || !r.ver) return;                /* مفيش شبكة أو الرد ناقص */
+        if (r.ver !== cachedVer) notifyUpdate(); else AP_UPD_READY = false;
       })());
     } catch (e) {}
     return cached;
   }
 
-  let res = null;
-  try { res = await net; } catch (e) {}
-  if (res) return res;
-
-  /* مخزن النسخة قد يحمل نسخة قديمة من الجذر — أفضل من لا شىء */
-  const alt = await cacheMatch(CACHE, './');
-  if (alt) return alt;
-
-  try { const live = await fetch(req); if (live) return live; } catch (e) {}
+  /* ٤ — مفيش محفوظة: ننتظر الشبكة. وما نعرضش رد ناقص — صفحة
+     «مفيش اتصال» أحسن ألف مرة من نظام نصّه ناقص. */
+  let r = null;
+  try { r = await net; } catch (e) {}
+  if (r && r.ver) return r.resp;
 
   return offlinePage();
 }
@@ -223,8 +266,21 @@ self.addEventListener('fetch', e => {
 
   const path = url.pathname;
 
-  /* v61.55: صفحة الإصلاح لا تُعترض أبدًا — لازم تشتغل حتى لو كل حاجة اتلخبطت */
-  if (/\/reset\.html$/.test(path)) return;
+  /* صفحة الإصلاح: الشبكة أولًا دايمًا (فما ينفعش مخزَّن بايظ يحبسها)،
+     ومخزَّنها احتياطى لو مفيش نت — عشان تشتغل فى كل الحالات.
+     v61.60: قبل كده كانت بتعدّى من غير أى معالجة، فما كانتش تفتح
+     أصلًا من غير إنترنت. */
+  if (/\/reset\.html$/.test(path)) {
+    e.respondWith((async () => {
+      try {
+        const r = await fetch(req);
+        if (r && r.ok) { cachePut(CACHE, req, r.clone()); return r; }
+      } catch (err) {}
+      const hit = await cacheMatch(CACHE, req);
+      return hit || offlinePage();
+    })());
+    return;
+  }
 
   /* v61.55: «مستند» = الجذر أو index.html أو تنقّل لمسار بلا امتداد.
      قبل كده كان أى تنقّل مهما كان مساره بيرجّع index.html من المخزن. */
