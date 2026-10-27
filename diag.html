@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aqua Pearl — تشخيص</title>
+<!-- =====================================================================
+     صفحة تشخيص — قراءة فقط
+     مابتكتبش ولا بتمسح أى حاجة: لا بيانات، لا مخازن، لا تسجيل.
+     بتقول: النسخة المحفوظة على الجهاز كام، واللى على السيرفر كام،
+     وهل المتصفح شايفهم مختلفين ولا لأ.
+     ===================================================================== -->
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:#0d2b45;color:#eaf3f8;
+       font-family:"Segoe UI",Tahoma,system-ui,sans-serif;padding:16px;font-size:14px}
+  h1{font-size:18px;margin:0 0 4px}
+  .sub{color:#9fc3d6;font-size:12.5px;margin:0 0 14px}
+  .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+        border-radius:14px;padding:13px;margin-bottom:11px}
+  .card h2{font-size:14px;margin:0 0 9px;color:#7fd0ea}
+  .row{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.07);
+       align-items:flex-start;line-height:1.7}
+  .row:last-child{border:0}
+  .k{color:#9fc3d6;flex:0 0 42%}
+  .v{flex:1;word-break:break-all;font-weight:700}
+  .ok{color:#7fd6a9}.bad{color:#ff9d9d}.warn{color:#ffd27f}
+  code{direction:ltr;display:inline-block;font-size:12px}
+  button{display:block;width:100%;margin-top:12px;padding:12px;border:0;border-radius:11px;
+         background:#1195b2;color:#fff;font-size:15px;font-weight:700;font-family:inherit}
+  .note{color:#8fb0c4;font-size:12px;line-height:1.75;margin-top:12px}
+</style>
+</head>
+<body>
+<h1>🩺 تشخيص Aqua Pearl</h1>
+<p class="sub">قراءة فقط — مفيش أى حاجة بتتغيّر. صوّر الشاشة دى كلها وابعتها.</p>
+<div id="out"><div class="card">جارٍ الفحص…</div></div>
+<button onclick="location.href='./index.html'">↩️ رجوع للنظام</button>
+<p class="note">لو عايز تصلّح بعد ما تصوّر: <code>reset.html</code></p>
+
+<script>
+(function(){
+  var O=document.getElementById('out'), H='';
+  function card(t){ H+='<div class="card"><h2>'+t+'</h2>'; }
+  function row(k,v,cls){ H+='<div class="row"><span class="k">'+k+'</span><span class="v '+(cls||'')+'">'+v+'</span></div>'; }
+  function end(){ H+='</div>'; O.innerHTML=H; }
+  function verOf(t){ var m=String(t||'').match(/APP_VER\s*=\s*'([^']+)'/); return m?m[1]:'—'; }
+  function hdr(r,n){ try{ return r.headers.get(n)||'—'; }catch(e){ return '—'; } }
+
+  (async function(){
+    H='';
+    /* ١ — مدير التخزين */
+    card('١ · مدير التخزين');
+    try{
+      if(!('serviceWorker' in navigator)){ row('مدعوم','لأ','bad'); }
+      else{
+        var regs=await navigator.serviceWorker.getRegistrations();
+        row('عدد المسجّل', regs.length, regs.length===1?'ok':(regs.length?'warn':'bad'));
+        row('ماسك الصفحة', navigator.serviceWorker.controller?'أيوه':'لأ',
+            navigator.serviceWorker.controller?'ok':'warn');
+        regs.forEach(function(r,i){
+          row('#'+(i+1)+' نشط', r.active?r.active.state:'—', r.active&&r.active.state==='activated'?'ok':'warn');
+          if(r.waiting) row('#'+(i+1)+' مستنى','أيوه ⚠️','warn');
+          if(r.installing) row('#'+(i+1)+' بيتركّب','أيوه','warn');
+          try{ row('#'+(i+1)+' النطاق','<code>'+r.scope.replace(location.origin,'')+'</code>'); }catch(e){}
+        });
+      }
+    }catch(e){ row('خطأ', String(e).slice(0,70),'bad'); }
+    end();
+
+    /* ٢ — المخازن */
+    card('٢ · المخازن على الجهاز');
+    var cachedVer='—';
+    try{
+      var keys=await caches.keys();
+      row('عددها', keys.length, keys.length?'ok':'bad');
+      keys.forEach(function(k){ row('·','<code>'+k+'</code>'); });
+      var c=await caches.open('aqua-pearl-doc');
+      var m=await c.match('./index.html');
+      if(m){
+        var t=await m.clone().text();
+        cachedVer=verOf(t);
+        row('النسخة المحفوظة', cachedVer, 'ok');
+        row('حجمها', (t.length/1048576).toFixed(2)+' ميجا');
+        row('ETag المحفوظ','<code>'+hdr(m,'etag')+'</code>');
+        row('Last-Modified','<code>'+hdr(m,'last-modified')+'</code>');
+      } else row('النسخة المحفوظة','مش موجودة ⚠️','bad');
+    }catch(e){ row('خطأ', String(e).slice(0,70),'bad'); }
+    end();
+
+    /* ٣ — اللى على السيرفر (مرتين، نشوف هل بيتغيّر) */
+    card('٣ · اللى على السيرفر');
+    var n1=null,n2=null;
+    try{
+      n1=await fetch('./index.html?d='+Date.now(),{cache:'no-store'});
+      var t1=await n1.clone().text();
+      row('نسخة السيرفر', verOf(t1), verOf(t1)===cachedVer?'ok':'warn');
+      row('ETag (١)','<code>'+hdr(n1,'etag')+'</code>');
+      row('Last-Mod (١)','<code>'+hdr(n1,'last-modified')+'</code>');
+      row('Length (١)','<code>'+hdr(n1,'content-length')+'</code>');
+      n2=await fetch('./index.html?d='+(Date.now()+1),{cache:'no-store'});
+      row('ETag (٢)','<code>'+hdr(n2,'etag')+'</code>',
+          hdr(n1,'etag')===hdr(n2,'etag')?'ok':'bad');
+      row('Length (٢)','<code>'+hdr(n2,'content-length')+'</code>',
+          hdr(n1,'content-length')===hdr(n2,'content-length')?'ok':'bad');
+      row('الطلبين متطابقين؟',
+          (hdr(n1,'etag')===hdr(n2,'etag') && hdr(n1,'content-length')===hdr(n2,'content-length'))
+            ? 'أيوه ✔' : 'لأ ⚠️ — دى المشكلة',
+          (hdr(n1,'etag')===hdr(n2,'etag') && hdr(n1,'content-length')===hdr(n2,'content-length'))?'ok':'bad');
+    }catch(e){ row('خطأ', String(e).slice(0,70),'bad'); }
+    end();
+
+    /* ٤ — بياناتك (طمأنة) */
+    card('٤ · بياناتك على الجهاز');
+    try{
+      var n=0,sz=0;
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i); n++;
+        try{ sz+=(localStorage.getItem(k)||'').length; }catch(e){}
+      }
+      row('عدد السجلات', n, n?'ok':'warn');
+      row('حجمها', (sz/1024).toFixed(0)+' كيلو');
+      row('مسجّل دخول', sessionStorage.getItem('aquaPearlERP_session')?'أيوه':'لأ');
+    }catch(e){ row('خطأ', String(e).slice(0,70),'bad'); }
+    end();
+
+    /* ٥ — المساحة والمتصفح */
+    card('٥ · الجهاز');
+    try{
+      if(navigator.storage && navigator.storage.estimate){
+        var es=await navigator.storage.estimate();
+        row('مستخدم', (es.usage/1048576).toFixed(1)+' ميجا');
+        row('المسموح', (es.quota/1048576).toFixed(0)+' ميجا',
+            (es.quota-es.usage) < 50*1048576 ? 'bad':'ok');
+      } else row('المساحة','المتصفح مابيقولش');
+      row('أونلاين', navigator.onLine?'أيوه':'لأ', navigator.onLine?'ok':'bad');
+      row('مثبّت كتطبيق',
+          (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)?'أيوه':'لأ');
+      row('المتصفح','<code>'+navigator.userAgent.slice(0,80)+'</code>');
+    }catch(e){ row('خطأ', String(e).slice(0,70),'bad'); }
+    end();
+  })();
+})();
+</script>
+</body>
+</html>

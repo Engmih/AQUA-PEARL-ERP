@@ -1446,8 +1446,56 @@ table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2
 <link rel="icon" href="icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <script>
+/* =====================================================================
+   v61.58 — مفتاح «التحميل المباشر» لجهاز بعينه
+   ---------------------------------------------------------------------
+   التخزين المحلى بيخلّى النظام يفتح فورًا ويشتغل بلا إنترنت، لكن ثمنه
+   إنه بيعرض النسخة المحفوظة الأول. على جهاز بيفتح النظام بعد كل نشر
+   على طول، الثمن ده مش مستاهل.
+
+   الحل: مفتاح لكل جهاز على حدة.
+     يتفعّل من:   index.html?nosw=1     (يتحفظ على الجهاز ده وحده)
+     يترجّع من:   index.html?nosw=0
+
+   وهو مفعّل: النظام بيتحمّل من الإنترنت مباشرة كل مرة، ومفيش مدير
+   تخزين ولا نسخ محفوظة على الجهاز ده إطلاقًا. باقى الأجهزة زى ما هى.
+   المفتاح فى localStorage فما بيضيعش مع التحديثات.
+   ===================================================================== */
+var AP_NOSW = false;
+(function () {
+  try {
+    var q = location.search || '';
+    if (/[?&]nosw=1/.test(q)) localStorage.setItem('apNoSW', '1');
+    if (/[?&]nosw=0/.test(q)) localStorage.removeItem('apNoSW');
+    AP_NOSW = localStorage.getItem('apNoSW') === '1';
+  } catch (e) { AP_NOSW = /[?&]nosw=1/.test(location.search || ''); }
+  if (!AP_NOSW) return;
+  var jobs = [];
+  try {
+    if ('serviceWorker' in navigator) {
+      jobs.push(navigator.serviceWorker.getRegistrations()
+        .then(function (rs) { return Promise.all(rs.map(function (r) {
+          return r.unregister().catch(function () {}); })); })
+        .catch(function () {}));
+    }
+  } catch (e) {}
+  try {
+    if (window.caches) {
+      jobs.push(caches.keys().then(function (ks) {
+        return Promise.all(ks.map(function (k) { return caches.delete(k).catch(function(){}); }));
+      }).catch(function () {}));
+    }
+  } catch (e) {}
+  /* أول مرة يتفعّل فيها: الصفحة دى نفسها جات من المخزن، فنعيد تحميلها
+     من الإنترنت مرة واحدة عشان يشوف آخر نسخة فورًا. */
+  if (/[?&]nosw=1/.test(location.search || '')) {
+    Promise.all(jobs).then(function () {
+      setTimeout(function () { location.replace('./index.html'); }, 400);
+    });
+  }
+})();
 /* تسجيل الـ service worker — يعمل فقط عند التشغيل من موقع https */
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+if (!AP_NOSW && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('sw.js').catch(function(e){ console.warn('SW', e); });
   });
@@ -4666,7 +4714,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.57';
+const APP_VER  = 'v61.58';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -11379,6 +11427,7 @@ const AP_GUIDE={
  admin:{t:'دليل المدير',s:[
   ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
   ['📡 صفحة الإصلاح — reset.html','لو جهاز أى حد وقف عن فتح النظام أو ظهرت صفحة خطأ، يفتح aqua-pearl-erp.pages.dev/reset.html ويدوس «ابدأ الإصلاح»: بتلغى مدير التخزين وتمسح نسخ الملفات المحفوظة بس، من غير ما تلمس أى بيانات ولا المرفقات ولا تسجيل الدخول، وبعدين بتفتح النظام لوحدها. ومن v61.55 ملف النظام بقى محفوظ فى مخزن ثابت مستقل عن رقم النسخة، فما بقاش فيه لحظة بين نسخة وجديدة يكون الجهاز فيها من غير نسخة محفوظة.'],
+  ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
   ['👥 صلاحيات الموظفين','قاعدة العملاء وملف العميل مقفولين على المدير وحده — مش بينفع تتمنح لموظف حتى بالخطأ.'],
   ['👥 المستخدمون','تضيف موظف أو عميل أو شريك. لو السحابة متصلة الحساب بيتعمل على Firebase تلقائيًا، و«📨 إرسال رابط» بيخلّى المستخدم يحط كلمة سره بنفسه.'],
