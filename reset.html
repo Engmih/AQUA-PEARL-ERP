@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aqua Pearl — إصلاح التخزين</title>
+<!-- =====================================================================
+     v61.55 — صفحة الإصلاح
+     بتمسح ملفات النظام المخزَّنة على الجهاز وتلغى تسجيل الـ service worker،
+     فيعيد المتصفح تحميل كل حاجة من أول وجديد.
+
+     مهم جدًا: الصفحة دى **لا تلمس أى بيانات**:
+       • localStorage  (بيانات النظام على الجهاز)  — لا تُمس
+       • IndexedDB     (المرفقات)                  — لا تُمس
+       • Cookies / الجلسة                          — لا تُمس
+     اللى بيتمسح هو نسخ الملفات المخزَّنة للعمل بلا إنترنت فقط، وبتترجّع
+     لوحدها أول ما تفتح النظام وإنت متصل.
+     ===================================================================== -->
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:linear-gradient(160deg,#0d2b45,#12415f);color:#eaf3f8;
+       font-family:"Segoe UI",Tahoma,system-ui,sans-serif;padding:22px}
+  .box{max-width:400px;width:100%;background:rgba(255,255,255,.07);
+       border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:26px 20px;text-align:center}
+  h1{font-size:20px;margin:0 0 10px}
+  p{font-size:15px;line-height:1.85;color:#c6dbe8;margin:0 0 16px}
+  button{display:block;width:100%;margin:9px 0;padding:13px;border:0;border-radius:11px;
+         font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}
+  .p{background:#1195b2;color:#fff}
+  .g{background:transparent;color:#9fc3d6;border:1px solid rgba(255,255,255,.22)}
+  button[disabled]{opacity:.55}
+  .safe{background:rgba(30,158,106,.16);border:1px solid rgba(30,158,106,.4);
+        border-radius:11px;padding:11px 13px;margin:0 0 16px;font-size:13.5px;
+        line-height:1.8;color:#bfe6d4;text-align:right}
+  #log{margin-top:15px;font-size:13px;line-height:1.9;color:#9fc3d6;text-align:right;
+       white-space:pre-line;min-height:1em}
+  .done{color:#7fd6a9;font-weight:700}
+</style>
+</head>
+<body>
+<div class="box">
+  <div style="font-size:40px;margin-bottom:4px">🛠️</div>
+  <h1>إصلاح التخزين</h1>
+  <p>بيعيد تحميل ملفات النظام على الجهاز من أول وجديد. استعمله لو النظام وقف عن الفتح أو ظهرت صفحة خطأ.</p>
+
+  <div class="safe">
+    ✅ <b>مفيش أى بيانات هتتمسح.</b><br>
+    بيانات النظام والمرفقات وتسجيل دخولك كلها زى ما هى — اللى بيتمسح هو نسخ الملفات المحفوظة للعمل بلا إنترنت بس.
+  </div>
+
+  <button class="p" id="go">ابدأ الإصلاح</button>
+  <button class="g" id="back">↩️ رجوع للنظام</button>
+  <div id="log"></div>
+</div>
+
+<script>
+(function(){
+  var log = document.getElementById('log');
+  function say(t, cls){
+    var d = document.createElement('div');
+    if (cls) d.className = cls;
+    d.textContent = t;
+    log.appendChild(d);
+  }
+  document.getElementById('back').onclick = function(){ location.href = './index.html'; };
+
+  document.getElementById('go').onclick = function(){
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'جارٍ الإصلاح…';
+    log.textContent = '';
+    run();
+  };
+
+  async function run(){
+    /* ١ — إلغاء تسجيل الـ service worker */
+    try{
+      if ('serviceWorker' in navigator){
+        var regs = await navigator.serviceWorker.getRegistrations();
+        for (var i=0;i<regs.length;i++){ try{ await regs[i].unregister(); }catch(e){} }
+        say('١ · اتلغى تسجيل ' + regs.length + ' نسخة من مدير التخزين');
+      } else {
+        say('١ · المتصفح مابيدعمش مدير التخزين — عدّينا');
+      }
+    }catch(e){ say('١ · ماقدرناش نلغى التسجيل — عدّينا'); }
+
+    /* ٢ — مسح نسخ الملفات المخزَّنة (مش البيانات) */
+    try{
+      if (window.caches){
+        var keys = await caches.keys();
+        for (var j=0;j<keys.length;j++){ try{ await caches.delete(keys[j]); }catch(e){} }
+        say('٢ · اتمسحت ' + keys.length + ' نسخة ملفات مخزَّنة');
+      } else {
+        say('٢ · مفيش ملفات مخزَّنة');
+      }
+    }catch(e){ say('٢ · ماقدرناش نمسح الملفات المخزَّنة'); }
+
+    /* ٣ — تأكيد إن البيانات زى ما هى */
+    try{
+      var n = 0;
+      try{ n = localStorage.length; }catch(e){ n = -1; }
+      if (n >= 0) say('٣ · بياناتك سليمة (' + n + ' سجل على الجهاز زى ما هو)');
+      else        say('٣ · بياناتك ماتلمستش');
+    }catch(e){}
+
+    say('تم ✅ — جارٍ فتح النظام…', 'done');
+    setTimeout(function(){
+      location.replace('./index.html?fix=' + Date.now());
+    }, 1400);
+  }
+})();
+</script>
+</body>
+</html>
