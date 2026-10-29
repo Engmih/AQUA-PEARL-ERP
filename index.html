@@ -280,14 +280,15 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 h2.screen-title.apTR::after{display:none}
 h2.screen-title > .ttLine{flex:1;min-width:18px;height:2px;
   background:linear-gradient(90deg,var(--aqua2),transparent)}
+/* v61.61: الأيقونة كبرت ٥٠٪ (19 ← 28.5 بكسل) والنقط معاها */
 h2.screen-title > .apTDots{flex:0 0 auto;position:relative;
-  width:19px;height:19px;border-radius:50%;cursor:pointer;padding:0;
+  width:28.5px;height:28.5px;border-radius:50%;cursor:pointer;padding:0;
   border:1px solid rgba(11,42,74,.34);background:transparent;
-  display:flex;align-items:center;justify-content:center;gap:2px;
+  display:flex;align-items:center;justify-content:center;gap:3px;
   transition:.15s;-webkit-tap-highlight-color:transparent}
-h2.screen-title > .apTDots i{width:2.6px;height:2.6px;border-radius:50%;
+h2.screen-title > .apTDots i{width:3.9px;height:3.9px;border-radius:50%;
   background:var(--navy);display:block;flex:0 0 auto}
-h2.screen-title > .apTDots::after{content:"";position:absolute;inset:-11px}
+h2.screen-title > .apTDots::after{content:"";position:absolute;inset:-6px}
 h2.screen-title > .apTDots:hover,h2.screen-title > .apTDots:focus{
   border-color:var(--navy);background:rgba(11,42,74,.07);outline:none}
 /* سطر العنوان يفضل ثابت فوق فى الشاشات الفرعية، فالقائمة فى الإيد دايمًا */
@@ -4714,7 +4715,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.60';
+const APP_VER  = 'v61.61';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -11401,7 +11402,7 @@ const AP_GUIDE={
   ['🏠 الرئيسية','العنوان والفيديو ثابتين فوق وتحتيهم الكارت اليومى. وكل أقسامك جوّه التلات نقط اللى على سطر العنوان، ولما تخلص من أى شاشة اضغط زرار الرجوع فى موبايلك ترجع للرئيسية.'],
   ['⋯ قائمة التلات نقط','فى أقصى شمال الخط الأزرق الرفيع اللى جنب عنوان الشاشة فيه تلات نقط صغيّرة جوّه دايرة — دوس عليها تفتح قائمة كل الشاشات واختار منها اللى تحبه. موجودة على سطر العنوان فى كل شاشة، وعلى الرئيسية بتفضل ثابتة فوق وإنت بتسكرول. ولو دوست برّه القائمة بتقفل.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
-  ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام.'],
+  ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام، وبيظبط نفسه لوحده مع تغيير التوقيت الصيفى والشتوى.'],
   ['📊 ملخصى','رصيدك الإجمالى ونصيبك من المشروع.'],
   ['🏢 الوحدات المباعة','كل عمارة: نسبتك فيها وعدد وحداتها المباعة وإجمالى المحصل ونصيبك منه.'],
   ['🅿️ الوحدات المتاحة','الوحدات اللى لسه ما اتباعتش فى عماراتك، وإجمالى أسعارها ونصيبك المتوقّع منها. رقم تقديرى بيتغيّر مع الأسعار والمبيعات.'],
@@ -11417,7 +11418,7 @@ const AP_GUIDE={
   ['⋯ قائمة التلات نقط','فى أقصى شمال الخط الأزرق الرفيع اللى جنب عنوان الشاشة فيه تلات نقط صغيّرة جوّه دايرة — دوس عليها تفتح قائمة كل الشاشات واختار منها اللى تحبه. موجودة على سطر العنوان فى كل شاشة، وعلى الرئيسية بتفضل ثابتة فوق وإنت بتسكرول. ولو دوست برّه القائمة بتقفل.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
   ['الشاشات المتاحة','كل شاشاتك جوّه قائمة التلات نقط — الشريط الطويل اللى كان فوق اتشال. وبتشوف الشاشات اللى المدير سمح لك بيها بس، أى شاشة مش ظاهرة معناها إنها مش من صلاحيتك.'],
-  ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام.'],
+  ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام، وبيظبط نفسه لوحده مع تغيير التوقيت الصيفى والشتوى.'],
   ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['👥 بيانات العملاء','قاعدة العملاء وملفاتهم للمدير وحده ومش ظاهرة لأى موظف.'],
   ['🏢 عرض وحدة','تشوف بيانات الوحدة ومساحتها وسعرها وحالتها.'],
@@ -11998,7 +11999,12 @@ const AP_WMO={0:['☀️','صحو'],1:['🌤️','صحو غالبًا'],2:['⛅'
   95:['⛈️','رعد'],96:['⛈️','رعد وبَرَد'],99:['⛈️','رعد وبَرَد']};
 const AP_PRAYERS=[['Fajr','الفجر'],['Sunrise','الشروق'],['Dhuhr','الظهر'],
                   ['Asr','العصر'],['Maghrib','المغرب'],['Isha','العشاء']];
-let AP_DAILY={pray:null,prayDate:'',hijri:'',wx:null,wxAt:0,money:null};
+let AP_DAILY={pray:null,prayDate:'',prayOff:null,hijri:'',wx:null,wxAt:0,money:null};
+/* v61.61: فرق التوقيت عن جرينتش بالدقايق. مصر بتغيّر التوقيت مرتين فى
+   السنة، والمواقيت كانت بتتجاب مرة واحدة فى اليوم وتتخزّن — فلما الساعة
+   بترجع ساعة بالليل تفضل المواقيت زيادة ساعة لحد بكرة الصبح.
+   دلوقتى بنحفظ الفرق مع المواقيت، ولو اتغيّر بنعيد الجلب فورًا. */
+function apTzOff(){ try{ return new Date().getTimezoneOffset(); }catch(e){ return null; } }
 let AP_DAILY_BUSY=false, AP_DAILY_TICK=null;
 
 function apDailyCfg(){
@@ -12025,7 +12031,7 @@ function apDailySave(){
 let AP_DAILY_LAST=0;
 function apDailySig(){
   const w=AP_DAILY.wx||{}, m=AP_DAILY.money||{}, a=AP_DAILY.auto||{};
-  return [AP_DAILY.prayDate,AP_DAILY.hijri,w.t,w.code,w.hi,w.lo,
+  return [AP_DAILY.prayDate,AP_DAILY.prayOff,AP_DAILY.hijri,w.t,w.code,w.hi,w.lo,
           m.usd,m.g21,m.g24,a.usd,a.g21,a.g24].join('|');
 }
 async function apDailyPull(force){
@@ -12039,13 +12045,13 @@ async function apDailyPull(force){
   const t=todayISO();
   const jobs=[];
   /* مواقيت الصلاة — طريقة الهيئة المصرية العامة للمساحة (method=5) */
-  if(c.pray&&(force||AP_DAILY.prayDate!==t)){
+  if(c.pray&&(force||AP_DAILY.prayDate!==t||AP_DAILY.prayOff!==apTzOff())){
     jobs.push(fetch('https://api.aladhan.com/v1/timings?latitude='+c.lat+'&longitude='+c.lng+
         '&method=5&school=0',{cache:'no-store'})
       .then(r=>r.json()).then(j=>{
         const d=j&&j.data;
         if(d&&d.timings){
-          AP_DAILY.pray=d.timings; AP_DAILY.prayDate=t;
+          AP_DAILY.pray=d.timings; AP_DAILY.prayDate=t; AP_DAILY.prayOff=apTzOff();
           try{ const h=d.date&&d.date.hijri;
             AP_DAILY.hijri=h?(h.day+' '+(h.month&&(h.month.ar||h.month.en))+' '+h.year+' هـ'):''; }catch(e){}
         }
