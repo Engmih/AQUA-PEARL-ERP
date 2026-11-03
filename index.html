@@ -684,6 +684,53 @@ body.pvOn #shareFab{display:none!important}
 .pvNum{color:#cfe3f0;font-size:12px}
 @media print{#uvPvModal{display:none!important}}
 
+/* =====================================================================
+   v61.64 — تخطيط المعاينة المضغوط
+   الهدف: نفضّى ارتفاع عشان المحتوى يكبر ويملا الورقة. كل القواعد دى
+   جوّه .pvCompact فمابتأثرش على الشاشة نفسها ولا على الـPDF.
+   ===================================================================== */
+.pvCompact .card{margin-bottom:9px;padding:9px 11px;border-radius:10px}
+.pvCompact .card>h3{font-size:14px;margin:0 0 7px;padding-bottom:5px}
+.pvCompact .grid{gap:6px!important}
+/* كل كارت حقل فى سطر واحد: أيقونة + اسم + قيمة */
+.pvCompact .field{display:flex;align-items:center;gap:7px;padding:5px 9px;min-height:0}
+.pvCompact .field>div{display:flex!important;align-items:baseline;gap:7px;flex:1;min-width:0}
+.pvCompact .field .lb{font-size:11.5px;color:#5a7488;white-space:nowrap;margin:0}
+.pvCompact .field .vl{font-size:13.5px;font-weight:800;margin:0}
+.pvCompact .field .ic{font-size:14px}
+/* تفصيل السعر على سطره الصغير — من غير ما يكسر الرقم */
+.pvCompact .field .gray-note{display:block!important;font-size:9.8px;font-weight:600;
+  margin:1px 0 0;color:#6b8398}
+/* الأرقام ما تتكسرش فى نص الرقم */
+.pvCompact .field .vl,.pvCompact .field .gray-note{word-break:keep-all!important;
+  overflow-wrap:normal!important;hyphens:none}
+/* الخلايا تقدر تضيق من غير ما المحتوى يطلع برّه الورقة */
+.pvCompact .field{min-width:0;overflow:hidden}
+.pvCompact .field>div{min-width:0;flex-wrap:wrap;row-gap:0}
+.pvCompact .grid{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
+.pvCompact .grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.pvCompact .grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.pvCompact .grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.pvCompact .pvG2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.pvCompact .pvG3{display:grid;grid-template-columns:1.45fr 1fr 1fr;gap:6px}
+/* جدول خطط السداد — نفس شكل النظام القديم */
+.pvPlans{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;
+  border:1px solid #cfdae4}
+.pvPlans th,.pvPlans td{border:1px solid #d9e3ec;padding:5px 7px;text-align:center;white-space:nowrap}
+.pvPlans thead th{background:#123a5c;color:#fff;font-weight:800;font-size:12.5px}
+.pvPlans tbody th{background:#f4f8fb;color:#0b2a4a;font-weight:800;text-align:center;width:17%}
+.pvPlans .rTot td{color:#1a6fa8;font-weight:800}
+.pvPlans .rMon{background:#eaf4fb}
+.pvPlans .rMon td,.pvPlans .rMon th{font-weight:800;color:#0b2a4a}
+.pvPlans .rDep td{color:#0f8a4d;font-weight:800}
+/* سطر طريقة الدفع + المقدم */
+.pvPayLine{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:7px 10px;border:1px solid #dbe6ee;border-radius:9px;background:#fbfdff;margin-bottom:8px}
+.pvPayLine b{color:#0b2a4a;font-size:13px}
+.pvPayLine .pvDp{display:flex;align-items:center;gap:7px;margin-inline-start:auto}
+.pvPayLine .pvDpBox{border:1.5px solid #1a7fc1;border-radius:7px;padding:3px 14px;
+  font-weight:900;font-size:14px;color:#0b2a4a;background:#fff;min-width:110px;text-align:center}
+
 /* ===== Share FAB ===== */
 #shareFab{position:fixed;bottom:20px;left:20px;z-index:90;border:none;cursor:pointer;
   background:linear-gradient(135deg,var(--aqua),var(--navy2));color:#fff;font-weight:700;font-size:13.5px;
@@ -4761,7 +4808,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.63';
+const APP_VER  = 'v61.64';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5248,20 +5295,85 @@ function uvPvFit(){
     f.style.marginInline='auto';
   });
 }
-/* بيصغّر المحتوى جوّه الورقة لحد ما يدخل.
-   القياس بيتعمل والمحتوى بحجمه الطبيعى، وبنسيب ٢٪ أمان عشان الخطوط
-   ممكن تخلّص تحميل بعد القياس وتزوّد سطر. */
+/* v61.64: بيدوّر على أحسن عرض بناء يخلّى المحتوى أكبر ما يمكن وهو
+   داخل الورقة. المحتوى المضغوط بقى أقصر، فبدل ما نسيب فراغ تحت بنبنيه
+   بعرض أضيق ونكبّره — فالخط يطلع أكبر والورقة تتملى. */
 function uvPvShrink(area){
   const sc=area.querySelector('.pvScale'); if(!sc) return;
-  sc.style.transform='translateX(-50%) scale(1)';
   const availH=area.clientHeight-10, availW=area.clientWidth;
-  const r=sc.getBoundingClientRect();
-  const h=Math.max(r.height, sc.offsetHeight, sc.scrollHeight);
-  const w=Math.max(r.width,  sc.offsetWidth,  1);
-  let k=Math.min(availW/w, availH/(h||1), 1)*0.98;
-  if(!isFinite(k)||k<=0) k=1;
+  const widths=[980,900,820,760,700,650,600];
+  let best={k:0,w:980,h:0};
+  widths.forEach(function(w){
+    sc.style.width=w+'px';
+    sc.style.transform='translateX(-50%) scale(1)';
+    void sc.offsetHeight;
+    const r=sc.getBoundingClientRect();
+    const h=Math.max(r.height, sc.offsetHeight, sc.scrollHeight)||1;
+    const k=Math.min(availW/w, availH/h)*0.985;
+    if(k>best.k) best={k:k,w:w,h:h};
+  });
+  let k=best.k; if(!isFinite(k)||k<=0) k=1;
+  sc.style.width=best.w+'px';
   sc.style.transform='translateX(-50%) scale('+k+')';
-  return {k:+k.toFixed(3),h:Math.round(h),availH:Math.round(availH)};
+  return {k:+k.toFixed(3),w:best.w,h:Math.round(best.h),availH:Math.round(availH)};
+}
+/* محتوى صفحة المعاينة — مبنى من نفس أرقام الشاشة بالظبط */
+function uvPvContent(u){
+  const out=[];
+  /* ١) كروت الوحدة — من غير عنوان «عرض وحدة» */
+  const cards=Array.prototype.slice.call(document.querySelectorAll('#uvBody > .card'))
+    .filter(function(c){ return !c.classList.contains('uvplanpg'); });
+  cards.forEach(function(c){
+    const d=c.cloneNode(true);
+    /* ٥) سطر «نظام التشطيب (…)» يتشال بالكامل */
+    const h=d.querySelector(':scope > h3');
+    if(h && /نظام التشطيب/.test(h.textContent||'')) h.remove();
+    /* ٣+٤) كارت الدفع بيتبنى من الأول */
+    if(d.querySelector('#uvPayBody')) return;
+    out.push(d.outerHTML);
+  });
+  /* ٣) سطر واحد: طريقة الدفع + المقدم */
+  const total=uvTotal(u), fin=(typeof uvFinAmount==='function')?uvFinAmount(u):0;
+  const reserve=Math.round(total*((S().reservePct||1))/100);
+  const pct=(S().depositPct!=null?S().depositPct:7.5);
+  const inst=(typeof uvMode!=='undefined'&&uvMode==='inst');
+  const dot=function(on){ return '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;'+
+    'border:2px solid #1a7fc1;margin-inline-end:5px;vertical-align:-2px;box-sizing:border-box;'+
+    (on?'background:radial-gradient(circle,#1a7fc1 0 46%,#fff 48%)':'background:#fff')+'"></span>'; };
+  let pay='<div class="card"><h3>💳 بيانات الدفع</h3>'+
+    '<div class="pvPayLine"><b>طريقة الدفع:</b>'+
+      '<span>'+dot(!inst)+'كاش</span><span>'+dot(inst)+'تقسيط</span>'+
+      (inst?('<span class="pvDp"><b>المقدم (قابل للتعديل):</b>'+
+             '<span class="pvDpBox">'+fmtN(uvDown||0)+'</span></span>'):'')+
+    '</div>'+
+    '<div class="'+(inst?'pvG2':'pvG3')+'">'+
+      fld('💵',(fin?'السعر شامل التشطيب':'السعر الأساسى'),
+          fmtM(total)+(fin?'<span class="gray-note">الوحدة '+fmtN(uvUnitBase(u))+' + التشطيب '+fmtN(fin)+'</span>':''),'money')+
+      fld('🧾','دفعة الحجز (1%)',fmtM(reserve)+'<span class="gray-note">تسترد خلال 10 أيام</span>','money')+
+      (inst?'':fld('🏦','وديعة الاستلام ('+pct+'٪)',fmtM(Math.round(total*pct/100)),'money'))+
+    '</div>';
+  /* ٤) جدول خطط السداد بدل الأربع كروت */
+  if(inst){
+    const ys=[1,2,3,4], P=ys.map(function(y){ return instPlan(total,uvDown,y); });
+    const head=['سنة','سنتين','3 سنوات','4 سنوات'];
+    const row=function(cls,label,vals){
+      return '<tr class="'+cls+'"><th>'+label+'</th>'+
+        vals.map(function(v){ return '<td>'+fmtN(v)+' جنيه</td>'; }).join('')+'</tr>';
+    };
+    let rows=row('rTot','إجمالى سعر الوحدة',P.map(function(p){return p.finalPrice;}));
+    if(fin>0&&total>0){
+      const mFin=P.map(function(p){ return Math.round(p.monthly*(fin/total)); });
+      rows+=row('','قسط الشقة الشهرى',P.map(function(p,i){ return p.monthly-mFin[i]; }));
+      rows+=row('','قسط التشطيب الشهرى',mFin);
+    }
+    rows+=row('rMon','القسط الشهرى',P.map(function(p){return p.monthly;}));
+    rows+=row('rDep','دفعة الاستلام '+pct+'٪',P.map(function(p){return Math.round(p.finalPrice*pct/100);}));
+    pay+='<table class="pvPlans"><thead><tr><th>البند</th>'+
+      head.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+  pay+='</div>';
+  out.push(pay);
+  return out.join('');
 }
 async function uvPreview(){
   const u=uvUnitId?unitById(uvUnitId):null;
@@ -5271,19 +5383,17 @@ async function uvPreview(){
   toast('⏳ جارٍ تجهيز المعاينة...');
   const hdr=(window.ASSETS&&window.ASSETS.header)?window.ASSETS.header:'';
   const code=(typeof planCode==='function')?planCode(u):((u.building||'')+'-'+(u.unitNo||''));
-  /* الكروت زى ما هى فى الشاشة، من غير أزرار */
-  const cards=Array.prototype.slice.call(document.querySelectorAll('#uvBody > .card'))
-    .filter(function(c){ return !c.classList.contains('uvplanpg'); });
+  /* v61.64: المعاينة تخطيط مستقل مضغوط — الشاشة نفسها ما بتتلمسش */
   const body=document.createElement('div');
-  body.innerHTML='<h2 style="color:#0b2a4a;text-align:center;margin:2px 0 10px;font-size:22px">عرض وحدة — '+
-    esc(code)+'</h2>'+cards.map(function(c){return c.outerHTML;}).join('');
+  body.className='pvCompact';
+  body.innerHTML=uvPvContent(u);
   body.querySelectorAll('.no-print,button,.btn,input[type=file]').forEach(function(x){ x.remove(); });
   body.querySelectorAll('*').forEach(function(el){ el.style.letterSpacing='normal'; });
 
   wrap.innerHTML=
     '<div class="pvFit"><div class="pvSheet" id="pvP1">'+
       (hdr?'<img class="pvHdr" src="'+hdr+'">':'')+
-      '<div class="pvArea"><div class="pvScale" id="pvC1" style="width:1000px"></div></div>'+
+      '<div class="pvArea"><div class="pvScale" id="pvC1" style="width:900px"></div></div>'+
     '</div></div>';
   document.getElementById('pvC1').appendChild(body);
   m.classList.add('open');
@@ -5318,11 +5428,41 @@ async function uvPreview(){
   UV_PV_Z=0; uvPvFit();
   wrap.scrollIntoView({block:'start'});
 }
-/* مشاركة الصفحتين كصور من داخل المعاينة */
+/* v61.64: بتصوّر ورقتى المعاينة نفسهم — فاللى بيتبعت هو اللى شايفه
+   بالظبط، وبأعلى دقة. */
 async function uvPvShare(){
   const u=uvUnitId?unitById(uvUnitId):null;
-  if(!u) return;
-  try{ await shareUnitImages(); }catch(e){ console.error(e); }
+  if(!u||typeof html2canvas==='undefined') return;
+  const code=(typeof planCode==='function')?planCode(u):((u.building||'')+'-'+(u.unitNo||''));
+  const fits=Array.prototype.slice.call(document.querySelectorAll('#pvWrap .pvFit'));
+  const saved=fits.map(function(f){ return f.style.transform; });
+  toast('⏳ جارٍ تجهيز الصور...');
+  try{
+    fits.forEach(function(f){ f.style.transform='none'; });
+    await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
+    const SC=apIsPhone()?2.6:3.4;
+    const files=[];
+    const sheets=['pvP1','pvP2'];
+    for(let i=0;i<sheets.length;i++){
+      const el=document.getElementById(sheets[i]); if(!el) continue;
+      const cv=await html2canvas(el,{scale:SC,backgroundColor:'#ffffff',logging:false,
+        windowWidth:1500,windowHeight:1600});
+      const blob=await new Promise(function(r){ cv.toBlob(r,'image/jpeg',0.95); });
+      cv.width=cv.height=0;
+      files.push(new File([blob],(i?'Plan ':'Aqua Pearl ')+code.replace(/[^\w\-]/g,'-')+'.jpg',{type:'image/jpeg'}));
+    }
+    const kb=Math.round(files.reduce(function(a,f){return a+f.size;},0)/1024);
+    if(navigator.canShare&&navigator.canShare({files:files})){
+      try{ await navigator.share({files:files,title:'عرض وحدة '+code,text:'Aqua Pearl City — Trust Group'});
+           toast('تمت المشاركة ✔ ('+kb+' كيلو)','ok'); return; }
+      catch(err){ if(err&&err.name==='AbortError') return; }
+    }
+    files.forEach(function(f){ const a=document.createElement('a');
+      a.href=URL.createObjectURL(f); a.download=f.name; a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); },5000); });
+    toast('اتنزّلت '+files.length+' صورة ('+kb+' كيلو)','ok');
+  }catch(e){ console.error(e); toast('تعذر تجهيز الصور: '+e.message,'err'); }
+  finally{ fits.forEach(function(f,i){ f.style.transform=saved[i]; }); }
 }
 try{ window.addEventListener('resize',function(){
   const m=document.getElementById('uvPvModal');
@@ -8430,13 +8570,13 @@ async function shareUnitImages(){
     const p1=hdr+
       '<h2 style="color:#0b2a4a;text-align:center;margin:2px 0 14px;font-size:27px">عرض وحدة — '+esc(code)+'</h2>'+
       (cards[0]?cards[0].outerHTML:'')+(cards[1]?cards[1].outerHTML:'');
-    const b1=await apNodeToJpeg(p1,{width:980,scale:apIsPhone()?1.9:2.2,quality:.85});
+    const b1=await apNodeToJpeg(p1,{width:980,scale:apIsPhone()?2.6:3.2,quality:.95});
     files.push(new File([b1],'Aqua Pearl '+code.replace(/[^\w\-]/g,'-')+'.jpg',{type:'image/jpeg'}));
     /* ── صورة ٢: المخطط ── */
     try{
       const pc=await apPlanCanvas(u,apIsPhone()?1300:1600);
       if(pc){
-        const b2=await new Promise(res=>pc.toBlob(res,'image/jpeg',.85));
+        const b2=await new Promise(res=>pc.toBlob(res,'image/jpeg',.95));
         pc.width=pc.height=0;
         files.push(new File([b2],'Plan '+code.replace(/[^\w\-]/g,'-')+'.jpg',{type:'image/jpeg'}));
       }
@@ -8487,14 +8627,15 @@ async function shareUnitPdf(){
       snap.querySelectorAll('*').forEach(el=>{el.style.letterSpacing='normal';});
       /* v61.62: دقة أقل على الموبايل وضغط أعلى — الفرق مش باين على A4
          والحجم بينزل للثلث تقريبًا، فواتساب مابيهنّجش. */
-      const canvas=await html2canvas(snap,{scale:(apIsPhone()?1.8:2.2),backgroundColor:'#ffffff',logging:false});
+      /* v61.64: الدقة رجعت وزادت — الحجم مش مشكلة، الوضوح أهم */
+      const canvas=await html2canvas(snap,{scale:(apIsPhone()?2.8:3.5),backgroundColor:'#ffffff',logging:false});
       snap.remove();
       if(newPage)pdf.addPage();
       addHeader();
       const cw=W-2*M;let ch=cw*canvas.height/canvas.width;
       const maxH=H-M*2-headerH-12;
       if(ch>maxH)ch=maxH;
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.82),'JPEG',M,M+headerH+12,cw,ch);
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',M,M+headerH+12,cw,ch);
       canvas.width=canvas.height=0;
     };
     // page 1: unit + payment data (as currently displayed)
@@ -8506,14 +8647,14 @@ async function shareUnitPdf(){
     /* v61.62: المخطط يتحط كصورة مباشرة بدل ما يتعاد تصويره بـhtml2canvas.
        دى كانت أتقل حتة فى الملف: إعادة رسم صورة جاهزة بدقة 2.5 ثم ضغطها. */
     try{
-      const pc=await apPlanCanvas(u,1500);
+      const pc=await apPlanCanvas(u,2200);
       if(pc){
         pdf.addPage(); addHeader();
         const cw=W-2*M;
         let ch=cw*pc.height/pc.width;
         const maxH=H-M*2-headerH-12;
         if(ch>maxH){ ch=maxH; }
-        pdf.addImage(pc.toDataURL('image/jpeg',0.82),'JPEG',M,M+headerH+12,cw,ch);
+        pdf.addImage(pc.toDataURL('image/jpeg',0.95),'JPEG',M,M+headerH+12,cw,ch);
         pc.width=pc.height=0;
       }
     }catch(e){ console.warn('plan page',e); }
@@ -11777,7 +11918,7 @@ const AP_GUIDE={
  admin:{t:'دليل المدير',s:[
   ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
   ['🟢 تعديل الوحدات المتاحة','لو الحفظ اتوقف، بيظهر صندوق جوّه الشاشة بكل الأخطاء، وجنب كل خطأ زرار «↪️ روح للصف» بينزّلك على الصف الغلطان ويلوّنه بالأحمر — حتى لو كان مخفى بفلتر، الفلتر بيتشال لوحده. قبل كده كانت القايمة بتروح لمعاينة الطباعة ولو اتقفلت ما كنتش تعرف الخطأ إيه.'],
-  ['📷 معاينة العرض','فى «بوابة عرض وحدة» جنب «🧮 حاسبة الأقساط» فيه زرار «📷 معاينة». بيوريك العرض بالظبط زى ما هيطلع مطبوع: صفحة A4 طولى فيها بيانات الوحدة والتشطيب وجدول السداد، وصفحة A4 عرضى فيها المخطط. تصوّرها سكرين شوت وتبعتها، أو تدوس «📤 مشاركة صور» فوق فيبعت الصفحتين كصور جاهزة (ربع ميجا تقريبًا — أخف بكتير من الـPDF وبتظهر فى الواتساب على طول). وزرار الـPDF زى ما هو لمين يحتاج ملف.'],
+  ['📷 معاينة العرض','جنب «🧮 حاسبة الأقساط». بتوريك العرض على ورقتين A4 مجهّزين للتصوير: الأولى بيانات الوحدة والتشطيب وجدول السداد، والتانية المخطط. تخطيط المعاينة مضغوط مخصوص عشان المحتوى يكبر ويملا الورقة — كل كارت فى سطر، وخطط السداد الأربعة فى جدول واحد (البند × سنة/سنتين/٣/٤). ده شكل المعاينة بس — الشاشة اللى بتشتغل عليها وملف الـPDF و«إرسال واتساب» زى ما هم. وفوق فيه «📤 مشاركة صور» بيبعت الورقتين كصور بأعلى دقة، و＋/－ للتكبير قبل التصوير.'],
   ['📡 صفحة الإصلاح — reset.html','لو جهاز أى حد وقف عن فتح النظام أو ظهرت صفحة خطأ، يفتح aqua-pearl-erp.pages.dev/reset.html ويدوس «ابدأ الإصلاح»: بتلغى مدير التخزين وتمسح نسخ الملفات المحفوظة بس، من غير ما تلمس أى بيانات ولا المرفقات ولا تسجيل الدخول، وبعدين بتفتح النظام لوحدها. ومن v61.55 ملف النظام بقى محفوظ فى مخزن ثابت مستقل عن رقم النسخة، فما بقاش فيه لحظة بين نسخة وجديدة يكون الجهاز فيها من غير نسخة محفوظة.'],
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
@@ -17014,7 +17155,7 @@ async function uvBuildPdf(u){
     try{
       /* عرض نافذة افتراضى عريض: المكتبة تصوّر داخل إطار بعرض الشاشة،
          فلو تُرك على عرض الموبايل تُعاد قواعد الموبايل داخل الإطار. */
-      cv = await html2canvas(snap,{scale:2.4,backgroundColor:'#ffffff',logging:false,
+      cv = await html2canvas(snap,{scale:(apIsPhone()?2.8:3.5),backgroundColor:'#ffffff',logging:false,
         windowWidth:1400, windowHeight:2200});
     } finally {
       if(mobCss){ mobCss.disabled = wasOff; void document.body.offsetHeight; }
@@ -17034,7 +17175,7 @@ async function uvBuildPdf(u){
   let cw=W-2*M, ch=cw*c1.height/c1.width;
   const maxH=H-2*M-headerH-10;
   if(ch>maxH){ cw=cw*maxH/ch; ch=maxH; }
-  pdf.addImage(c1.toDataURL('image/jpeg',0.92),'JPEG',M+(W-2*M-cw)/2,M+headerH+10,cw,ch);
+  pdf.addImage(c1.toDataURL('image/jpeg',0.95),'JPEG',M+(W-2*M-cw)/2,M+headerH+10,cw,ch);
   /* --- صفحة 2: لاندسكيب — المخطط --- */
   const pm=matchPlan(u);
   if(pm&&!apPlansReady()) await apPlansLoad();   /* v61.50 */
