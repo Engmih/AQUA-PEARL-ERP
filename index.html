@@ -4855,7 +4855,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.66';
+const APP_VER  = 'v61.67';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -9300,6 +9300,35 @@ function deletePaymentGuarded(payId){
   });
 }
 
+/* =====================================================================
+   v61.67 — «مدين أكثر من شهر»
+   أقدم قسط لسه عليه فلوس هو اللى بيحدّد التأخير. القسط المسدَّد جزئيًا
+   بيتحسب متأخر (البند التالت: لا يُعتد بالسداد الجزئى). والمدة شهر
+   تقويمى كامل مش ٣٠ يوم — فقسط مستحق ٥/١٠ يدخل الفلتر من ٦/١١.
+   الكاش المدين: المدة من تاريخ العقد.
+   ===================================================================== */
+function custOldestUnpaidDue(sale){
+  if(!sale) return '';
+  if(sale.mode==='cash') return sale.contractDate||'';
+  let out='';
+  try{
+    scheduleWithStatus(sale).forEach(function(i){
+      if(i.st==='محصل'||i.st==='قادم') return;     /* مسدَّد بالكامل أو لسه ماحلّش */
+      if(!i.due) return;
+      if(!out||i.due<out) out=i.due;
+    });
+  }catch(e){}
+  return out;
+}
+function custLateOverMonth(sale){
+  try{
+    if(customerPosition(sale).state!=='debtor') return false;
+    const due=custOldestUnpaidDue(sale);
+    if(!due) return false;
+    return todayISO() > addMonths(due,1);
+  }catch(e){ return false; }
+}
+
 /* ================= Customers list ================= */
 function thMulti(id,options){
   return `<details class="thm" id="${id}"><summary>الكل ▾</summary><div class="thm-pop">
@@ -9319,7 +9348,8 @@ function renderCustomers(){
     const u=unitById(s.unitId)||{};
     const pos=customerPosition(s);
     const cls=pos.state==='debtor'?'neg':pos.state==='creditor'?'pos':'';
-    return `<tr data-sid="${s.id}" data-bld="${esc(u.building||'')}" data-mode="${s.mode}" data-state="${pos.state}">
+    const lateM=custLateOverMonth(s);
+    return `<tr data-sid="${s.id}" data-bld="${esc(u.building||'')}" data-mode="${s.mode}" data-state="${pos.state}" data-late="${lateM?'1':''}">
       <td class="nm" title="${esc(s.customer.name)}">${esc(s.customer.name)}</td><td title="${esc(s.customer.phone)}">${esc(s.customer.phone)}</td><td>${esc(s.contractNo)}</td>
       <td><b>${esc(u.building||'')}</b></td><td class="cUnit">${esc(u.unitNo||'')}<span class="uBld"> · ${esc(u.building||'')}</span></td><td>${s.mode==='cash'?'كاش':'تقسيط'}</td>
       <td>${fmtM(s.finalPrice)}</td><td>${fmtM(collectedOf(s.id))}</td><td>${fmtM(saleRemaining(s))}</td>
@@ -9335,7 +9365,7 @@ function renderCustomers(){
   <div class="custFiltersM no-print">
     <span>🏗️ العمارة ${thMulti('thmBldM',blds.map(b=>({v:b,t:b})))}</span>
     <span>💳 النظام ${thMulti('thmModeM',[{v:'cash',t:'كاش'},{v:'inst',t:'تقسيط'}])}</span>
-    <span>⚖️ الحالة ${thMulti('thmStateM',[{v:'regular',t:'منتظم'},{v:'debtor',t:'مدين'},{v:'creditor',t:'دائن'}])}</span>
+    <span>⚖️ الحالة ${thMulti('thmStateM',[{v:'regular',t:'منتظم'},{v:'debtor',t:'مدين'},{v:'debtorLate',t:'مدين أكثر من شهر'},{v:'creditor',t:'دائن'}])}</span>
   </div>
   <div class="tbl-wrap" style="overflow:visible"><table class="tbl" id="custTbl">
   <!-- v61.34: ضُيّقت أعمدة العقد والعمارة والوحدة لصالح عمود الأزرار،
@@ -9351,7 +9381,7 @@ function renderCustomers(){
     <th>الوحدة</th>
     <th>النظام<br>${thMulti('thmMode',[{v:'cash',t:'كاش'},{v:'inst',t:'تقسيط'}])}</th>
     <th>إجمالي السعر</th><th>المحصل</th><th>المتبقي</th>
-    <th>الحالة<br>${thMulti('thmState',[{v:'regular',t:'منتظم'},{v:'debtor',t:'مدين'},{v:'creditor',t:'دائن'}])}</th>
+    <th>الحالة<br>${thMulti('thmState',[{v:'regular',t:'منتظم'},{v:'debtor',t:'مدين'},{v:'debtorLate',t:'مدين أكثر من شهر'},{v:'creditor',t:'دائن'}])}</th>
     <th class="no-print"></th></tr></thead>
   <tbody>${rows||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">لا يوجد عملاء بعد — سجّل أول بيع من شاشة تسجيل بيع</td></tr>'}</tbody></table></div>`;
   $('#custSearch').addEventListener('input',custFilter);
@@ -9444,7 +9474,8 @@ function custFilter(){
     const ok=(!q||txt.includes(q)||apPhoneHit(src,raw))
       &&(!bld.length||bld.includes(tr.dataset.bld))
       &&(!mode.length||mode.includes(tr.dataset.mode))
-      &&(!state.length||state.includes(tr.dataset.state));
+      /* v61.67: «مدين أكثر من شهر» بيتفلتر بعلامة الصف مش بحالته */
+      &&(!state.length||state.some(v=>v==='debtorLate'?tr.dataset.late==='1':v===tr.dataset.state));
     tr.style.display=ok?'':'none';if(ok)n++;
   });
   const c=$('#custCount');if(c)c.textContent='عدد النتائج: '+n;
@@ -12052,6 +12083,7 @@ const AP_GUIDE={
   ['📡 صفحة الإصلاح — reset.html','لو جهاز أى حد وقف عن فتح النظام أو ظهرت صفحة خطأ، يفتح aqua-pearl-erp.pages.dev/reset.html ويدوس «ابدأ الإصلاح»: بتلغى مدير التخزين وتمسح نسخ الملفات المحفوظة بس، من غير ما تلمس أى بيانات ولا المرفقات ولا تسجيل الدخول، وبعدين بتفتح النظام لوحدها. ومن v61.55 ملف النظام بقى محفوظ فى مخزن ثابت مستقل عن رقم النسخة، فما بقاش فيه لحظة بين نسخة وجديدة يكون الجهاز فيها من غير نسخة محفوظة.'],
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
+  ['👥 قاعدة العملاء — فلتر «مدين أكثر من شهر»','فى عمود «الحالة» فى قاعدة العملاء فيه فلتر فيه: منتظم · مدين · مدين أكثر من شهر · دائن. «مدين أكثر من شهر» بيطلّعلك العملاء اللى عليهم متأخرات وعدّى على أقدم قسط لسه عليه فلوس شهر تقويمى كامل (قسط مستحق ٥/١٠ يدخل الفلتر من ٦/١١). القسط اللى اتسدّد جزئى بيتحسب متأخر برضه زى ما البند التالت فى العقد بيقول. والعميل الكاش بيتحسب من تاريخ العقد. الفلتر ده بيشتغل مع فلاتر العمارة والنظام والبحث مع بعض، وعدّاد النتائج بيتحدّث، و«🖨️ طباعة» بتطبع المعروض بس — فتقدر تطبع كشف المتأخرات على طول.'],
   ['👥 صلاحيات الموظفين','قاعدة العملاء وملف العميل مقفولين على المدير وحده — مش بينفع تتمنح لموظف حتى بالخطأ.'],
   ['👥 المستخدمون','تضيف موظف أو عميل أو شريك. لو السحابة متصلة الحساب بيتعمل على Firebase تلقائيًا، و«📨 إرسال رابط» بيخلّى المستخدم يحط كلمة سره بنفسه.'],
   ['🔔 الإشعارات','مفتاح VAPID ورابط Apps Script. «🩺 فحص السحابة» بيوريك مين مسجّل جهازه، و«🔄 إعادة نشر» بتعيد رفع بيانات العملاء والشركاء.'],
