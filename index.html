@@ -655,18 +655,41 @@ tr.auBad>td{background:#fff3f3!important}
 tr.auBad{outline:2px solid #d64545;outline-offset:-2px;border-radius:7px}
 tr.auBad input,tr.auBad select{border-color:#d64545!important}
 
+/* =====================================================================
+   v61.63 — معاينة الصفحتين بمقاس A4
+   نفس تخطيط الـPDF بالظبط، لكن معروض على الشاشة عشان يتصوّر سكرين شوت.
+   مرسوم بالـDOM مش كانفاس، فالخط يطلع أوضح من صورة الـPDF.
+   ===================================================================== */
+#uvPvModal{position:fixed;inset:0;z-index:1200;background:rgba(9,26,43,.72);
+  display:none;overflow:auto;-webkit-overflow-scrolling:touch}
+#uvPvModal.open{display:block}
+body.pvOn #shareFab{display:none!important}
+.pvBar{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:9px 12px;background:#0d2b45;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.pvBar b{font-size:14px;margin-inline-end:auto}
+.pvWrap{padding:14px 10px 40px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.pvFit{transform-origin:top center}
+.pvSheet{width:794px;height:1123px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.35);
+  padding:24px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;
+  direction:rtl;font-family:'Segoe UI',Tahoma,Arial}
+.pvSheet.land{width:1123px;height:794px}
+.pvSheet .pvHdr{width:100%;display:block;flex:0 0 auto}
+.pvSheet .pvArea{flex:1 1 auto;min-height:0;overflow:hidden;position:relative}
+/* flow-root عشان هوامش الأبناء ما تهربش برّه وتبوّظ القياس */
+.pvSheet .pvScale{position:absolute;top:8px;left:50%;display:flow-root;
+  transform-origin:top center}
+.pvSheet .pvArea>img{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  max-width:100%;max-height:100%;object-fit:contain}
+.pvSheet .pvCap{flex:0 0 auto;text-align:center;font-size:12px;color:#5a7488;padding-top:6px}
+.pvNum{color:#cfe3f0;font-size:12px}
+@media print{#uvPvModal{display:none!important}}
+
 /* ===== Share FAB ===== */
 #shareFab{position:fixed;bottom:20px;left:20px;z-index:90;border:none;cursor:pointer;
   background:linear-gradient(135deg,var(--aqua),var(--navy2));color:#fff;font-weight:700;font-size:13.5px;
   padding:12px 20px;border-radius:999px;box-shadow:0 8px 24px rgba(11,42,74,.35);display:flex;align-items:center;gap:7px;transition:.15s}
 #shareFab:hover{transform:translateY(-2px);filter:brightness(1.1)}
-/* v61.62: زرار الصورة فوق زرار الـPDF — الصورة هى الطريقة الأسرع على واتساب */
-#imgFab{position:fixed;bottom:74px;left:20px;z-index:90;border:none;cursor:pointer;
-  background:linear-gradient(135deg,#1e9e6a,#0d6b46);color:#fff;font-weight:700;font-size:13.5px;
-  padding:12px 20px;border-radius:999px;box-shadow:0 8px 24px rgba(11,42,74,.35);
-  display:flex;align-items:center;gap:7px;transition:.15s}
-#imgFab:hover{transform:translateY(-2px);filter:brightness(1.1)}
-@media print{#imgFab{display:none!important}}
+
 
 /* ===== Toast ===== */
 #toast{position:fixed;bottom:18px;right:18px;z-index:600;display:flex;flex-direction:column;gap:8px}
@@ -1258,7 +1281,6 @@ table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2
   table.tbl tr td[data-blank="1"]{display:none!important}
   /* زر المشاركة العائم أصغر ولا يغطى آخر كارت */
   #shareFab{transform:scale(.82);transform-origin:bottom left;bottom:8px!important;left:8px!important;opacity:.95}
-  #imgFab{transform:scale(.82);transform-origin:bottom left;bottom:52px!important;left:8px!important;opacity:.95}
   .screen{padding-bottom:62px}
   /* صف البطاقة أكثر إحكامًا */
   table.tbl tr{padding:6px 9px;margin-bottom:8px}
@@ -1973,8 +1995,18 @@ if (!AP_NOSW && 'serviceWorker' in navigator && location.protocol.startsWith('ht
   </div>
 </div>
 
+<div id="uvPvModal" class="no-print" onclick="if(event.target===this)uvPvClose()">
+  <div class="pvBar">
+    <b>📷 معاينة — صفحتان A4</b>
+    <span class="pvNum" id="pvInfo"></span>
+    <button class="btn sm green" onclick="uvPvShare()">📤 مشاركة صور</button>
+    <button class="btn sm ghost" onclick="uvPvZoom(1)">＋</button>
+    <button class="btn sm ghost" onclick="uvPvZoom(-1)">－</button>
+    <button class="btn sm red" onclick="uvPvClose()">✕ إغلاق</button>
+  </div>
+  <div class="pvWrap" id="pvWrap"></div>
+</div>
 <button id="shareFab" class="no-print" style="display:none" onclick="shareFabClick()" title="مشاركة الشاشة الحالية كملف PDF عبر التطبيقات">📤 مشاركة PDF</button>
-<button id="imgFab" class="no-print" style="display:none" onclick="shareUnitImages()" title="مشاركة العرض كصورتين — أسرع وأخف على واتساب">📷 صورة</button>
 
 <div id="toast"></div>
 
@@ -4729,7 +4761,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.62';
+const APP_VER  = 'v61.63';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5001,6 +5033,10 @@ function apBackInit(){
   window.__apBackOn=true;
   apBackPush();
   window.addEventListener('popstate',function(){
+    /* v61.63: معاينة الـA4 مفتوحة؟ تتقفل الأول */
+    try{ const pv=document.getElementById('uvPvModal');
+      if(pv&&pv.classList.contains('open')){ pv.classList.remove('open');
+        document.body.classList.remove('pvOn'); apBackPush(); return; } }catch(e){}
     /* ١) نافذة مفتوحة؟ اقفل أحدث واحدة */
     const m=apBackTopModal();
     if(m){ m.classList.remove('open'); apBackPush(); return; }
@@ -5187,6 +5223,112 @@ async function apPdfHeader(){
   }catch(e){ return null; }
 }
 try{ window.addEventListener('load',function(){ setTimeout(function(){ try{ apPdfHeader(); }catch(e){} },2500); }); }catch(e){}
+/* =====================================================================
+   v61.63 — بناء المعاينة
+   بتتبنى من نفس الكروت اللى فى الشاشة، بنفس ترتيب الـPDF:
+     صفحة ١ طولى: الترويسة + عنوان العرض + كل كروت الوحدة
+     صفحة ٢ عرضى: الترويسة + المخطط + سطر البيانات
+   المحتوى بيتصغّر أوتوماتيك عشان يدخل جوّه الورقة من غير قص.
+   ===================================================================== */
+let UV_PV_Z=0;
+function uvPvClose(){ const m=document.getElementById('uvPvModal'); if(m) m.classList.remove('open');
+  try{ document.body.classList.remove('pvOn'); }catch(e){} }
+function uvPvZoom(d){ UV_PV_Z=Math.max(-3,Math.min(3,UV_PV_Z+d)); uvPvFit(); }
+function uvPvFit(){
+  const wrap=document.getElementById('pvWrap'); if(!wrap) return;
+  const avail=Math.max(260,wrap.clientWidth-8);
+  wrap.querySelectorAll('.pvFit').forEach(function(f){
+    const sheet=f.firstElementChild; if(!sheet) return;
+    const w=sheet.classList.contains('land')?1123:794;
+    let k=Math.min(1,avail/w)*(1+UV_PV_Z*0.15);
+    k=Math.max(0.2,k);
+    f.style.transform='scale('+k+')';
+    f.style.width=w+'px';
+    f.style.height=(sheet.offsetHeight*k)+'px';
+    f.style.marginInline='auto';
+  });
+}
+/* بيصغّر المحتوى جوّه الورقة لحد ما يدخل.
+   القياس بيتعمل والمحتوى بحجمه الطبيعى، وبنسيب ٢٪ أمان عشان الخطوط
+   ممكن تخلّص تحميل بعد القياس وتزوّد سطر. */
+function uvPvShrink(area){
+  const sc=area.querySelector('.pvScale'); if(!sc) return;
+  sc.style.transform='translateX(-50%) scale(1)';
+  const availH=area.clientHeight-10, availW=area.clientWidth;
+  const r=sc.getBoundingClientRect();
+  const h=Math.max(r.height, sc.offsetHeight, sc.scrollHeight);
+  const w=Math.max(r.width,  sc.offsetWidth,  1);
+  let k=Math.min(availW/w, availH/(h||1), 1)*0.98;
+  if(!isFinite(k)||k<=0) k=1;
+  sc.style.transform='translateX(-50%) scale('+k+')';
+  return {k:+k.toFixed(3),h:Math.round(h),availH:Math.round(availH)};
+}
+async function uvPreview(){
+  const u=uvUnitId?unitById(uvUnitId):null;
+  if(!u){ toast('اختر وحدة أولاً','err'); return; }
+  const m=document.getElementById('uvPvModal'), wrap=document.getElementById('pvWrap');
+  if(!m||!wrap) return;
+  toast('⏳ جارٍ تجهيز المعاينة...');
+  const hdr=(window.ASSETS&&window.ASSETS.header)?window.ASSETS.header:'';
+  const code=(typeof planCode==='function')?planCode(u):((u.building||'')+'-'+(u.unitNo||''));
+  /* الكروت زى ما هى فى الشاشة، من غير أزرار */
+  const cards=Array.prototype.slice.call(document.querySelectorAll('#uvBody > .card'))
+    .filter(function(c){ return !c.classList.contains('uvplanpg'); });
+  const body=document.createElement('div');
+  body.innerHTML='<h2 style="color:#0b2a4a;text-align:center;margin:2px 0 10px;font-size:22px">عرض وحدة — '+
+    esc(code)+'</h2>'+cards.map(function(c){return c.outerHTML;}).join('');
+  body.querySelectorAll('.no-print,button,.btn,input[type=file]').forEach(function(x){ x.remove(); });
+  body.querySelectorAll('*').forEach(function(el){ el.style.letterSpacing='normal'; });
+
+  wrap.innerHTML=
+    '<div class="pvFit"><div class="pvSheet" id="pvP1">'+
+      (hdr?'<img class="pvHdr" src="'+hdr+'">':'')+
+      '<div class="pvArea"><div class="pvScale" id="pvC1" style="width:1000px"></div></div>'+
+    '</div></div>';
+  document.getElementById('pvC1').appendChild(body);
+  m.classList.add('open');
+  try{ document.body.classList.add('pvOn'); }catch(e){}
+  /* صفحة المخطط */
+  let planAdded=false;
+  try{
+    const pm=(typeof matchPlan==='function')?matchPlan(u):null;
+    if(pm){
+      if(typeof apPlansReady==='function'&&!apPlansReady()) await apPlansLoad();
+      const src=window.PLAN_IMGS&&window.PLAN_IMGS[pm.pdf+'_'+pm.page];
+      if(src){
+        const d=document.createElement('div');
+        d.className='pvFit';
+        d.innerHTML='<div class="pvSheet land" id="pvP2">'+
+          (hdr?'<img class="pvHdr" src="'+hdr+'">':'')+
+          '<div class="pvArea"><img id="pvPlanImg" src="'+src+'" style="max-width:100%;max-height:100%;object-fit:contain"></div>'+
+          '<div class="pvCap">Aqua Pearl City  -  '+esc(code)+'  -  '+fmtN(u.area)+' m2  -  '+esc(u.finishing||'')+'</div>'+
+        '</div>';
+        wrap.appendChild(d);
+        planAdded=true;
+        const im=document.getElementById('pvPlanImg');
+        if(im&&!im.complete) await new Promise(function(r){ im.onload=r; im.onerror=r; });
+      }
+    }
+  }catch(e){ console.warn('pv plan',e); }
+  const info=document.getElementById('pvInfo');
+  if(info) info.textContent=code+' — '+(planAdded?'صفحتان':'صفحة واحدة');
+  /* المقاسات بعد الرسم */
+  await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
+  const a1=document.querySelector('#pvP1 .pvArea'); if(a1) uvPvShrink(a1);
+  UV_PV_Z=0; uvPvFit();
+  wrap.scrollIntoView({block:'start'});
+}
+/* مشاركة الصفحتين كصور من داخل المعاينة */
+async function uvPvShare(){
+  const u=uvUnitId?unitById(uvUnitId):null;
+  if(!u) return;
+  try{ await shareUnitImages(); }catch(e){ console.error(e); }
+}
+try{ window.addEventListener('resize',function(){
+  const m=document.getElementById('uvPvModal');
+  if(m&&m.classList.contains('open')) uvPvFit();
+}); }catch(e){}
+
 function apIsPhone(){
   try{ return window.matchMedia('(pointer:coarse)').matches || window.innerWidth<=760; }
   catch(e){ return window.innerWidth<=760; }
@@ -5728,9 +5870,7 @@ function nav(id,arg){
   try{ apBarMount(); }catch(e){}          /* v61.54: الشريط والتلات نقط للموظف */
   const fab=$('#shareFab');
   if(fab)fab.style.display=['dashboard','unitView','sales','customers','customerFile','due','collected','sold','returnedScr','reports','attach','expenses'].includes(id)?'flex':'none';
-  /* v61.62: زرار الصورة فى بوابة عرض وحدة فقط، ولما تكون فيه وحدة مفتوحة */
-  try{ const ifb=$('#imgFab');
-    if(ifb) ifb.style.display=(id==='unitView'&&typeof uvUnitId!=='undefined'&&uvUnitId)?'flex':'none'; }catch(e){}
+
   window.scrollTo({top:0});
 }
 function shareFabClick(){
@@ -7765,9 +7905,7 @@ function uvOpenSelected(){uvUnitId=$('#uvSelect').value;uvRenderUnit();}
 
 function uvRenderUnit(){
   const box=$('#uvBody');
-  /* v61.62: زرار «📷 صورة» يبان بس لما تكون فيه وحدة مفتوحة */
-  try{ const ifb=document.getElementById('imgFab');
-    if(ifb) ifb.style.display=(currentScreen==='unitView'&&uvUnitId&&unitById(uvUnitId))?'flex':'none'; }catch(e){}
+
   if(!uvUnitId||!unitById(uvUnitId)){box.innerHTML='<div class="plan-missing">اختر وحدة من القائمة أعلاه لعرض بياناتها 🏢</div>';return;}
   const u=unitById(uvUnitId);
   if(uvDownAuto) uvDown=Math.round(uvTotal(u)*0.5);
@@ -7782,6 +7920,7 @@ function uvRenderUnit(){
     <button class="btn ghost" onclick="printScreen()">🖨️ طباعة عرض الوحدة (صفحتان: البيانات + المخطط)</button>
     <button class="btn green" onclick="uvWhatsApp()" title="تجهيز ملف PDF للوحدة وإرساله على واتساب">📲 إرسال واتساب</button>
     <button class="btn aqua" onclick="apCalcOpen()" title="حاسبة أقساط — أداة مساعدة لا تغيّر أى بيانات">🧮 حاسبة الأقساط</button>
+    <button class="btn green" onclick="uvPreview()" title="معاينة الصفحتين بمقاس A4 — للتصوير أو المشاركة">📷 معاينة</button>
   </div>
   <div class="card">
     <h3>🏢 بيانات الوحدة <span style="margin-inline-start:auto">${statusBadge(u.status)}</span></h3>
@@ -11638,7 +11777,7 @@ const AP_GUIDE={
  admin:{t:'دليل المدير',s:[
   ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
   ['🟢 تعديل الوحدات المتاحة','لو الحفظ اتوقف، بيظهر صندوق جوّه الشاشة بكل الأخطاء، وجنب كل خطأ زرار «↪️ روح للصف» بينزّلك على الصف الغلطان ويلوّنه بالأحمر — حتى لو كان مخفى بفلتر، الفلتر بيتشال لوحده. قبل كده كانت القايمة بتروح لمعاينة الطباعة ولو اتقفلت ما كنتش تعرف الخطأ إيه.'],
-  ['📷 مشاركة العرض كصورة','فى «بوابة عرض وحدة» بقى فيه زرار أخضر «📷 صورة» تحت جنب زرار الـPDF. بيطلّع صورتين: العرض كامل (بيانات الوحدة وجدول السداد) والمخطط، ويبعتهم مع بعض. الصورة بتظهر فى الواتساب على طول من غير ما العميل ينزّلها، وحجمها حوالى ربع ميجا بدل ملف الـPDF اللى كان ٢ ميجا وبيهنّج الواتساب. زرار الـPDF زى ما هو لمين يحتاجه.'],
+  ['📷 معاينة العرض','فى «بوابة عرض وحدة» جنب «🧮 حاسبة الأقساط» فيه زرار «📷 معاينة». بيوريك العرض بالظبط زى ما هيطلع مطبوع: صفحة A4 طولى فيها بيانات الوحدة والتشطيب وجدول السداد، وصفحة A4 عرضى فيها المخطط. تصوّرها سكرين شوت وتبعتها، أو تدوس «📤 مشاركة صور» فوق فيبعت الصفحتين كصور جاهزة (ربع ميجا تقريبًا — أخف بكتير من الـPDF وبتظهر فى الواتساب على طول). وزرار الـPDF زى ما هو لمين يحتاج ملف.'],
   ['📡 صفحة الإصلاح — reset.html','لو جهاز أى حد وقف عن فتح النظام أو ظهرت صفحة خطأ، يفتح aqua-pearl-erp.pages.dev/reset.html ويدوس «ابدأ الإصلاح»: بتلغى مدير التخزين وتمسح نسخ الملفات المحفوظة بس، من غير ما تلمس أى بيانات ولا المرفقات ولا تسجيل الدخول، وبعدين بتفتح النظام لوحدها. ومن v61.55 ملف النظام بقى محفوظ فى مخزن ثابت مستقل عن رقم النسخة، فما بقاش فيه لحظة بين نسخة وجديدة يكون الجهاز فيها من غير نسخة محفوظة.'],
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
