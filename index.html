@@ -696,7 +696,8 @@ body.pvOn #shareFab{display:none!important}
 .pvCompact .field{display:flex;align-items:center;gap:7px;padding:5px 9px;min-height:0}
 .pvCompact .field>div{display:flex!important;align-items:baseline;gap:7px;flex:1;min-width:0}
 .pvCompact .field .lb{font-size:11.5px;color:#5a7488;white-space:nowrap;margin:0}
-.pvCompact .field .vl{font-size:13.5px;font-weight:800;margin:0}
+.pvCompact .field .vl{font-size:1em;font-weight:800;margin:0}
+.pvCompact .field .lb{font-size:.85em}
 .pvCompact .field .ic{font-size:14px}
 /* تفصيل السعر على سطره الصغير — من غير ما يكسر الرقم */
 .pvCompact .field .gray-note{display:block!important;font-size:9.8px;font-weight:600;
@@ -709,10 +710,49 @@ body.pvOn #shareFab{display:none!important}
 .pvCompact .field>div{min-width:0;flex-wrap:wrap;row-gap:0}
 .pvCompact .grid{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
 .pvCompact .grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+/* صف التشطيب الرباعى فى المعاينة: الكارت الأول (اسم الباقة) والأخير
+   (معادلة القيمة) نصهم أطول، فبياخدوا عرض أكبر عشان مايتكسروش لسطور */
+.pvCompact .grid.g4.uvFinTop{grid-template-columns:1.5fr 1.05fr 1.05fr 1.4fr!important}
+.pvCompact .uvFinTop .field .vl{font-size:.95em}
+.pvCompact .uvFinTop .field .lb{font-size:.7em;white-space:nowrap}
+/* v61.65: صف التشطيب بقى ٤ كروت — الأرقام البولد بتصغر شوية فى الصف ده
+   وحده (الشاشة والطباعة والـPDF والمعاينة) عشان الأربعة يدخلوا مرتاحين */
+.uvFinTop .field{padding:8px 9px;gap:7px}
+.uvFinTop .field .ic{font-size:15px}
+.uvFinTop .field .vl{font-size:13px}
+.uvFinTop .field .lb{font-size:10.5px}
 .pvCompact .grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 .pvCompact .grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 .pvCompact .pvG2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .pvCompact .pvG3{display:grid;grid-template-columns:1.45fr 1fr 1fr;gap:6px}
+/* ٩) كارتى السعر ودفعة الحجز: سطر واحد لكل كارت، والسعر ياخد مساحة أكبر */
+/* كل كارت بياخد مساحة على قد محتواه — فالسعر (أطول نص) بياخد نصيب أكبر
+   والرقم الأساسى يفضل كبير بدل ما يتصغّر عشان كارت أقصر منه */
+.pvCompact .pvG2,.pvCompact .pvG3{display:flex!important;flex-wrap:nowrap;gap:5px}
+.pvCompact .pvG2>.field,.pvCompact .pvG3>.field{flex:1 1 auto;min-width:0;padding:5px 6px;gap:5px}
+/* الكروت دى سطر واحد جنب بعض، فبنضيّق كل حاجة حوالين الرقم عشان الرقم
+   نفسه يفضل كبير: الأيقونة أصغر، واسم الحقل أصغر، والتفصيل الرمادى أصغر */
+.pvCompact .pvG2>.field>.ic,.pvCompact .pvG3>.field>.ic{font-size:11px;flex:0 0 auto}
+.pvCompact .pvG2 .field .lb,.pvCompact .pvG3 .field .lb{font-size:.78em}
+.pvCompact .pvG2 .field>div,.pvCompact .pvG3 .field>div{flex-wrap:nowrap;white-space:nowrap}
+.pvCompact .pvG2 .field .lb,.pvCompact .pvG3 .field .lb,
+.pvCompact .pvG2 .field .vl,.pvCompact .pvG3 .field .vl,
+.pvCompact .pvG2 .gray-note,.pvCompact .pvG3 .gray-note{white-space:nowrap!important}
+.pvCompact .pvG2 .gray-note,.pvCompact .pvG3 .gray-note{display:inline!important;
+  margin:0!important;font-size:6.5px}
+.pvCompact .pvG2 .gray-note::before,.pvCompact .pvG3 .gray-note::before{content:" · ";color:#9fb3c4}
+/* ٦+٧) جدول المواصفات: عمودين، وكل صف سطر واحد */
+.pvCompact .uvFinTbl{width:100%;border-collapse:collapse;table-layout:auto}
+.pvCompact .uvFinTbl th,.pvCompact .uvFinTbl td{padding:3px 7px;white-space:nowrap;
+  text-align:center;border:1px solid #d9e3ec;line-height:1.5}
+.pvCompact .uvFinTbl thead th{background:#123a5c;color:#fff;font-weight:800}
+.pvCompact .uvFinTbl td.it{background:#f4f8fb;font-weight:800;color:#0b2a4a;width:1%}
+.pvCompact .uvFinTbl td.sp{text-align:start}
+.pvCompact .uvFinTbl td.sp .md{color:#1a6fa8;font-weight:800;margin-inline-start:6px}
+/* ١٠) جدول السداد: البند ضيق على قد النص، والصفوف أعلى والخط أكبر */
+.pvCompact .pvPlans{width:100%;max-width:100%;margin:5px 0 0;font-size:13.5px;table-layout:auto}
+.pvCompact .pvPlans th,.pvCompact .pvPlans td{padding:9px 6px}
+.pvCompact .pvPlans tbody th{width:1%;white-space:nowrap;padding-inline:9px}
 /* جدول خطط السداد — نفس شكل النظام القديم */
 .pvPlans{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;
   border:1px solid #cfdae4}
@@ -4808,7 +4848,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.64';
+const APP_VER  = 'v61.65';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5307,6 +5347,8 @@ function uvPvShrink(area){
     sc.style.width=w+'px';
     sc.style.transform='translateX(-50%) scale(1)';
     void sc.offsetHeight;
+    uvPvFitFinTbl(sc); uvPvFitLines(sc);   /* الجداول والسطور تلاءم العرض ده */
+    void sc.offsetHeight;
     const r=sc.getBoundingClientRect();
     const h=Math.max(r.height, sc.offsetHeight, sc.scrollHeight)||1;
     const k=Math.min(availW/w, availH/h)*0.985;
@@ -5314,8 +5356,82 @@ function uvPvShrink(area){
   });
   let k=best.k; if(!isFinite(k)||k<=0) k=1;
   sc.style.width=best.w+'px';
+  sc.style.transform='translateX(-50%) scale(1)';
+  void sc.offsetHeight;
+  uvPvFitFinTbl(sc); uvPvFitLines(sc);
   sc.style.transform='translateX(-50%) scale('+k+')';
   return {k:+k.toFixed(3),w:best.w,h:Math.round(best.h),availH:Math.round(availH)};
+}
+/* v61.65: جدول مواصفات التشطيب — عمودين بدل تلاتة.
+   «البند» بيضيق على قد النص، و«المواصفة» و«الموديل» بيتلموا فى خانة
+   واحدة على سطر واحد، فكل الصفوف بتبقى بنفس الارتفاع والجدول بيقصر. */
+function uvPvMergeFin(root){
+  try{
+    const t=root.querySelector('table.uvFinTbl'); if(!t) return;
+    const hr=t.querySelector('thead tr');
+    if(hr && hr.children.length>=3){
+      hr.children[1].textContent='المواصفة / الموديل';
+      hr.removeChild(hr.children[2]);
+    }
+    Array.prototype.slice.call(t.querySelectorAll('tbody tr')).forEach(function(tr){
+      if(tr.children.length<3) return;
+      const spec=(tr.children[1].textContent||'').trim();
+      const mod =(tr.children[2].textContent||'').trim();
+      tr.removeChild(tr.children[2]);
+      const td=tr.children[1];
+      td.className='sp';
+      td.innerHTML=esc(spec)+(mod?'<span class="md">— '+esc(mod)+'</span>':'');
+    });
+  }catch(e){ console.warn('mergeFin',e); }
+}
+/* كروت السعر ودفعة الحجز: لو السطر مش داخل، ننزّل خطه لوحده */
+function uvPvFitLines(scope){
+  try{
+    Array.prototype.slice.call(scope.querySelectorAll('.pvG2,.pvG3')).forEach(function(row){
+      const divs=Array.prototype.slice.call(row.querySelectorAll('.field>div'));
+      if(!divs.length) return;
+      divs.forEach(function(d){ d.style.fontSize=''; });
+      row.style.flexWrap='nowrap';
+      const over=function(){ return divs.some(function(d){ return d.scrollWidth>d.clientWidth+1; }); };
+      if(!over()) return;
+      /* ١) نجرّب نخلّيهم جنب بعض: بننزّل خط كل كروت الصف بنفس المقاس
+            (عشان يفضلوا متساويين) لحد 11px — أقل من كده مش مقروء. */
+      let ok=false;
+      for(let fs=13.5;fs>=11;fs-=0.5){
+        divs.forEach(function(d){ d.style.fontSize=fs+'px'; });
+        if(!over()){
+          if(fs-0.5>=10.5) divs.forEach(function(d){ d.style.fontSize=(fs-0.5)+'px'; });
+          ok=true; break;
+        }
+      }
+      /* ٢) لسه مش داخلين؟ (الكاش فيه تلات كروت) — يبقى ينزلوا تحت بعض
+            بخط كامل، أحسن من أرقام مصغّرة مش باينة. */
+      if(!ok){
+        divs.forEach(function(d){ d.style.fontSize=''; });
+        row.style.flexWrap='wrap';
+        if(over()) for(let fs=13.5;fs>=7;fs-=0.5){
+          divs.forEach(function(d){ d.style.fontSize=fs+'px'; });
+          if(!over()){
+            if(fs-0.5>=6.5) divs.forEach(function(d){ d.style.fontSize=(fs-0.5)+'px'; });
+            break;
+          }
+        }
+      }
+    });
+  }catch(e){}
+}
+/* الجدول لازم يفضل سطر واحد لكل صف — لو أطول صف مش داخل، بننزّل خط
+   الجدول لوحده لحد ما يدخل (الباقى ما بيتأثرش). */
+function uvPvFitFinTbl(scope){
+  try{
+    const t=scope.querySelector('table.uvFinTbl'); if(!t) return;
+    const avail=scope.clientWidth||t.parentElement.clientWidth;
+    for(let fs=13;fs>=7.5;fs-=0.5){
+      t.style.fontSize=fs+'px';
+      void t.offsetWidth;
+      if(t.scrollWidth<=avail+1) return fs;
+    }
+  }catch(e){}
 }
 /* محتوى صفحة المعاينة — مبنى من نفس أرقام الشاشة بالظبط */
 function uvPvContent(u){
@@ -5328,6 +5444,8 @@ function uvPvContent(u){
     /* ٥) سطر «نظام التشطيب (…)» يتشال بالكامل */
     const h=d.querySelector(':scope > h3');
     if(h && /نظام التشطيب/.test(h.textContent||'')) h.remove();
+    /* ٦+٧: «المواصفة» و«الموديل» عمود واحد، وكل صف سطر واحد */
+    uvPvMergeFin(d);
     /* ٣+٤) كارت الدفع بيتبنى من الأول */
     if(d.querySelector('#uvPayBody')) return;
     out.push(d.outerHTML);
@@ -5340,7 +5458,7 @@ function uvPvContent(u){
   const dot=function(on){ return '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;'+
     'border:2px solid #1a7fc1;margin-inline-end:5px;vertical-align:-2px;box-sizing:border-box;'+
     (on?'background:radial-gradient(circle,#1a7fc1 0 46%,#fff 48%)':'background:#fff')+'"></span>'; };
-  let pay='<div class="card"><h3>💳 بيانات الدفع</h3>'+
+  let pay='<div class="card">'+
     '<div class="pvPayLine"><b>طريقة الدفع:</b>'+
       '<span>'+dot(!inst)+'كاش</span><span>'+dot(inst)+'تقسيط</span>'+
       (inst?('<span class="pvDp"><b>المقدم (قابل للتعديل):</b>'+
@@ -5445,8 +5563,11 @@ async function uvPvShare(){
     const sheets=['pvP1','pvP2'];
     for(let i=0;i<sheets.length;i++){
       const el=document.getElementById(sheets[i]); if(!el) continue;
+      /* v61.65: لازم نافذة التصوير تبقى بمقاس الورقة نفسها. كانت 1500×1600
+         فـhtml2canvas كان بيعيد ترتيب الصفحة على عرض تانى، والكروت اللى
+         جنب بعض كانت بتنزل تحت بعض فى الصورة المبعوتة. */
       const cv=await html2canvas(el,{scale:SC,backgroundColor:'#ffffff',logging:false,
-        windowWidth:1500,windowHeight:1600});
+        windowWidth:el.offsetWidth,windowHeight:el.offsetHeight});
       const blob=await new Promise(function(r){ cv.toBlob(r,'image/jpeg',0.95); });
       cv.width=cv.height=0;
       files.push(new File([blob],(i?'Plan ':'Aqua Pearl ')+code.replace(/[^\w\-]/g,'-')+'.jpg',{type:'image/jpeg'}));
@@ -11911,14 +12032,15 @@ const AP_GUIDE={
   ['🗓️ الكارت اليومى','تحت الأيقونات كارت بيتحدّث لوحده: الطقس النهاردة، ومواقيت الصلاة والوقت الباقى على الأذان الجاى، وسعر الدولار وجرام الذهب. مفيش حاجة تظبطها — بيجيب الأرقام من مصادرها كل ما تفتح النظام، وبيظبط نفسه لوحده مع تغيير التوقيت الصيفى والشتوى.'],
   ['⬅️ زرار الرجوع','دوسة رجوع بتقفل النافذة المفتوحة أو ترجّعك للرئيسية. وعلى الرئيسية بتقولك «اضغط رجوع تانى للخروج».'],
   ['👥 بيانات العملاء','قاعدة العملاء وملفاتهم للمدير وحده ومش ظاهرة لأى موظف.'],
-  ['🏢 عرض وحدة','تشوف بيانات الوحدة ومساحتها وسعرها وحالتها.'],
+  ['🏢 عرض وحدة','تشوف بيانات الوحدة ومساحتها وسعرها وحالتها. وفى صف «نظام التشطيب» أربع كروت: الباقة المختارة · سعر متر التشطيب · «سعر متر الوحدة» · قيمة التشطيب. «سعر متر الوحدة» بيتاخد من سعر المتر المسجّل فى بيانات الوحدة، ولو مش مكتوب بيتحسب تلقائى (سعر الوحدة ÷ المساحة). و«ج.م» اتشالت من كروت الصف ده عشان الأربعة يبانوا مرتاحين — الأرقام زى ما هى.'],
   ['⚙️ الإعدادات','من أيقونة الإعدادات فى الرئيسية: كلمة سرك واسم المستخدم والبصمة والموسيقى.'],
   ['🔐 البصمة','بتطلب كلمة سرك مرة واحدة وتحفظها مشفّرة على جهازك، وبعدها تدخل ببصمتك من شاشة الدخول.']
  ]},
  admin:{t:'دليل المدير',s:[
   ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
   ['🟢 تعديل الوحدات المتاحة','لو الحفظ اتوقف، بيظهر صندوق جوّه الشاشة بكل الأخطاء، وجنب كل خطأ زرار «↪️ روح للصف» بينزّلك على الصف الغلطان ويلوّنه بالأحمر — حتى لو كان مخفى بفلتر، الفلتر بيتشال لوحده. قبل كده كانت القايمة بتروح لمعاينة الطباعة ولو اتقفلت ما كنتش تعرف الخطأ إيه.'],
-  ['📷 معاينة العرض','جنب «🧮 حاسبة الأقساط». بتوريك العرض على ورقتين A4 مجهّزين للتصوير: الأولى بيانات الوحدة والتشطيب وجدول السداد، والتانية المخطط. تخطيط المعاينة مضغوط مخصوص عشان المحتوى يكبر ويملا الورقة — كل كارت فى سطر، وخطط السداد الأربعة فى جدول واحد (البند × سنة/سنتين/٣/٤). ده شكل المعاينة بس — الشاشة اللى بتشتغل عليها وملف الـPDF و«إرسال واتساب» زى ما هم. وفوق فيه «📤 مشاركة صور» بيبعت الورقتين كصور بأعلى دقة، و＋/－ للتكبير قبل التصوير.'],
+  ['🏢 عرض وحدة — صف نظام التشطيب','الصف بقى أربع كروت: الباقة المختارة · سعر متر التشطيب · «سعر متر الوحدة» · قيمة التشطيب. «سعر متر الوحدة» بيتاخد من حقل سعر المتر اللى بتدخله فى «تعديل الوحدات المتاحة»، ولو فاضى بيتحسب لوحده (سعر الوحدة ÷ المساحة). وعشان الأربعة يدخلوا فى سطر واحد: «ج.م» اتشالت من كروت الصف ده، ومعادلة قيمة التشطيب بقت «150 × 11,000 = 1,650,000» من غير «م²». ده ظاهر فى الشاشة والطباعة والـPDF والمعاينة — نفس الشكل فى الأربعة.'],
+  ['📷 معاينة العرض','جنب «🧮 حاسبة الأقساط». بتوريك العرض على ورقتين A4 مجهّزين للتصوير: الأولى بيانات الوحدة والتشطيب وجدول السداد، والتانية المخطط. تخطيط المعاينة مضغوط مخصوص عشان المحتوى يكبر ويملا الورقة: كل كارت فى سطر واحد، جدول مواصفات التشطيب بعمودين («البند» ضيّق على قد النص، و«المواصفة / الموديل» فى خانة واحدة سطر واحد بارتفاع متساوى لكل الصفوف)، وسطر واحد فيه طريقة الدفع (كاش/تقسيط) والمقدم جنبه، وخطط السداد الأربعة فى جدول واحد (البند × سنة/سنتين/٣/٤) بأعمدة أضيق وصفوف أعلى عشان الأرقام تكبر. ده شكل المعاينة بس — الشاشة اللى بتشتغل عليها وملف الـPDF و«إرسال واتساب» زى ما هم بالظبط. وفوق فيه «📤 مشاركة صور» بيبعت الورقتين كصور بأعلى دقة، و＋/－ للتكبير قبل التصوير.'],
   ['📡 صفحة الإصلاح — reset.html','لو جهاز أى حد وقف عن فتح النظام أو ظهرت صفحة خطأ، يفتح aqua-pearl-erp.pages.dev/reset.html ويدوس «ابدأ الإصلاح»: بتلغى مدير التخزين وتمسح نسخ الملفات المحفوظة بس، من غير ما تلمس أى بيانات ولا المرفقات ولا تسجيل الدخول، وبعدين بتفتح النظام لوحدها. ومن v61.55 ملف النظام بقى محفوظ فى مخزن ثابت مستقل عن رقم النسخة، فما بقاش فيه لحظة بين نسخة وجديدة يكون الجهاز فيها من غير نسخة محفوظة.'],
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
@@ -17077,10 +17199,15 @@ function uvFinCardHTML(u){
     p.rows.forEach(function(r){
       rows+='<tr><td class="it">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td class="md">'+esc(r[2])+'</td></tr>';
     });
-    body='<div class="grid g3" style="margin-bottom:9px">'
+    /* v61.65: كارت رابع «سعر متر الوحدة» — الرقم من حقل سعر المتر المسجَّل،
+       ولو مش مكتوب بنحسبه من سعر الوحدة ÷ المساحة. و«ج.م» اتشالت من الصف
+       ده كله و«م²» اتشالت من معادلة قيمة التشطيب عشان نوفّر مكان للكارت. */
+    const uppm=Math.round(Number(u.ppm)||(area>0?uvUnitBase(u)/area:0));
+    body='<div class="grid g4 uvFinTop" style="margin-bottom:9px">'
       +fld('🎨','الباقة المختارة',esc(p.name)+' ('+esc(p.ar)+')')
-      +fld('📐','سعر متر التشطيب',fmtM(p.pm))
-      +fld('🧮','قيمة التشطيب',fmtN(area)+' م² × '+fmtN(p.pm)+' = <b>'+fmtM(amt)+'</b>','money')
+      +fld('📐','سعر متر التشطيب',fmtN(p.pm))
+      +fld('🏷️','سعر متر الوحدة',fmtN(uppm),'money')
+      +fld('🧮','قيمة التشطيب',fmtN(area)+' × '+fmtN(p.pm)+' = <b>'+fmtN(amt)+'</b>','money')
       +'</div>'
       +'<table class="uvFinTbl"><thead><tr><th>البند</th><th>المواصفة</th><th>الموديل / السلسلة</th></tr></thead>'
       +'<tbody>'+rows+'</tbody></table>';
