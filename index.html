@@ -1220,6 +1220,13 @@ table.cfExpTbl thead th:first-child{z-index:4;inset-inline-start:0;position:stic
 .rowBtns .rowIco.invIco{cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .rowBtns .rowIco.invIco:hover{border-color:var(--aqua2);box-shadow:0 2px 8px rgba(15,163,163,.2)}
 .rowBtns .rowIco.cloudOn{background:#eaf7f5;border-color:#bfe6ec}
+/* v61.68: عدّاد شهور التأخير فوق زرار الإنذار الأحمر */
+.lateWrap{position:relative;display:inline-flex}
+.lateWrap .lateNum{position:absolute;top:-7px;inset-inline-end:-7px;min-width:18px;height:18px;
+  padding:0 4px;border-radius:999px;background:#8a1008;color:#fff;font-size:10.5px;font-weight:800;
+  line-height:18px;text-align:center;border:2px solid #fff;pointer-events:none;
+  box-shadow:0 1px 4px rgba(138,16,8,.45)}
+@media print{.lateWrap .lateNum{display:none!important}}
 .rowBtns .rowIco .rowNum{position:absolute;top:-6px;inset-inline-end:-6px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:#d64545;color:#fff;font-size:9.5px;font-weight:800;
   font-style:normal;line-height:15px;text-align:center;border:1.5px solid #fff}
@@ -4855,7 +4862,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.67';
+const APP_VER  = 'v61.68';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -9076,36 +9083,133 @@ function isDebtor(sale){
   try{ return customerPosition(sale).state==='debtor'; }catch(e){ return false; }
 }
 
+/* =====================================================================
+   v61.68 — تلات صيغ للإخطار: إنذار بالغرامة (الافتراضى) · إنذار بالفسخ ·
+   إعلام بالفسخ. الأرقام كلها من نفس حسابات الجدول، فمفيش رقم بيختلف
+   بين الرسالة والجدول والـPDF. والنظام ما بياخدش أى إجراء لوحده —
+   الفسخ الفعلى يفضل من «↩️ فسخ بيع الوحدة».
+   ===================================================================== */
+const LATE_KINDS={
+  fine   :{t:'إنذار بالغرامة', doc:'إنذار بسداد متأخرات'},
+  rescind:{t:'إنذار بالفسخ',   doc:'إنذار بالفسخ'},
+  done   :{t:'إعلام بالفسخ',   doc:'إعلام بفسخ التعاقد'}
+};
+const AR_MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                 'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function arMonthName(iso){
+  const m=Number(String(iso||'').split('-')[1]);
+  return AR_MONTHS[m-1]||'';
+}
+/* آخر يوم فى الشهر الجارى — ده الميعاد اللى الشركة بتديه فى إنذار الفسخ */
+function apEndOfMonthISO(iso){
+  const a=String(iso||todayISO()).split('-').map(Number);
+  const d=new Date(a[0],a[1],0);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+/* صياغة عربية سليمة للعدد: شهر · شهرين · ٥ شهور · ١٢ شهرًا */
+function arMonthsPhrase(n){
+  n=Number(n)||0;
+  if(n===1) return 'شهر';
+  if(n===2) return 'شهرين';
+  if(n>=3&&n<=10) return fmtN(n)+' شهور';
+  return fmtN(n)+' شهرًا';
+}
+/* أكبر عدد شهور تأخير عند العميل = شهور أقدم قسط لسه عليه فلوس */
+function lateMonthsMax(sale){
+  try{
+    const r=lateRows(sale);
+    return r.length?Math.max.apply(null,r.map(function(x){return x.months;})):0;
+  }catch(e){ return 0; }
+}
+function lateOldestRow(sale){
+  try{
+    const r=lateRows(sale).slice().sort(function(a,b){ return a.due<b.due?-1:1; });
+    return r[0]||null;
+  }catch(e){ return null; }
+}
+/* تسوية الفسخ: المدفوع (مقدم + أقساط + وديعة لو اتسددت) ناقص أعباء التأخير */
+function lateSettlement(sale){
+  const down=Number(sale.down)||0;
+  const inst=collectedOf(sale.id);
+  const dep =depositPaidOf(sale.id);
+  const paid=down+inst+dep;
+  const pen =Math.round(lateTotals(sale).penalty);
+  return {down:down,inst:inst,dep:dep,paid:paid,pen:pen,net:Math.round(paid-pen)};
+}
+
 /* ---------- نص رسالة الواتساب ---------- */
-function lateMsgText(sale){
+function lateMsgText(sale,kind,opt){
+  kind=LATE_KINDS[kind]?kind:'fine';
+  opt=opt||{};
   const u=unitById(sale.unitId)||{};
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
   const owed=Math.max(0,due-col);
   const grand=owed+L.penalty;
-  const s=S();
-  const lines=[];
-  lines.push('السيد/ة: '+sale.customer.name);
-  lines.push('تحية طيبة وبعد،');
-  lines.push('');
-  lines.push('بخصوص الوحدة رقم '+(u.unitNo||'')+' بالعمارة '+(u.building||'')+' — عقد رقم '+(sale.contractNo||''));
-  lines.push('');
+  const st=S();
+  const sign=['','مع تحية إدارة الائتمان،',
+              (st.companyName||'Trust Group')+' — '+(st.projectName||'Aqua Pearl City')];
+  const head=['السيد/ة: '+sale.customer.name,'تحية طيبة وبعد،','',
+    'بخصوص الوحدة رقم '+(u.unitNo||'')+' بالعمارة '+(u.building||'')+' — عقد رقم '+(sale.contractNo||''),''];
+
+  /* ===== ٣) إعلام بالفسخ — بعد ما الفسخ يحصل ===== */
+  if(kind==='done'){
+    const S2=lateSettlement(sale);
+    const dNot=opt.notice||todayISO(), dCan=opt.cancel||todayISO();
+    const L2=head.slice();
+    L2.push('إلحاقًا للإنذار المرسل إليكم بتاريخ '+fmtD(dNot)+'، وحيث لم يتم سداد المتأخرات المستحقة خلال المهلة الممنوحة،');
+    L2.push('');
+    L2.push('نفيدكم بأنه تم فسخ التعاقد اعتبارًا من '+fmtD(dCan)+' وإعادة طرح الوحدة للبيع، وفقًا للبند العاشر من العقد.');
+    L2.push('');
+    L2.push('التسوية المالية:');
+    L2.push('• المقدم المسدَّد: '+fmtN(S2.down)+' ج.م');
+    L2.push('• الأقساط المحصَّلة: '+fmtN(S2.inst)+' ج.م');
+    if(S2.dep>0) L2.push('• وديعة الاستلام المسدَّدة: '+fmtN(S2.dep)+' ج.م');
+    L2.push('• إجمالي المسدَّد: '+fmtN(S2.paid)+' ج.م');
+    L2.push('• يُخصم: الغرامات وأعباء التأخير المستحقة حتى تاريخ الفسخ: '+fmtN(S2.pen)+' ج.م');
+    L2.push('');
+    L2.push('▪ الصافي المستحق رده لكم: '+fmtN(Math.max(0,S2.net))+' ج.م');
+    L2.push('');
+    L2.push('ويُرد إليكم الصافي المبيَّن أعلاه بعد إعادة بيع الوحدة، وفقًا للبند العاشر من العقد.');
+    L2.push('');
+    L2.push('برجاء التوجه لمقر الشركة لتوقيع عقد الفسخ وتسليم أصل العقد وملحقاته وما بحوزتكم من إيصالات.');
+    L2.push('');
+    L2.push('وأي سداد يتم بعد تاريخ الفسخ لا يُعتد به كإحياء للعقد ما لم تقبله الشركة كتابةً.');
+    return L2.concat(sign).join('\n');
+  }
+
+  /* ===== الموقف المالى — مشترك بين الغرامة والفسخ ===== */
+  const lines=head.slice();
   lines.push('نفيدكم بموقفكم المالي حتى تاريخ '+fmtD(todayISO())+':');
   lines.push('• المستحق حتى تاريخه: '+fmtN(due)+' ج.م');
   lines.push('• إجمالي المسدَّد: '+fmtN(col)+' ج.م');
   lines.push('• المتأخرات المستحقة: '+fmtN(owed)+' ج.م');
   if(L.count){
     lines.push('• عدد الأقساط المتأخرة: '+fmtN(L.count));
+    if(kind==='rescind'){
+      const o=lateOldestRow(sale);
+      if(o) lines.push('• أقدم قسط متأخر: مستحق في '+fmtD(o.due)+' — متأخر '+arMonthsPhrase(o.months));
+    }
     lines.push('• أعباء التأخير ('+LATE_MONTHLY_PCT+'% شهريًا): '+fmtN(Math.round(L.penalty))+' ج.م');
   }
   lines.push('');
   lines.push('▪ الإجمالي المطلوب سداده: '+fmtN(Math.round(grand))+' ج.م');
   lines.push('');
+
+  /* ===== ٢) إنذار بالفسخ ===== */
+  if(kind==='rescind'){
+    const dl=opt.deadline||apEndOfMonthISO();
+    lines.push('ونحيطكم علمًا بأنه في حالة عدم السداد بنهاية '+arMonthName(dl)+' الجاري — '+fmtD(dl)+
+               ' — سيتم فسخ التعاقد وإعادة طرح الوحدة للبيع، مع رد ما تم سداده من مقدم وأقساط مخصومًا منه '+
+               'الغرامات وأعباء التأخير المستحقة، وذلك وفقًا للبند العاشر من العقد.');
+    lines.push('');
+    lines.push('وهذا إنذار أخير قبل اتخاذ إجراءات الفسخ.');
+    return lines.concat(sign).join('\n');
+  }
+
+  /* ===== ١) إنذار بالغرامة (الافتراضى — زى ما هو) ===== */
   lines.push('برجاء سرعة السداد تفاديًا لاحتساب أعباء تأخير إضافية، وإعمالًا لأحكام البند العاشر من العقد التي تجيز إضافة مدد التأخير إلى موعد تسليم الوحدة.');
-  lines.push('');
-  lines.push('مع تحية إدارة الائتمان،');
-  lines.push((s.companyName||'Trust Group')+' — '+(s.projectName||'Aqua Pearl City'));
-  return lines.join('\n');
+  return lines.concat(sign).join('\n');
 }
 function waPhone(p){
   let d=String(p||'').replace(/\D/g,'');
@@ -9118,9 +9222,14 @@ function waPhone(p){
 
 /* ---------- نافذة الإنذار ---------- */
 let lateSaleId=null;
+let lateKind='fine';                 /* الافتراضى: إنذار بالغرامة */
+let lateDl='', lateNotD='', lateCanD='';
 function openLateNotice(saleId){
   const sale=saleById(saleId);if(!sale)return;
   lateSaleId=saleId;
+  lateKind='fine';
+  lateDl=apEndOfMonthISO();          /* مهلة السداد = آخر يوم فى الشهر الجارى */
+  lateNotD=todayISO(); lateCanD=todayISO();
   const u=unitById(sale.unitId)||{};
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
@@ -9154,9 +9263,48 @@ function openLateNotice(saleId){
      <tbody>${rows}</tbody>
      <tfoot><tr><th colspan="2">الإجمالي</th><th>${fmtM(L.instTotal)}</th><th></th><th>${fmtM(L.restTotal)}</th>
        <th colspan="3"></th><th>${fmtM(Math.round(L.penalty))}</th></tr></tfoot></table></div>
+   <div class="form-row" style="margin-top:10px"><label>📑 نوع الإخطار</label>
+     <select id="lateKindSel" onchange="lateKindChange()">
+       ${Object.keys(LATE_KINDS).map(k=>`<option value="${k}">${LATE_KINDS[k].t}</option>`).join('')}
+     </select></div>
+   <div id="lateDates"></div>
    <div class="form-row" style="margin-top:10px"><label>💬 نص رسالة الواتساب (قابل للتعديل قبل الإرسال)</label>
-     <textarea id="lateMsg" rows="9" style="width:100%;font-family:inherit">${esc(lateMsgText(sale))}</textarea></div>`;
+     <textarea id="lateMsg" rows="9" style="width:100%;font-family:inherit"></textarea></div>`;
+  lateKindChange();
   openModal('lateModal');
+}
+/* v61.68: تغيير نوع الإخطار — التواريخ المطلوبة والنص بيتبنوا من أول وجديد */
+function lateKindChange(){
+  const sale=saleById(lateSaleId); if(!sale) return;
+  const sel=$('#lateKindSel'); lateKind=(sel&&LATE_KINDS[sel.value])?sel.value:'fine';
+  const box=$('#lateDates');
+  if(box){
+    if(lateKind==='rescind'){
+      box.innerHTML='<div class="form-row"><label>🗓️ مهلة السداد — آخر يوم فى الشهر الجارى (تقدر تعدّله)</label>'+
+        '<input type="date" id="lateDlI" value="'+lateDl+'" onchange="lateRefreshMsg()"></div>';
+    }else if(lateKind==='done'){
+      box.innerHTML='<div class="grid g2">'+
+        '<div class="form-row"><label>🗓️ تاريخ الإنذار السابق</label>'+
+          '<input type="date" id="lateNotI" value="'+lateNotD+'" onchange="lateRefreshMsg()"></div>'+
+        '<div class="form-row"><label>🗓️ تاريخ الفسخ</label>'+
+          '<input type="date" id="lateCanI" value="'+lateCanD+'" onchange="lateRefreshMsg()"></div></div>'+
+        '<p class="gray-note">دى رسالة وبس — النظام مش بيفسخ البيع ولا بيلمس أى بيانات. الفسخ الفعلى من «↩️ فسخ بيع الوحدة».</p>';
+    }else box.innerHTML='';
+  }
+  const t=$('#lateTitle');
+  if(t&&sale) t.textContent='⚠️ '+LATE_KINDS[lateKind].t+' — '+sale.customer.name;
+  lateRefreshMsg();
+}
+function lateOpt(){
+  const d=$('#lateDlI'), n=$('#lateNotI'), c=$('#lateCanI');
+  if(d&&d.value) lateDl=d.value;
+  if(n&&n.value) lateNotD=n.value;
+  if(c&&c.value) lateCanD=c.value;
+  return {deadline:lateDl,notice:lateNotD,cancel:lateCanD};
+}
+function lateRefreshMsg(){
+  const sale=saleById(lateSaleId); if(!sale) return;
+  const t=$('#lateMsg'); if(t) t.value=lateMsgText(sale,lateKind,lateOpt());
 }
 /* PDF الإنذار — بنفس هوية وتنسيق إيصال التحصيل (الترويسة واللوجوهات والفوتر) */
 function lateNoticeHTML(sale){
@@ -9164,6 +9312,11 @@ function lateNoticeHTML(sale){
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
   const owed=Math.max(0,due-col), grand=owed+L.penalty;
+  /* v61.68: المستند بيتغيّر مع نوع الإخطار المختار — نفس أرقام الرسالة */
+  const KND=LATE_KINDS[lateKind]?lateKind:'fine';
+  const SET=lateSettlement(sale);
+  const amtLbl = KND==='done' ? 'الصافي المستحق رده بعد الخصم' : 'الإجمالي المطلوب سداده';
+  const amtVal = KND==='done' ? Math.max(0,SET.net) : Math.round(grand);
   const row=(ic,l,v)=>`<div class="rc2-row"><span class="ic">${ic}</span><div style="flex:1"><span class="lbl">${l}</span><span class="val">${v}</span></div></div>`;
   const rows=L.rows.map((r,n)=>`<tr>
     <td style="text-align:center">${n+1}</td><td style="text-align:center">${fmtD(r.due)}</td>
@@ -9174,7 +9327,7 @@ function lateNoticeHTML(sale){
     ||'<tr><td colspan="8" style="text-align:center">لا توجد أقساط تجاوزت شهرًا من تاريخ الاستحقاق</td></tr>';
   return `<div class="rc2" id="receiptDoc">
     <div class="rc2-title">
-      <h2>إنذار بسداد متأخرات</h2>
+      <h2>${LATE_KINDS[KND].doc}</h2>
       <div class="rc2-badge">${esc(u.building||'')} / ${esc(u.unitNo||'')}</div>
       <div class="rc2-date">📅 تاريخ الإصدار: ${fmtD(todayISO())}</div>
     </div>
@@ -9201,9 +9354,9 @@ function lateNoticeHTML(sale){
       </div>
     </div>
     <div class="rc2-amount">
-      <div class="l">الإجمالي المطلوب سداده</div>
-      <div class="n">${fmtN(Math.round(grand))} <span style="font-size:14px">جنيه</span></div>
-      <div class="w">فقط ${tafqit(Math.round(grand))} لا غير</div>
+      <div class="l">${amtLbl}</div>
+      <div class="n">${fmtN(amtVal)} <span style="font-size:14px">جنيه</span></div>
+      <div class="w">فقط ${tafqit(amtVal)} لا غير</div>
     </div>
     <div class="rc2-legal" style="background:#fdf3f2;border-color:#f0cfcb">
       <b>كشف الأقساط المتأخرة</b>
@@ -9218,12 +9371,25 @@ function lateNoticeHTML(sale){
           <td style="padding:3px;text-align:center;color:#c0392b">${fmtN(Math.round(L.penalty))}</td></tr></tfoot>
       </table>
     </div>
-    <div class="rc2-legal">
-      تُخطر شركة ${esc(S().companyName||'Trust Group')} السيد/ة ${esc(sale.customer.name)} بوجود متأخرات مستحقة عن الوحدة الموضحة بعاليه بإجمالي
-      <b>${fmtN(Math.round(grand))} جنيه</b> شاملة أعباء التأخير المحتسبة بواقع ${LATE_MONTHLY_PCT}٪ شهريًا عن كل شهر كامل مضى من تاريخ استحقاق القسط،
-      على قيمة القسط كاملة ولو سُدِّد جزئيًا، وذلك وفقًا لأحكام البند العاشر من عقد البيع الابتدائي.
-      وبرجاء سرعة السداد تفاديًا لاحتساب أعباء إضافية، مع أحقية الشركة في إضافة مدد التأخير إلى موعد تسليم الوحدة.
-    </div>
+    <div class="rc2-legal">${
+      KND==='done'
+      ? `تُخطر شركة ${esc(S().companyName||'Trust Group')} السيد/ة ${esc(sale.customer.name)} بأنه تم فسخ التعاقد عن الوحدة الموضحة بعاليه
+         اعتبارًا من <b>${fmtD(lateCanD||todayISO())}</b> وإعادة طرح الوحدة للبيع، وفقًا لأحكام البند العاشر من عقد البيع الابتدائي، وذلك إلحاقًا
+         للإنذار المرسل بتاريخ ${fmtD(lateNotD||todayISO())}. وقد بلغ إجمالي المسدَّد <b>${fmtN(SET.paid)} جنيه</b> (مقدم وأقساط${SET.dep>0?' ووديعة استلام':''})،
+         يُخصم منه الغرامات وأعباء التأخير المستحقة حتى تاريخ الفسخ وقدرها <b>${fmtN(SET.pen)} جنيه</b>، ليصبح الصافي المستحق رده
+         <b>${fmtN(Math.max(0,SET.net))} جنيه</b> يُرد بعد إعادة بيع الوحدة. وبرجاء التوجه لمقر الشركة لتوقيع عقد الفسخ وتسليم أصل العقد وملحقاته.
+         وأي سداد يتم بعد تاريخ الفسخ لا يُعتد به كإحياء للعقد ما لم تقبله الشركة كتابةً.`
+      : KND==='rescind'
+      ? `تُنذر شركة ${esc(S().companyName||'Trust Group')} السيد/ة ${esc(sale.customer.name)} بسداد المتأخرات المستحقة عن الوحدة الموضحة بعاليه
+         وقدرها <b>${fmtN(Math.round(grand))} جنيه</b> شاملة أعباء التأخير، وذلك بحد أقصى <b>${fmtD(lateDl||apEndOfMonthISO())}</b>.
+         وفي حالة عدم السداد خلال المهلة المذكورة سيتم فسخ التعاقد وإعادة طرح الوحدة للبيع، مع رد ما تم سداده من مقدم وأقساط مخصومًا منه
+         الغرامات وأعباء التأخير المستحقة، وذلك وفقًا لأحكام البند العاشر من عقد البيع الابتدائي، ودون إخلال بحق الشركة في إضافة مدد التأخير
+         إلى موعد تسليم الوحدة. وهذا إنذار أخير قبل اتخاذ إجراءات الفسخ.`
+      : `تُخطر شركة ${esc(S().companyName||'Trust Group')} السيد/ة ${esc(sale.customer.name)} بوجود متأخرات مستحقة عن الوحدة الموضحة بعاليه بإجمالي
+         <b>${fmtN(Math.round(grand))} جنيه</b> شاملة أعباء التأخير المحتسبة بواقع ${LATE_MONTHLY_PCT}٪ شهريًا عن كل شهر كامل مضى من تاريخ استحقاق القسط،
+         على قيمة القسط كاملة ولو سُدِّد جزئيًا، وذلك وفقًا لأحكام البند العاشر من عقد البيع الابتدائي.
+         وبرجاء سرعة السداد تفاديًا لاحتساب أعباء إضافية، مع أحقية الشركة في إضافة مدد التأخير إلى موعد تسليم الوحدة.`
+    }</div>
     <div class="rc2-bottom">
       <div class="rc2-bcard"><div class="hd">✍️ توقيع المستلم</div>
         <div class="bd" style="line-height:2.2;text-align:start;padding:6px 8px">الاسم: ................................<br>التاريخ: ..........................<br>التوقيع: ............................</div></div>
@@ -9252,7 +9418,7 @@ function lateSendWA(){
   const sale=saleById(lateSaleId);if(!sale)return;
   const ph=waPhone(sale.customer.phone);
   if(!ph){toast('لا يوجد رقم هاتف مسجّل لهذا العميل','err');return;}
-  const txt=($('#lateMsg')&&$('#lateMsg').value)||lateMsgText(sale);
+  const txt=($('#lateMsg')&&$('#lateMsg').value)||lateMsgText(sale,lateKind,lateOpt());
   window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(txt),'_blank');
 }
 function lateCopy(){
@@ -9354,7 +9520,7 @@ function renderCustomers(){
       <td><b>${esc(u.building||'')}</b></td><td class="cUnit">${esc(u.unitNo||'')}<span class="uBld"> · ${esc(u.building||'')}</span></td><td>${s.mode==='cash'?'كاش':'تقسيط'}</td>
       <td>${fmtM(s.finalPrice)}</td><td>${fmtM(collectedOf(s.id))}</td><td>${fmtM(saleRemaining(s))}</td>
       <td class="cSt ${cls}"><span class="stWord">${pos.label}</span>${pos.diff?'<span class="stNum">'+fmtN(Math.abs(pos.diff))+'</span>':'<span class="stNum dash">—</span>'}</td>
-      <td class="no-print"><div class="rowBtns"><button class="btn sm aqua" onclick="nav('customerFile','${s.id}')">📂<span class="btnTxt"> الملف</span></button>${pos.state==='debtor'?`<button class="btn sm red icon" title="إرسال إنذار متأخرات" onclick="openLateNotice('${s.id}')">⚠️</button>`:''}${apRowStateHTML(s)}</div></td>
+      <td class="no-print"><div class="rowBtns"><button class="btn sm aqua" onclick="nav('customerFile','${s.id}')">📂<span class="btnTxt"> الملف</span></button>${pos.state==='debtor'?(()=>{const lm=lateMonthsMax(s);return `<span class="lateWrap"><button class="btn sm red icon" title="إرسال إنذار متأخرات${lm?' — متأخر '+arMonthsPhrase(lm):''}" onclick="openLateNotice('${s.id}')">⚠️</button>${lm?`<i class="lateNum">${lm}</i>`:''}</span>`;})():''}${apRowStateHTML(s)}</div></td>
     </tr>`;
   }).join('');
   $('#scr-customers').innerHTML=`
@@ -12084,6 +12250,7 @@ const AP_GUIDE={
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
   ['👥 قاعدة العملاء — فلتر «مدين أكثر من شهر»','فى عمود «الحالة» فى قاعدة العملاء فيه فلتر فيه: منتظم · مدين · مدين أكثر من شهر · دائن. «مدين أكثر من شهر» بيطلّعلك العملاء اللى عليهم متأخرات وعدّى على أقدم قسط لسه عليه فلوس شهر تقويمى كامل (قسط مستحق ٥/١٠ يدخل الفلتر من ٦/١١). القسط اللى اتسدّد جزئى بيتحسب متأخر برضه زى ما البند التالت فى العقد بيقول. والعميل الكاش بيتحسب من تاريخ العقد. الفلتر ده بيشتغل مع فلاتر العمارة والنظام والبحث مع بعض، وعدّاد النتائج بيتحدّث، و«🖨️ طباعة» بتطبع المعروض بس — فتقدر تطبع كشف المتأخرات على طول.'],
+  ['⚠️ إنذار المتأخرات — تلات صيغ','الزرار الأحمر جنب العميل المدين فى قاعدة العملاء. عليه عدّاد بعدد شهور التأخير (شهور أقدم قسط لسه عليه فلوس) — نفس الرقم اللى فى عمود «شهور كاملة» فى الجدول جوّه، فمستحيل الرقمين يختلفوا، والعدّاد مابيظهرش فى الطباعة. جوّه النافذة فيه قايمة «نوع الإخطار»: «إنذار بالغرامة» (الافتراضى، الرسالة القديمة زى ما هى) · «إنذار بالفسخ» (بيديله مهلة لآخر يوم فى الشهر الجارى — النظام بيحسبها لوحده وتقدر تعدّلها — ويقوله هيتفسخ وتتطرح الوحدة للبيع ويترد المدفوع ناقص الغرامات طبقًا للبند العاشر) · «إعلام بالفسخ» (بيتبعت بعد الفسخ، وفيه تسوية مالية: المقدم والأقساط والوديعة ناقص الغرامات = الصافى اللى يترد بعد إعادة بيع الوحدة، وبيطلب التوجه للشركة لتوقيع عقد الفسخ وتسليم أصل العقد). النص والعنوان وملف الـPDF بيتغيروا مع اختيارك، والنص قابل للتعديل قبل الإرسال. مهم: التلاتة رسايل وبس — النظام مابياخدش أى إجراء لوحده، والفسخ الفعلى بيتعمل من «↩️ فسخ بيع الوحدة».'],
   ['👥 صلاحيات الموظفين','قاعدة العملاء وملف العميل مقفولين على المدير وحده — مش بينفع تتمنح لموظف حتى بالخطأ.'],
   ['👥 المستخدمون','تضيف موظف أو عميل أو شريك. لو السحابة متصلة الحساب بيتعمل على Firebase تلقائيًا، و«📨 إرسال رابط» بيخلّى المستخدم يحط كلمة سره بنفسه.'],
   ['🔔 الإشعارات','مفتاح VAPID ورابط Apps Script. «🩺 فحص السحابة» بيوريك مين مسجّل جهازه، و«🔄 إعادة نشر» بتعيد رفع بيانات العملاء والشركاء.'],
