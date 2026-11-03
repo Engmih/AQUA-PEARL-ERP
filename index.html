@@ -650,11 +650,23 @@ table.uvFinTbl td.md{font-weight:800;color:var(--aqua2,#0FA3A3);width:24%}
 .perm-list label{display:flex;align-items:center;gap:5px}
 .perm-list input{width:auto}
 
+/* v61.62: تمييز الصف الغلطان فى جدول الوحدات المتاحة */
+tr.auBad>td{background:#fff3f3!important}
+tr.auBad{outline:2px solid #d64545;outline-offset:-2px;border-radius:7px}
+tr.auBad input,tr.auBad select{border-color:#d64545!important}
+
 /* ===== Share FAB ===== */
 #shareFab{position:fixed;bottom:20px;left:20px;z-index:90;border:none;cursor:pointer;
   background:linear-gradient(135deg,var(--aqua),var(--navy2));color:#fff;font-weight:700;font-size:13.5px;
   padding:12px 20px;border-radius:999px;box-shadow:0 8px 24px rgba(11,42,74,.35);display:flex;align-items:center;gap:7px;transition:.15s}
 #shareFab:hover{transform:translateY(-2px);filter:brightness(1.1)}
+/* v61.62: زرار الصورة فوق زرار الـPDF — الصورة هى الطريقة الأسرع على واتساب */
+#imgFab{position:fixed;bottom:74px;left:20px;z-index:90;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#1e9e6a,#0d6b46);color:#fff;font-weight:700;font-size:13.5px;
+  padding:12px 20px;border-radius:999px;box-shadow:0 8px 24px rgba(11,42,74,.35);
+  display:flex;align-items:center;gap:7px;transition:.15s}
+#imgFab:hover{transform:translateY(-2px);filter:brightness(1.1)}
+@media print{#imgFab{display:none!important}}
 
 /* ===== Toast ===== */
 #toast{position:fixed;bottom:18px;right:18px;z-index:600;display:flex;flex-direction:column;gap:8px}
@@ -1246,6 +1258,7 @@ table.tbl td.bpChk input[type=checkbox]{width:auto!important;transform:scale(1.2
   table.tbl tr td[data-blank="1"]{display:none!important}
   /* زر المشاركة العائم أصغر ولا يغطى آخر كارت */
   #shareFab{transform:scale(.82);transform-origin:bottom left;bottom:8px!important;left:8px!important;opacity:.95}
+  #imgFab{transform:scale(.82);transform-origin:bottom left;bottom:52px!important;left:8px!important;opacity:.95}
   .screen{padding-bottom:62px}
   /* صف البطاقة أكثر إحكامًا */
   table.tbl tr{padding:6px 9px;margin-bottom:8px}
@@ -1961,6 +1974,7 @@ if (!AP_NOSW && 'serviceWorker' in navigator && location.protocol.startsWith('ht
 </div>
 
 <button id="shareFab" class="no-print" style="display:none" onclick="shareFabClick()" title="مشاركة الشاشة الحالية كملف PDF عبر التطبيقات">📤 مشاركة PDF</button>
+<button id="imgFab" class="no-print" style="display:none" onclick="shareUnitImages()" title="مشاركة العرض كصورتين — أسرع وأخف على واتساب">📷 صورة</button>
 
 <div id="toast"></div>
 
@@ -4715,7 +4729,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.61';
+const APP_VER  = 'v61.62';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5145,6 +5159,34 @@ function apBioSupported(){
       (location.protocol==='https:'||location.hostname==='localhost'));
   }catch(e){ return false; }
 }
+/* ترويسة الـPDF كـJPEG مضغوطة — تتبنى مرة واحدة وتتخزّن.
+   كانت PNG ٣١٢ كيلو بتتحط فى كل صفحة من كل ملف PDF فى النظام. */
+let AP_PDF_HDR=null;
+function apAddHdr(pdf,M,w,h){
+  const d=AP_PDF_HDR||(window.ASSETS&&window.ASSETS.header)||'';
+  if(!d) return;
+  const fmt=AP_PDF_HDR?'JPEG':'PNG';
+  try{ pdf.addImage(d,fmt,M,M,w,h,'aphdr_'+fmt,'FAST'); }
+  catch(e){ try{ pdf.addImage(d,fmt,M,M,w,h); }catch(e2){} }
+}
+async function apPdfHeader(){
+  if(AP_PDF_HDR) return AP_PDF_HDR;
+  try{
+    const src=window.ASSETS&&window.ASSETS.header;
+    if(!src) return null;
+    const im=await new Promise((res,rej)=>{ const x=new Image();
+      x.onload=()=>res(x); x.onerror=rej; x.src=src; });
+    const c=document.createElement('canvas');
+    c.width=1200; c.height=Math.round(1200*(im.naturalHeight/im.naturalWidth));
+    const g=c.getContext('2d');
+    g.fillStyle='#ffffff'; g.fillRect(0,0,c.width,c.height);
+    g.drawImage(im,0,0,c.width,c.height);
+    AP_PDF_HDR=c.toDataURL('image/jpeg',0.85);
+    c.width=c.height=0;
+    return AP_PDF_HDR;
+  }catch(e){ return null; }
+}
+try{ window.addEventListener('load',function(){ setTimeout(function(){ try{ apPdfHeader(); }catch(e){} },2500); }); }catch(e){}
 function apIsPhone(){
   try{ return window.matchMedia('(pointer:coarse)').matches || window.innerWidth<=760; }
   catch(e){ return window.innerWidth<=760; }
@@ -5686,6 +5728,9 @@ function nav(id,arg){
   try{ apBarMount(); }catch(e){}          /* v61.54: الشريط والتلات نقط للموظف */
   const fab=$('#shareFab');
   if(fab)fab.style.display=['dashboard','unitView','sales','customers','customerFile','due','collected','sold','returnedScr','reports','attach','expenses'].includes(id)?'flex':'none';
+  /* v61.62: زرار الصورة فى بوابة عرض وحدة فقط، ولما تكون فيه وحدة مفتوحة */
+  try{ const ifb=$('#imgFab');
+    if(ifb) ifb.style.display=(id==='unitView'&&typeof uvUnitId!=='undefined'&&uvUnitId)?'flex':'none'; }catch(e){}
   window.scrollTo({top:0});
 }
 function shareFabClick(){
@@ -5949,33 +5994,72 @@ function auExit(){
 }
 /* التحقق والحفظ */
 function auValidate(){
+  /* v61.62: بنمسك رقم الصف الحقيقى فى auRows مع كل خطأ، عشان زرار
+     «روح للصف» يوصل للصف الصح حتى لو فيه فلتر شغّال. */
   const live=auRows.filter(r=>!r.deleted);
+  const idxOf=new Map(); auRows.forEach((r,i)=>idxOf.set(r,i));
   const errs=[];
   const seen={};
+  const E=(r,t)=>errs.push({i:idxOf.has(r)?idxOf.get(r):-1,t:t});
   live.forEach((r,n)=>{
-    const where='صف '+(n+1)+' ('+(r.unitNo||'بدون رقم')+')';
-    if(!String(r.building||'').trim())errs.push(where+': اختر العمارة');
-    if(!String(r.unitNo||'').trim())errs.push(where+': رقم الوحدة مطلوب');
-    if(r.floor===''||r.floor==null||isNaN(Number(r.floor)))errs.push(where+': الدور مطلوب');
-    if(!(Number(r.area)>0))errs.push(where+': المساحة يجب أن تكون أكبر من صفر');
-    if(!(Number(r.price)>0))errs.push(where+': السعر الإجمالي يجب أن يكون أكبر من صفر');
+    const who=(r.building||'؟')+' — '+(r.unitNo||'بدون رقم');
+    const where=who;
+    if(!String(r.building||'').trim())E(r,where+': اختر العمارة');
+    if(!String(r.unitNo||'').trim())E(r,where+': رقم الوحدة مطلوب');
+    if(r.floor===''||r.floor==null||isNaN(Number(r.floor)))E(r,where+': الدور مطلوب');
+    if(!(Number(r.area)>0))E(r,where+': المساحة يجب أن تكون أكبر من صفر');
+    if(!(Number(r.price)>0))E(r,where+': السعر الإجمالي يجب أن يكون أكبر من صفر');
     const key=String(r.building).trim()+'|'+String(r.unitNo).trim();
-    if(seen[key])errs.push('تكرار: الوحدة '+key+' موجودة أكثر من مرة');
+    if(seen[key])E(r,'تكرار: الوحدة '+key+' موجودة أكثر من مرة');
     seen[key]=true;
   });
   // تعارض مع وحدات غير متاحة (مباعة/مرتجعة/محجوزة)
   const otherIds=new Set(DB.units.filter(u=>u.status!=='available').map(u=>u.id));
   live.forEach(r=>{
     const key=String(r.building).trim()+'|'+String(r.unitNo).trim();
-    if(otherIds.has(key))errs.push('الوحدة '+key+' مسجّلة بالفعل (مباعة/محجوزة) — غيّر رقم الوحدة');
+    if(otherIds.has(key))E(r,'الوحدة '+key+' مسجّلة بالفعل (مباعة/محجوزة) — غيّر رقم الوحدة');
   });
   return errs;
+}
+/* v61.62: صندوق أخطاء جوّه الشاشة + القفز للصف الغلطان */
+function auGoRow(i){
+  try{
+    closeModal('confirmModal');
+    /* نشيل الفلتر عشان الصف يبقى ظاهر أكيد */
+    if(auFilterB||auSearch){ auFilterB=''; auSearch=''; renderAvailEdit(); }
+    const vis=auVisible();
+    let pos=-1;
+    for(let n=0;n<vis.length;n++){ if(vis[n].i===i){ pos=n; break; } }
+    if(pos<0) return;
+    const rows=document.querySelectorAll('#scr-availEdit table.tbl tbody tr');
+    const tr=rows[pos]; if(!tr) return;
+    tr.scrollIntoView({behavior:'smooth',block:'center'});
+    tr.classList.add('auBad');
+    const bad=tr.querySelector('input[value=""],input:not([value])')||tr.querySelector('input');
+    if(bad){ try{ bad.focus(); }catch(e){} }
+    setTimeout(function(){ try{ tr.classList.remove('auBad'); }catch(e){} },8000);
+  }catch(e){ console.error(e); }
+}
+function auShowErrors(errs){
+  const rows=errs.map(function(e){
+    const t=(typeof e==='string')?e:e.t;
+    const i=(typeof e==='string')?-1:e.i;
+    const go=(i>=0)?'<button class="btn sm aqua" onclick="auGoRow('+i+')">↪️ روح للصف</button>':'';
+    return '<tr><td style="text-align:start">'+esc(t)+'</td>'+
+           '<td class="no-print" style="width:1%;white-space:nowrap">'+go+'</td></tr>';
+  }).join('');
+  const html='<p class="gray-note" style="margin:0 0 9px">التعديلات لسه مش محفوظة. صحّح الآتى وبعدين اضغط «حفظ التعديلات» تانى:</p>'+
+    '<table class="tbl"><tbody>'+rows+'</tbody></table>';
+  confirmBox('لم يتم الحفظ — '+errs.length+' خطأ', html, 'تمام', null);
+  toast('هناك '+errs.length+' خطأ — صحّحه وجرّب تانى','err');
 }
 function auSave(){
   const errs=auValidate();
   if(errs.length){
-    printDocHTML('تنبيهات قبل الحفظ',`<h2>لم يتم الحفظ — صحّح الآتي:</h2><ul>${errs.map(e=>'<li>'+esc(e)+'</li>').join('')}</ul>`);
-    toast('هناك '+errs.length+' خطأ — راجع القائمة','err');
+    /* v61.62: كانت القائمة بتروح لمعاينة الطباعة، فلو المعاينة اتقفلت
+       المستخدم مايشوفش الخطأ أصلًا. دلوقتى بتظهر جوّه الشاشة ومعاها
+       زرار بينطّ على الصف الغلطان ويلوّنه. */
+    auShowErrors(errs);
     return;
   }
   const del=auRows.filter(r=>r.deleted&&!r.isNew).length;
@@ -7681,6 +7765,9 @@ function uvOpenSelected(){uvUnitId=$('#uvSelect').value;uvRenderUnit();}
 
 function uvRenderUnit(){
   const box=$('#uvBody');
+  /* v61.62: زرار «📷 صورة» يبان بس لما تكون فيه وحدة مفتوحة */
+  try{ const ifb=document.getElementById('imgFab');
+    if(ifb) ifb.style.display=(currentScreen==='unitView'&&uvUnitId&&unitById(uvUnitId))?'flex':'none'; }catch(e){}
   if(!uvUnitId||!unitById(uvUnitId)){box.innerHTML='<div class="plan-missing">اختر وحدة من القائمة أعلاه لعرض بياناتها 🏢</div>';return;}
   const u=unitById(uvUnitId);
   if(uvDownAuto) uvDown=Math.round(uvTotal(u)*0.5);
@@ -8125,6 +8212,117 @@ function saleRemaining(sale){
   return Math.max(0,r)+0;
 }
 
+/* =====================================================================
+   v61.62 — مشاركة العرض كصور بدل PDF
+   ---------------------------------------------------------------------
+   ملف الـPDF كان بيطلع ٢ ميجا تقريبًا، وواتساب على الموبايلات المتوسطة
+   بيهنّج وهو بيستقبله، فالمناديب بقوا بياخدوا سكرين شوت بإيديهم.
+   الصورة أخف بكتير، وبتظهر فى الشات على طول من غير ما العميل ينزّلها
+   أو يفتح برنامج PDF.
+   بتطلع صورتين: العرض (بيانات الوحدة + جدول السداد) والمخطط.
+   ===================================================================== */
+function apIsPhone(){ try{ return window.innerWidth<820; }catch(e){ return false; } }
+
+/* بيحوّل HTML لصورة JPEG — بيرجّع {canvas,blob} */
+async function apNodeToJpeg(innerHTML,{width=980,scale=2,quality=.85}={}){
+  const snap=document.createElement('div');
+  snap.style.cssText='position:fixed;left:-12000px;top:0;width:'+width+'px;background:#fff;'+
+    'padding:18px;direction:rtl;font-family:Segoe UI,Tahoma,Arial';
+  snap.innerHTML=innerHTML;
+  snap.querySelectorAll('.no-print').forEach(x=>x.remove());
+  /* أزرار التحكم مالهاش لازمة فى صورة بتتبعت للعميل */
+  snap.querySelectorAll('button,.btn,input[type=file]').forEach(x=>x.remove());
+  document.body.appendChild(snap);
+  snap.querySelectorAll('*').forEach(el=>{ el.style.letterSpacing='normal'; });
+  const canvas=await html2canvas(snap,{scale:scale,backgroundColor:'#ffffff',logging:false});
+  snap.remove();
+  const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',quality));
+  canvas.width=canvas.height=0;        /* تفضية الذاكرة فورًا */
+  return blob;
+}
+
+/* كانفاس المخطط: الصورة نفسها + سطر بيانات تحتها.
+   الرسم على كانفاس مباشرة أسرع وأخف بكتير من إعادة تصوير HTML. */
+async function apPlanCanvas(u,maxW){
+  const pm=(typeof matchPlan==='function')?matchPlan(u):null;
+  if(!pm) return null;
+  if(typeof apPlansReady==='function' && !apPlansReady()){ await apPlansLoad(); }
+  const src=window.PLAN_IMGS&&window.PLAN_IMGS[pm.pdf+'_'+pm.page];
+  if(!src) return null;
+  const img=await new Promise((res,rej)=>{ const im=new Image();
+    im.onload=()=>res(im); im.onerror=rej; im.src=src; });
+  const W=Math.min(maxW||1500,img.naturalWidth||maxW||1500);
+  const H=Math.round(W*(img.naturalHeight/img.naturalWidth));
+  const barH=Math.round(W*0.062);
+  const c=document.createElement('canvas');
+  c.width=W; c.height=H+barH;
+  const g=c.getContext('2d');
+  g.fillStyle='#ffffff'; g.fillRect(0,0,c.width,c.height);
+  g.drawImage(img,0,0,W,H);
+  /* شريط البيانات */
+  g.fillStyle='#0b2a4a'; g.fillRect(0,H,W,barH);
+  g.fillStyle='#ffffff';
+  g.textBaseline='middle'; g.direction='rtl';
+  g.font='700 '+Math.round(barH*0.42)+'px "Segoe UI",Tahoma,Arial';
+  g.textAlign='right';
+  const code=(typeof planCode==='function')?planCode(u):((u.building||'')+'-'+(u.unitNo||''));
+  g.fillText(code+'  •  '+fmtN(u.area)+' م²  •  '+(u.finishing||''), W-Math.round(W*0.03), H+barH/2);
+  g.textAlign='left';
+  g.font='600 '+Math.round(barH*0.33)+'px "Segoe UI",Tahoma,Arial';
+  g.fillText('Aqua Pearl City — Trust Group', Math.round(W*0.03), H+barH/2);
+  return c;
+}
+
+async function shareUnitImages(){
+  const u=uvUnitId?unitById(uvUnitId):null;
+  if(!u){ toast('اختر وحدة أولاً','err'); return; }
+  if(typeof html2canvas==='undefined'){ toast('مكتبة الصور غير محملة','err'); return; }
+  const btn=document.getElementById('imgFab');
+  const lbl=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='⏳ جارٍ التجهيز...'; }
+  toast('⏳ جارٍ تجهيز الصور...');
+  try{
+    const code=(typeof planCode==='function')?planCode(u):((u.building||'')+'-'+(u.unitNo||''));
+    const files=[];
+    /* ── صورة ١: العرض ── */
+    const cards=$$('#uvBody > .card');
+    const hdr=(window.ASSETS&&window.ASSETS.header)
+      ? '<img src="'+window.ASSETS.header+'" style="width:100%;display:block;margin-bottom:14px">' : '';
+    const p1=hdr+
+      '<h2 style="color:#0b2a4a;text-align:center;margin:2px 0 14px;font-size:27px">عرض وحدة — '+esc(code)+'</h2>'+
+      (cards[0]?cards[0].outerHTML:'')+(cards[1]?cards[1].outerHTML:'');
+    const b1=await apNodeToJpeg(p1,{width:980,scale:apIsPhone()?1.9:2.2,quality:.85});
+    files.push(new File([b1],'Aqua Pearl '+code.replace(/[^\w\-]/g,'-')+'.jpg',{type:'image/jpeg'}));
+    /* ── صورة ٢: المخطط ── */
+    try{
+      const pc=await apPlanCanvas(u,apIsPhone()?1300:1600);
+      if(pc){
+        const b2=await new Promise(res=>pc.toBlob(res,'image/jpeg',.85));
+        pc.width=pc.height=0;
+        files.push(new File([b2],'Plan '+code.replace(/[^\w\-]/g,'-')+'.jpg',{type:'image/jpeg'}));
+      }
+    }catch(e){ console.warn('plan image',e); }
+
+    const kb=Math.round(files.reduce((a,f)=>a+f.size,0)/1024);
+    if(navigator.canShare&&navigator.canShare({files:files})){
+      try{
+        await navigator.share({files:files,title:'عرض وحدة '+code,text:'Aqua Pearl City — Trust Group'});
+        toast('تمت المشاركة ✔ ('+kb+' كيلو)','ok'); return;
+      }catch(err){ if(err&&err.name==='AbortError') return; }
+    }
+    files.forEach(function(f){
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(f); a.download=f.name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    });
+    toast('اتنزّلت '+files.length+' صورة ('+kb+' كيلو) — ابعتها من جهازك','ok');
+  }catch(e){
+    console.error(e); toast('تعذر تجهيز الصور: '+e.message,'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=lbl||'📷 صورة'; }
+  }
+}
+
 /* ---------- Share unit as PDF ---------- */
 async function shareUnitPdf(){
   const u=uvUnitId?unitById(uvUnitId):null;
@@ -8136,22 +8334,29 @@ async function shareUnitPdf(){
     const pdf=new jsPDF({unit:'pt',format:'a4'});
     const W=pdf.internal.pageSize.getWidth(), H=pdf.internal.pageSize.getHeight(), M=24;
     const headerH=(W-2*M)*185/1800;
-    const addHeader=()=>pdf.addImage(window.ASSETS.header,'PNG',M,M,W-2*M,headerH);
+    /* v61.62: ترويسة اللوجو كانت PNG بحجم ٣١٢ كيلو وبتتحط فى كل صفحة،
+       يعنى نص حجم الملف تقريبًا. بقت JPEG ٣٢ كيلو وبتتخزّن مرة واحدة
+       فى الملف (alias) وتتكرّر بالإشارة ليها. */
+    const addHeader=()=>apAddHdr(pdf,M,W-2*M,headerH);
     const snapToPage=async (innerHTML,newPage)=>{
       const snap=document.createElement('div');
       snap.style.cssText='position:fixed;left:-12000px;top:0;width:1000px;background:#fff;padding:16px;direction:rtl;font-family:Segoe UI,Tahoma,Arial';
       snap.innerHTML=innerHTML;
       snap.querySelectorAll('.no-print').forEach(x=>x.remove());
+      snap.querySelectorAll('button,.btn,input[type=file]').forEach(x=>x.remove());
       document.body.appendChild(snap);
       snap.querySelectorAll('*').forEach(el=>{el.style.letterSpacing='normal';});
-      const canvas=await html2canvas(snap,{scale:2.5,backgroundColor:'#ffffff',logging:false});
+      /* v61.62: دقة أقل على الموبايل وضغط أعلى — الفرق مش باين على A4
+         والحجم بينزل للثلث تقريبًا، فواتساب مابيهنّجش. */
+      const canvas=await html2canvas(snap,{scale:(apIsPhone()?1.8:2.2),backgroundColor:'#ffffff',logging:false});
       snap.remove();
       if(newPage)pdf.addPage();
       addHeader();
       const cw=W-2*M;let ch=cw*canvas.height/canvas.width;
       const maxH=H-M*2-headerH-12;
       if(ch>maxH)ch=maxH;
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',M,M+headerH+12,cw,ch);
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.82),'JPEG',M,M+headerH+12,cw,ch);
+      canvas.width=canvas.height=0;
     };
     // page 1: unit + payment data (as currently displayed)
     const cards=$$('#uvBody > .card');
@@ -8159,15 +8364,20 @@ async function shareUnitPdf(){
       (cards[0]?cards[0].outerHTML:'')+(cards[1]?cards[1].outerHTML:'');
     await snapToPage(p1,false);
     // page 2: plan
-    const pm=matchPlan(u);
-    if(pm){
-      if(!apPlansReady()) await apPlansLoad();   /* v61.50 */
-      const img=window.PLAN_IMGS[pm.pdf+'_'+pm.page];
-      const p2=`<h2 style="color:#0b2a4a;text-align:center;margin:4px 0 12px;font-size:26px">${esc(planCode(u))}</h2>
-        <img src="${img}" style="width:100%;border:1px solid #dbe6ee;border-radius:10px">
-        <div style="text-align:center;margin-top:10px;font-size:18px;color:#123e63;font-weight:700">Aqua Pearl City — ${fmtN(u.area)} م² — ${esc(u.finishing)}</div>`;
-      await snapToPage(p2,true);
-    }
+    /* v61.62: المخطط يتحط كصورة مباشرة بدل ما يتعاد تصويره بـhtml2canvas.
+       دى كانت أتقل حتة فى الملف: إعادة رسم صورة جاهزة بدقة 2.5 ثم ضغطها. */
+    try{
+      const pc=await apPlanCanvas(u,1500);
+      if(pc){
+        pdf.addPage(); addHeader();
+        const cw=W-2*M;
+        let ch=cw*pc.height/pc.width;
+        const maxH=H-M*2-headerH-12;
+        if(ch>maxH){ ch=maxH; }
+        pdf.addImage(pc.toDataURL('image/jpeg',0.82),'JPEG',M,M+headerH+12,cw,ch);
+        pc.width=pc.height=0;
+      }
+    }catch(e){ console.warn('plan page',e); }
     const blob=pdf.output('blob');
     const fname='Unit '+planCode(u).replace(/[^\w\-]/g,'-')+'.pdf';
     const file=new File([blob],fname,{type:'application/pdf'});
@@ -8215,7 +8425,7 @@ async function shareScreenPdf(){
       const pc=document.createElement('canvas');pc.width=canvas.width;pc.height=sliceH;
       pc.getContext('2d').drawImage(canvas,0,y,canvas.width,sliceH,0,0,canvas.width,sliceH);
       if(!first)pdf.addPage();first=false;
-      pdf.addImage(window.ASSETS.header,'PNG',M,M,cw,headerH);
+      apAddHdr(pdf,M,cw,headerH);
       pdf.addImage(pc.toDataURL('image/jpeg',0.92),'JPEG',M,M+headerH+12,cw,sliceH*cw/canvas.width);
       y+=sliceH;
     }
@@ -11427,6 +11637,8 @@ const AP_GUIDE={
  ]},
  admin:{t:'دليل المدير',s:[
   ['🏠 لوحة التحكم','أرقام المشروع كاملة. كل كارت بيفتح الشاشة اللى وراه.'],
+  ['🟢 تعديل الوحدات المتاحة','لو الحفظ اتوقف، بيظهر صندوق جوّه الشاشة بكل الأخطاء، وجنب كل خطأ زرار «↪️ روح للصف» بينزّلك على الصف الغلطان ويلوّنه بالأحمر — حتى لو كان مخفى بفلتر، الفلتر بيتشال لوحده. قبل كده كانت القايمة بتروح لمعاينة الطباعة ولو اتقفلت ما كنتش تعرف الخطأ إيه.'],
+  ['📷 مشاركة العرض كصورة','فى «بوابة عرض وحدة» بقى فيه زرار أخضر «📷 صورة» تحت جنب زرار الـPDF. بيطلّع صورتين: العرض كامل (بيانات الوحدة وجدول السداد) والمخطط، ويبعتهم مع بعض. الصورة بتظهر فى الواتساب على طول من غير ما العميل ينزّلها، وحجمها حوالى ربع ميجا بدل ملف الـPDF اللى كان ٢ ميجا وبيهنّج الواتساب. زرار الـPDF زى ما هو لمين يحتاجه.'],
   ['📡 صفحة الإصلاح — reset.html','لو جهاز أى حد وقف عن فتح النظام أو ظهرت صفحة خطأ، يفتح aqua-pearl-erp.pages.dev/reset.html ويدوس «ابدأ الإصلاح»: بتلغى مدير التخزين وتمسح نسخ الملفات المحفوظة بس، من غير ما تلمس أى بيانات ولا المرفقات ولا تسجيل الدخول، وبعدين بتفتح النظام لوحدها. ومن v61.55 ملف النظام بقى محفوظ فى مخزن ثابت مستقل عن رقم النسخة، فما بقاش فيه لحظة بين نسخة وجديدة يكون الجهاز فيها من غير نسخة محفوظة.'],
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
@@ -14628,7 +14840,7 @@ async function shareReceiptPdf(paymentId){
     const pdf=new jsPDF({unit:'pt',format:'a4'});
     const W=pdf.internal.pageSize.getWidth(),H=pdf.internal.pageSize.getHeight(),M=24;
     const headerH=(W-2*M)*185/1800, cw=W-2*M;
-    pdf.addImage(window.ASSETS.header,'PNG',M,M,cw,headerH);
+    apAddHdr(pdf,M,cw,headerH);
     let ch=cw*canvas.height/canvas.width;
     const maxH=H-2*M-headerH-12;
     if(ch>maxH)ch=maxH;
@@ -16674,7 +16886,7 @@ async function uvBuildPdf(u){
   /* --- صفحة 1: بورتريه — بيانات الوحدة + التشطيب + الدفع --- */
   let W=pdf.internal.pageSize.getWidth(), H=pdf.internal.pageSize.getHeight();
   let headerH=(W-2*M)*185/1800;
-  pdf.addImage(window.ASSETS.header,'PNG',M,M,W-2*M,headerH);
+  apAddHdr(pdf,M,W-2*M,headerH);
   const cards=Array.prototype.slice.call(document.querySelectorAll('#uvBody > .card'))
     .filter(c=>!c.classList.contains('uvplanpg'));
   const p1='<h2 style="color:#0b2a4a;text-align:center;margin:2px 0 10px;font-size:22px">عرض وحدة — '
@@ -16691,7 +16903,7 @@ async function uvBuildPdf(u){
     pdf.addPage('a4','landscape');
     W=pdf.internal.pageSize.getWidth(); H=pdf.internal.pageSize.getHeight();
     headerH=(W-2*M)*185/1800;
-    pdf.addImage(window.ASSETS.header,'PNG',M,M,W-2*M,headerH);
+    apAddHdr(pdf,M,W-2*M,headerH);
     const img=new Image(); img.src=window.PLAN_IMGS[pm.pdf+'_'+pm.page];
     await new Promise(r=>{ if(img.complete) r(); else { img.onload=r; img.onerror=r; } });
     const availW=W-2*M, availH=H-2*M-headerH-24;
