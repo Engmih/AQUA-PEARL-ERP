@@ -4862,7 +4862,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.68';
+const APP_VER  = 'v61.70';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -6155,6 +6155,56 @@ function shareFabClick(){
 }
 
 /* ---------- Print metadata (footer timestamp) ---------- */
+/* =====================================================================
+   v61.69 — اسم ملف الـPDF
+   لما تطبع من المتصفح وتختار «Save as PDF»، اسم الملف المقترح بيتاخد من
+   عنوان الصفحة. هنا بنغيّر العنوان لحظة الطباعة لاسم معبّر، وبنرجّعه بعدها.
+   أى شاشة ما اتحددش ليها اسم بتاخد اسمها من عنوان الشاشة + تاريخ اليوم،
+   فمفيش طباعة بتطلع باسم عام.
+   ===================================================================== */
+function apSafeName(t){
+  return String(t||'')
+    .replace(/[\\\/:*?"<>|\u0000-\u001f]/g,' ')   /* ممنوعة فى أسماء الملفات */
+    .replace(/\s+/g,' ').trim().slice(0,110) || 'Aqua Pearl';
+}
+/* تاريخ باسم ملف: 04-11-2026 */
+function apFileDate(iso){
+  const a=String(iso||todayISO()).split('-');
+  return a.length===3 ? a[2]+'-'+a[1]+'-'+a[0] : apSafeName(iso);
+}
+/* عنوان الشاشة المعروضة، من غير الملاحظات الرمادية اللى جنبه */
+function apScreenName(){
+  try{
+    const sc=document.getElementById('scr-'+currentScreen)||document;
+    const h=sc.querySelector('.screen-title');
+    if(!h) return '';
+    const c=h.cloneNode(true);
+    c.querySelectorAll('.gray-note,.no-print,button,.btn').forEach(x=>x.remove());
+    /* بنشيل الإيموچى من أول العنوان — أسماء الملفات تبقى نضيفة */
+    return (c.textContent||'')
+      .replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}]/gu,' ')
+      .replace(/\s+/g,' ').trim();
+  }catch(e){ return ''; }
+}
+/* بيحطّ الاسم، يطبع، وبعدين يرجّع العنوان الأصلى مهما حصل */
+function apPrintAs(name,before,after){
+  const prev=document.title;
+  try{ document.title=apSafeName(name); }catch(e){}
+  let done=false;
+  const restore=function(){
+    if(done) return; done=true;
+    try{ document.title=prev; }catch(e){}
+    try{ window.removeEventListener('afterprint',restore); }catch(e){}
+    if(typeof after==='function') after();
+  };
+  try{ window.addEventListener('afterprint',restore); }catch(e){}
+  if(typeof before==='function') before();
+  setTimeout(function(){
+    try{ window.print(); }catch(e){}
+    setTimeout(restore,800);          /* شبكة أمان لو afterprint ما اشتغلش */
+  },120);
+}
+
 function setPrintMeta(){
   const d=new Date();
   const ts='Printed: '+d.toLocaleDateString('en-GB')+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
@@ -8193,7 +8243,7 @@ function uvRenderUnit(){
   }catch(e){}
   box.innerHTML=`
   <div class="toolbar no-print">
-    <button class="btn ghost" onclick="printScreen()">🖨️ طباعة عرض الوحدة (صفحتان: البيانات + المخطط)</button>
+    <button class="btn ghost" onclick="printScreen('عرض وحدة ${esc(planCode(u))} — ${apFileDate(todayISO())}')">🖨️ طباعة عرض الوحدة (صفحتان: البيانات + المخطط)</button>
     <button class="btn green" onclick="uvWhatsApp()" title="تجهيز ملف PDF للوحدة وإرساله على واتساب">📲 إرسال واتساب</button>
     <button class="btn aqua" onclick="apCalcOpen()" title="حاسبة أقساط — أداة مساعدة لا تغيّر أى بيانات">🧮 حاسبة الأقساط</button>
     <button class="btn green" onclick="uvPreview()" title="معاينة الصفحتين بمقاس A4 — للتصوير أو المشاركة">📷 معاينة</button>
@@ -8487,7 +8537,7 @@ function renderSalesForm(){
   </div>
   <div class="toolbar no-print">
     <button class="btn green" onclick="registerSale()">✅ تسجيل البيع وإنشاء ملف العميل</button>
-    <button class="btn ghost" onclick="setPrintMeta();window.print()">🖨️ طباعة</button>
+    <button class="btn ghost" onclick="printScreen()">🖨️ طباعة</button>
   </div>`;
   ['sMode','sYears','sDown'].forEach(id=>$('#'+id).addEventListener('input',slRecalc));
   $('#sFirst').addEventListener('change',slRecalc);
@@ -9406,13 +9456,11 @@ function latePDF(){
   closeModal('lateModal');
   area.innerHTML=lateNoticeHTML(sale);
   setPrintMeta();
-  const prev=document.title;
-  try{document.title=String(u.unitNo||'unit');}catch(e){}
-  document.body.classList.add('print-receipt');
-  setTimeout(()=>{
-    window.print();
-    setTimeout(()=>{document.body.classList.remove('print-receipt');try{document.title=prev;}catch(e){}},500);
-  },140);
+  const un=[u.building,u.unitNo].filter(Boolean).join('-')||sale.contractNo||'';
+  apPrintAs(LATE_KINDS[LATE_KINDS[lateKind]?lateKind:'fine'].doc+' — '+sale.customer.name+
+            ' — '+un+' — '+apFileDate(todayISO()),
+    function(){ document.body.classList.add('print-receipt'); },
+    function(){ document.body.classList.remove('print-receipt'); });
 }
 function lateSendWA(){
   const sale=saleById(lateSaleId);if(!sale)return;
@@ -10099,7 +10147,7 @@ function renderCustomerFile(saleId){
     <button class="btn ghost" onclick="cfEnterEdit()">✏️ تعديل البيانات</button>
     <button class="btn ghost" onclick="openAttachModal({saleId:'${s.id}'})">📎 إضافة مرفقات</button>
     <button class="btn ghost" onclick="nav('attach','${s.id}')">🗂️ عرض المرفقات</button>
-    <button class="btn ghost" onclick="printScreen()">🖨️ طباعة الملف</button>
+    <button class="btn ghost" onclick="printScreen('ملف العميل — ${esc(s.customer.name)} — ${apFileDate(todayISO())}')">🖨️ طباعة الملف</button>
     <button class="btn gold" onclick="apInvGen('${s.id}')" title="كود تفعيل لمرة واحدة يسجّل به العميل بنفسه">🎟️ كود تفعيل</button>
     ${(function(){const n=apInviteCount(s);
       return '<span class="invWrap">'+
@@ -12250,6 +12298,8 @@ const AP_GUIDE={
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
   ['👥 قاعدة العملاء — فلتر «مدين أكثر من شهر»','فى عمود «الحالة» فى قاعدة العملاء فيه فلتر فيه: منتظم · مدين · مدين أكثر من شهر · دائن. «مدين أكثر من شهر» بيطلّعلك العملاء اللى عليهم متأخرات وعدّى على أقدم قسط لسه عليه فلوس شهر تقويمى كامل (قسط مستحق ٥/١٠ يدخل الفلتر من ٦/١١). القسط اللى اتسدّد جزئى بيتحسب متأخر برضه زى ما البند التالت فى العقد بيقول. والعميل الكاش بيتحسب من تاريخ العقد. الفلتر ده بيشتغل مع فلاتر العمارة والنظام والبحث مع بعض، وعدّاد النتائج بيتحدّث، و«🖨️ طباعة» بتطبع المعروض بس — فتقدر تطبع كشف المتأخرات على طول.'],
+  ['📎 مرفقات ملف الشريك باللصق','فى «💸 دفعات الأرباح المصروفة» و«📎 مرفقات الشريك» بقى فيه نفس مربع المرفقات اللى فى ملف العميل: تضغط جوّه المربع وتعمل Ctrl+V فالسكرين شوت بيترفع على طول من غير ما تحفظه كملف، أو تسحب الملف وتفلته، أو تضغط وتختار ملفات. وبتشوف معاينة مصغّرة لكل مرفق قبل ما تحفظ وتقدر تشيل أى واحد. الصور بتتضغط تلقائيًا والمرفقات بتتخزّن فى IndexedDB زى باقى النظام، وبعد الحفظ المربع بيفضى لوحده.'],
+  ['🖨️ اسم ملف الـPDF','أى طباعة من البرنامج بقى ليها اسم ملف معبّر لما تختار «Save as PDF» — مش «Aqua Pearl ERP» العام. الإيصال بيطلع باسم: نوع الإيصال + رقم الوحدة + تاريخ الدفعة + رقم الإيصال (مثلاً «إيصال تحصيل B08-102 — 01-07-2025 — TRM-000001»)، فكل إيصال اسمه فريد حتى لو العميل دفع مرتين فى نفس اليوم. وكشف الشريك: «كشف حساب — اسم الشريك — تاريخ اليوم». وملف العميل: «ملف العميل — اسم العميل — التاريخ». وعرض الوحدة: «عرض وحدة <كود الوحدة> — التاريخ». وإنذار المتأخرات: نوع الإخطار + اسم العميل + الوحدة + التاريخ. وأى شاشة تانية بتاخد اسمها من عنوانها + التاريخ تلقائيًا، وفى بوابة العميل بيتضاف رقم وحدته وفى بوابة الشريك اسمه. الحروف الممنوعة فى أسماء الملفات بتتشال لوحدها، والعنوان بيرجع لأصله بعد الطباعة على طول.'],
   ['⚠️ إنذار المتأخرات — تلات صيغ','الزرار الأحمر جنب العميل المدين فى قاعدة العملاء. عليه عدّاد بعدد شهور التأخير (شهور أقدم قسط لسه عليه فلوس) — نفس الرقم اللى فى عمود «شهور كاملة» فى الجدول جوّه، فمستحيل الرقمين يختلفوا، والعدّاد مابيظهرش فى الطباعة. جوّه النافذة فيه قايمة «نوع الإخطار»: «إنذار بالغرامة» (الافتراضى، الرسالة القديمة زى ما هى) · «إنذار بالفسخ» (بيديله مهلة لآخر يوم فى الشهر الجارى — النظام بيحسبها لوحده وتقدر تعدّلها — ويقوله هيتفسخ وتتطرح الوحدة للبيع ويترد المدفوع ناقص الغرامات طبقًا للبند العاشر) · «إعلام بالفسخ» (بيتبعت بعد الفسخ، وفيه تسوية مالية: المقدم والأقساط والوديعة ناقص الغرامات = الصافى اللى يترد بعد إعادة بيع الوحدة، وبيطلب التوجه للشركة لتوقيع عقد الفسخ وتسليم أصل العقد). النص والعنوان وملف الـPDF بيتغيروا مع اختيارك، والنص قابل للتعديل قبل الإرسال. مهم: التلاتة رسايل وبس — النظام مابياخدش أى إجراء لوحده، والفسخ الفعلى بيتعمل من «↩️ فسخ بيع الوحدة».'],
   ['👥 صلاحيات الموظفين','قاعدة العملاء وملف العميل مقفولين على المدير وحده — مش بينفع تتمنح لموظف حتى بالخطأ.'],
   ['👥 المستخدمون','تضيف موظف أو عميل أو شريك. لو السحابة متصلة الحساب بيتعمل على Firebase تلقائيًا، و«📨 إرسال رابط» بيخلّى المستخدم يحط كلمة سره بنفسه.'],
@@ -14351,16 +14401,34 @@ function printReceipt(paymentId){
   $('#receiptArea').innerHTML=buildReceiptHTML(p);
   renderCodes(p,s,u);
   setPrintMeta();
-  document.body.classList.add('print-receipt');
-  setTimeout(()=>{window.print();setTimeout(()=>document.body.classList.remove('print-receipt'),400);},120);
+  /* اسم الملف: نوع الإيصال + رقم الوحدة + تاريخ الدفعة + رقم الإيصال */
+  const kind=(p.kind==='delivery'?'إيصال دفعة استلام':'إيصال تحصيل');
+  const un=[u.building,u.unitNo].filter(Boolean).join('-')||(s&&s.contractNo)||'';
+  apPrintAs(kind+' '+un+' — '+apFileDate(p.date)+(p.receiptNo?' — '+p.receiptNo:''),
+    function(){ document.body.classList.add('print-receipt'); },
+    function(){ document.body.classList.remove('print-receipt'); });
 }
-function printScreen(){
+function printScreen(name){
   document.body.classList.remove('print-receipt');
   setPrintMeta();
   const uv=(currentScreen==='unitView');
-  if(uv) document.body.classList.add('uvprint');
-  window.print();
-  if(uv) setTimeout(function(){ document.body.classList.remove('uvprint'); },600);
+  /* اسم الملف: اللى اتبعت، وإلا عنوان الشاشة + صاحب الشاشة + تاريخ اليوم */
+  let nm=name;
+  if(!nm){
+    let who='';
+    try{
+      if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER&&AP_PARTNER.name) who=' — '+AP_PARTNER.name;
+      else if(AP_CLIENT){
+        const sl=saleById(cfSaleId)||(DB.sales||[])[0];
+        const un=sl?unitById(sl.unitId):null;
+        if(un) who=' — '+[un.building,un.unitNo].filter(Boolean).join('-');
+      }
+    }catch(e){}
+    nm=(apScreenName()||'Aqua Pearl')+who+' — '+apFileDate(todayISO());
+  }
+  apPrintAs(nm,
+    function(){ if(uv) document.body.classList.add('uvprint'); },
+    function(){ if(uv) document.body.classList.remove('uvprint'); });
 }
 /* ===== v61.18: الطباعة بتنسيق الكمبيوتر دائمًا =====
    ورقة الموبايل صارت screen-only، وهنا نعطّلها كذلك لحظة الطباعة
@@ -16217,7 +16285,7 @@ function renderPartnerFile(id){
     <div class="form-row"><label>ملاحظات</label><input id="poNotes"></div>
    </div>
    <div class="grid g2">
-    <div class="form-row"><label>📎 مرفقات (اختياري — حتى 2MB للملف)</label><input type="file" id="poFiles" multiple></div>
+    <div id="poAttHost"></div>
     <div class="form-row"><label>&nbsp;</label><button class="btn green" onclick="addPayout('${p.id}')">صرف الدفعة</button></div>
    </div>`:''}
    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>المبلغ</th><th>الطريقة</th><th>ملاحظات</th><th>مرفقات</th><th class="no-print"></th></tr></thead><tbody>
@@ -16244,10 +16312,15 @@ function renderPartnerFile(id){
      ${er.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${fmtD(r.date)}</td><td>${fmtM(r.total)}</td><td>${r.pc}٪</td><td><b class="warn-red">${fmtM(r.amount)}</b></td><td class="no-print"><button class="btn sm gold" onclick="nav('expenses','${r.opId}')">📂 فتح</button></td></tr>`).join('')}
      </tbody><tfoot><tr><th colspan="4">الإجمالي المخصوم من رصيده</th><th>${fmtM(c.expShare||0)}</th><th class="no-print"></th></tr></tfoot></table></div></div>`;})()}
   <div class="card"><h3>📎 مرفقات الشريك</h3>
-   ${isAdmin()?`<div class="grid g2"><div class="form-row"><label>إضافة مرفقات</label><input type="file" id="paFiles" multiple></div>
+   ${isAdmin()?`<div class="grid g2"><div id="paAttHost"></div>
    <div class="form-row"><label>&nbsp;</label><button class="btn green" onclick="addPartnerAttach('${p.id}')">رفع</button></div></div>`:''}
    <div>${attachChips(p.attach,isAdmin()?`delPartnerAttach.bind(null,'${p.id}')`:null)}</div>
   </div>`;
+  /* v61.70: مربعات المرفقات — لصق Ctrl+V وسحب وإفلات زى باقى النظام */
+  if(isAdmin()){
+    attMount('poAttHost','pnPo_'+p.id,'مرفقات الدفعة (اختيارى)');
+    attMount('paAttHost','pnAt_'+p.id,'مرفقات الشريك');
+  }
 }
 function savePartnerPcts(id){
   const p=partnerById(id);if(!p)return;
@@ -16267,12 +16340,14 @@ function addPayout(id){
   const p=partnerById(id);if(!p)return;
   const amt=Number($('#poAmt').value);
   if(!amt||amt<=0){toast('أدخل مبلغ الصرف','err');return;}
-  readFilesAsAttach($('#poFiles'),files=>{
-    const rec={id:uid(),amount:amt,date:$('#poDate').value||todayISO(),method:$('#poMethod').value,notes:$('#poNotes').value.trim(),files:[]};
-    p.payouts.push(rec);
-    if(files.length)attOffload(files,'دفعة أرباح — '+p.name,{customer:p.name,date:(rec&&rec.date)||todayISO()}).then(r=>{rec.files=r;save();renderPartnerFile(id);});
-    save();toast('تم صرف دفعة أرباح '+fmtM(amt),'ok');renderPartnerFile(id);
-  });
+  const key='pnPo_'+p.id, files=attGet(key);
+  const rec={id:uid(),amount:amt,date:$('#poDate').value||todayISO(),method:$('#poMethod').value,notes:$('#poNotes').value.trim(),files:[]};
+  p.payouts.push(rec);
+  if(files.length)attOffload(files,'دفعة أرباح — '+p.name,{customer:p.name,date:rec.date||todayISO()})
+    .then(r=>{rec.files=r;save();renderPartnerFile(id);})
+    .catch(e=>toast('تعذر رفع المرفقات: '+e.message,'err'));
+  attClear(key);
+  save();toast('تم صرف دفعة أرباح '+fmtM(amt),'ok');renderPartnerFile(id);
 }
 function delPayout(pid,id){const p=partnerById(pid);if(!p)return;
   adminGuard('حذف دفعة أرباح','سيتم حذف الدفعة نهائيًا وسيتغير رصيد الشريك.','حذف',()=>{
@@ -16289,12 +16364,12 @@ function delDepReturn(pid,id){const p=partnerById(pid);if(!p)return;
   confirmBox('حذف رد ودائع','متأكد؟','حذف',()=>{p.depositReturns=p.depositReturns.filter(x=>x.id!==id);save();renderPartnerFile(pid);},true);}
 function addPartnerAttach(id){
   const p=partnerById(id);if(!p)return;
-  readFilesAsAttach($('#paFiles'),files=>{
-    if(!files.length){toast('اختر ملفات أولًا','err');return;}
-    attOffload(files,'مستند شريك — '+p.name,{customer:p.name,date:todayISO()}).then(refs=>{
-      p.attach=(p.attach||[]).concat(refs);save();toast('تم رفع المرفقات','ok');renderPartnerFile(id);
-    }).catch(e=>toast('تعذر رفع المرفقات: '+e.message,'err'));
-  });
+  const key='pnAt_'+p.id, files=attGet(key);
+  if(!files.length){toast('الصق سكرين شوت أو اختر ملفات أولًا','err');return;}
+  attOffload(files,'مستند شريك — '+p.name,{customer:p.name,date:todayISO()}).then(refs=>{
+    p.attach=(p.attach||[]).concat(refs);attClear(key);save();
+    toast('تم رفع المرفقات','ok');renderPartnerFile(id);
+  }).catch(e=>toast('تعذر رفع المرفقات: '+e.message,'err'));
 }
 function delPartnerAttach(pid,id){const p=partnerById(pid);if(!p)return;
   const a=(p.attach||[]).find(x=>x.id===id);if(a)attDropRef(a);
@@ -16554,7 +16629,7 @@ function viewPartnerStmt(id,type){
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
      <input type="checkbox" id="stmtSign" style="width:auto" onchange="toggleStmtSign(this.checked)"> إضافة سطر توقيع بالاستلام
     </label>
-    <button class="btn gold" style="margin-inline-start:auto" onclick="printScreen()">🖨️ طباعة الكشف</button>
+    <button class="btn gold" style="margin-inline-start:auto" onclick="printScreen('كشف حساب — ${esc(p.name)} — ${apFileDate(todayISO())}')">🖨️ طباعة الكشف</button>
    </div>
    ${stmtCardsApp(c)}
    ${stmtNoticeHTML()}
