@@ -360,6 +360,11 @@ h2.screen-title.apStickT{position:sticky;top:var(--hdrH,0px);z-index:18;
 .apDaily .dV .dLeft{display:inline-block;white-space:nowrap}
 .apDaily .dSide{flex:0 0 auto;text-align:center;font-size:.78rem;opacity:.9;line-height:1.5}
 .apDaily .dSide b{display:block;font-size:.95rem;font-weight:800}
+/* v61.72: سطر المناسبات */
+.apDaily .dOcc{font-size:11.5px;color:#bcd6e6;margin-top:3px;line-height:1.7}
+.apDaily .dOcc b{color:#fff;font-weight:800}
+.apDaily .dLink{background:0;border:0;color:#7fd3ea;font:inherit;font-size:11.5px;
+  text-decoration:underline;cursor:pointer;padding:0}
 .apDaily .dBtn{flex:0 0 auto;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);
   color:#fff;border-radius:9px;padding:5px 11px;font-size:.78rem;font-weight:700;cursor:pointer;
   font-family:inherit;-webkit-tap-highlight-color:transparent}
@@ -709,6 +714,9 @@ body.pvOn #shareFab{display:none!important}
 .pvCompact .field{min-width:0;overflow:hidden}
 .pvCompact .field>div{min-width:0;flex-wrap:wrap;row-gap:0}
 .pvCompact .grid{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
+/* v61.72: شاشة «📊 المبيعات» على الموبايل — عمودين زى الكمبيوتر */
+.dash-wrap.dash-mob{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dash-wrap.dash-mob .dash-col{display:flex;flex-direction:column;gap:10px}
 .pvCompact .grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 /* صف التشطيب الرباعى فى المعاينة: الكارت الأول (اسم الباقة) والأخير
    (معادلة القيمة) نصهم أطول، فبياخدوا عرض أكبر عشان مايتكسروش لسطور */
@@ -4862,7 +4870,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.70';
+const APP_VER  = 'v61.72';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5232,6 +5240,8 @@ function buildTabs(){
   /* v61.54: الموظف زى العميل — شاشاته من التلات نقط، فالشريط الطويل
      مابقاش له لزمة. المدير شاشته زى ما هى بالظبط. */
   if(CURRENT_USER && !CURRENT_USER.admin){ tabs.innerHTML=''; tabs.style.display='none'; return; }
+  /* v61.72: المدير على الموبايل — الشريط الطويل بيتخفى والقايمة من التلات نقط */
+  if(apAdmMobile()){ tabs.innerHTML=''; tabs.style.display='none'; return; }
   tabs.style.display='';
   tabs.innerHTML=SCREENS.filter(([id,lb,hid])=>!hid&&allowed(id)).map(([id,lb])=>`<button data-s="${id}" onclick="nav('${id}')">${lb}</button>`).join('');
 }
@@ -6264,10 +6274,46 @@ function canSeeStats(){
   if(CURRENT_USER.admin) return true;
   return (CURRENT_USER.perms||[]).includes('dashStats');
 }
+/* v61.72: كروت الإحصائيات — نفس كروت لوحة التحكم بالحرف، متقسّمة
+   عمودين زى الكمبيوتر، عشان شاشة «📊 المبيعات» على الموبايل تستخدمها. */
+function apStatsCardsHTML(st,col){
+  if(col==='a') return `
+       <div class="stat" data-k="total" onclick="nav('unitView')"><span class="ic">🏢</span><div><div class="tt">إجمالي الوحدات</div><div class="nm">${fmtN(st.total)}</div></div></div>
+       <div class="stat green" data-k="avail" onclick="auOpen()" title="فتح جدول تعديل الوحدات المتاحة"><span class="ic">🟢</span><div><div class="tt">المتاحة</div><div class="nm">${fmtN(st.avail)}</div></div></div>
+       <div class="stat" data-k="sold" onclick="nav('sold')"><span class="ic">💰</span><div><div class="tt">المباعة${(function(){const g=apGhostUnits().length;return g?'<span class="ghostDot" title="'+fmtN(g)+' وحدة متعلّمة مباعة بلا عملية بيع — اضغط للفحص" onclick="event.stopPropagation();apGhostOpen()">⚠ '+fmtN(g)+'</span>':'';})()}</div><div class="nm">${fmtN(st.sold)}</div></div></div>
+       <div class="stat red" data-k="ret" onclick="nav('returnedScr')"><span class="ic">🔄</span><div><div class="tt">المرتجعة</div><div class="nm">${fmtN(st.ret)}</div></div></div>
+       <div class="stat gold" data-k="salesTotal" onclick="nav('reports')"><span class="ic">💵</span><div><div class="tt">إجمالي المبيعات</div><div class="nm">${fmtM(st.salesTotal)}</div></div></div>`;
+  return `
+       <div class="stat" data-k="collected" onclick="nav('collected')"><span class="ic">💵</span><div><div class="tt">إجمالي المحصل</div><div class="nm">${fmtM(st.collected)}</div></div></div>
+       <div class="stat gold" data-k="remaining" onclick="nav('due')"><span class="ic">⏳</span><div><div class="tt">إجمالي المتبقي</div><div class="nm">${fmtM(st.remaining)}</div></div></div>
+       <div class="stat red" data-k="overdue" onclick="nav('reports')"><span class="ic">⚠️</span><div><div class="tt">عملاء متأخرون</div><div class="nm">${fmtN(st.overdue)}</div></div></div>
+       <div class="stat" data-k="cash" onclick="nav('sold')"><span class="ic">💳</span><div><div class="tt">مبيعات كاش</div><div class="nm">${fmtN(st.cash)}</div></div></div>
+       <div class="stat green" data-k="inst" onclick="nav('sold')"><span class="ic">🗓️</span><div><div class="tt">مبيعات تقسيط</div><div class="nm">${fmtN(st.inst)}</div></div></div>`;
+}
 function renderDashboard(){
   const st=stats();
   const SH=canSeeStats();
-  if(apDotsRole()==='staff'){ try{ apDailyPull(); apDailyTick(); }catch(e){} }   /* v61.54 */
+  const admM=apAdmMobile();
+  if(apDotsRole()==='staff'||admM){ try{ apDailyPull(); apDailyTick(); }catch(e){} }
+  /* v61.72: المدير على الموبايل — الرئيسية زى باقى الحسابات (فيديو +
+     كارت يومى + أخبار وعروض)، والكروت جوّه «📊 المبيعات» من التلات نقط.
+     على الكمبيوتر مفيش أى تغيير. */
+  if(admM){
+    if(AP_ADM_TAB==='stats'){
+      $('#scr-dashboard').innerHTML=`
+       <h2 class="screen-title">📊 المبيعات</h2>
+       <div class="dash-wrap dash-mob">
+         <div class="dash-col">${apStatsCardsHTML(st,'a')}</div>
+         <div class="dash-col">${apStatsCardsHTML(st,'b')}</div>
+       </div>`;
+      try{ apBarMount(); }catch(e){}
+      return;
+    }
+    $('#scr-dashboard').innerHTML=apHomeHTML('لوحة التحكم');
+    try{ apVidBoot(); }catch(e){}
+    try{ apBarMount(); }catch(e){}
+    return;
+  }
   $('#scr-dashboard').innerHTML=`
    <h2 class="screen-title">لوحة التحكم</h2>
    <div class="dash-wrap${SH?'':' dash-nostats'}">
@@ -6653,8 +6699,13 @@ function renderSettings(){
     <p class="gray-note" style="margin:-4px 0 10px">${AP_SIGNUP_ON
       ? '⚠️ التسجيل الذاتى <b>مفتوح</b> — أى حد معاه رابط التطبيق يقدر يبعت طلب. مفيش حد بيشوف أى بيانات قبل موافقتك.'
       : 'التسجيل الذاتى مقفول. افتحه لما تحتاج، واقفله تانى بعد ما تخلص.'}</p>
-    <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th class="no-print"></th></tr></thead><tbody>
+    <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>الاسم</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th title="التقويم القبطى بدل مواقيت الصلاة فى الكارت اليومى">🕊️ تقويم</th><th class="no-print"></th></tr></thead><tbody>
     ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':(u.partner?'<span class="badge ret">شريك</span>':'<span class="badge av">مستخدم</span>'))}</td>
+      <td style="white-space:nowrap">${(function(){
+          if(u.client){ const sl=(DB.sales||[]).find(x=>x.unitId===u.unitId);
+            return sl&&sl.customer&&sl.customer.name?esc(sl.customer.name):'<span class="gray-note">—</span>'; }
+          if(u.partner){ const pr=partnerById(u.partnerId); return pr?esc(pr.name||''):'<span class="gray-note">—</span>'; }
+          return '<span class="gray-note">—</span>'; })()}</td>
       <td style="white-space:nowrap;direction:ltr">${u.email?esc(u.email):'<span class="gray-note">—</span>'}
         <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="setUserMail('${u.id}')" title="تعديل البريد">✉️</button></td>
       <!-- v61.06: مستخدم السحابة كلمة سره فى Firebase لا هنا — فلا نعرض
@@ -6673,6 +6724,10 @@ function renderSettings(){
         :(u.client?(function(){const un=unitById(u.unitId);return '📄 ملفه فقط'+(un?(' — وحدة '+esc(un.unitNo||'')+' '+esc(un.building||'')):'');})()
         :(u.partner?(function(){const pr=partnerById(u.partnerId);return '🤝 حسابه فقط'+(pr?(' — '+esc(pr.name||'')):'');})()
         :((u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—')))}</td>
+      <td style="text-align:center">${u.admin
+        ? '<span class="gray-note" title="المدير بيشوف التقويمين">الكل</span>'
+        : `<input type="checkbox" ${u.copt?'checked':''} onchange="setUserCopt('${u.id}',this.checked)"
+             title="التقويم القبطى بدل مواقيت الصلاة" style="width:17px;height:17px;cursor:pointer">`}</td>
       <td class="no-print">${u.admin?'':`<button class="btn sm ghost" onclick="editUser('${u.id}')" title="تعديل الصلاحيات والبيانات">✏️ تعديل</button>
         <button class="btn sm red" onclick="deleteUser('${u.id}')">🗑️ حذف</button>`}</td></tr>`).join('')}
     </tbody></table>
@@ -7569,6 +7624,16 @@ async function cloudResetUser(id){
 }
 /* v62: إظهار/إخفاء كلمة السر */
 /* v63: تعديل بريد المستخدم (معرّف الدخول السحابى) */
+/* v61.72: علامة التقويم القبطى على حساب المستخدم.
+   بتتحفظ مع بيانات المستخدم، وبتتبعت جوّه نسخة العميل/الشريك عشان
+   الكارت اليومى عنده يقلب للنمط المسيحى. */
+function setUserCopt(id,on){
+  const u=(DB.users||[]).find(x=>x.id===id); if(!u) return;
+  if(on) u.copt=true; else delete u.copt;
+  save();
+  toast(on?'🕊️ '+(u.name||'')+' — التقويم القبطى':'🕌 '+(u.name||'')+' — النمط الإسلامى','ok');
+  try{ if(typeof apPushAccess==='function') apPushAccess(); }catch(e){}
+}
 function setUserMail(id){
   const u=findUser(id); if(!u) return;
   if(!isAdmin()){toast('للمدير فقط 🔒','err');return;}
@@ -10459,6 +10524,7 @@ window.apPartnerMode=apPartnerMode;
 window.apAdoptPartner=function(obj,info){
   try{
     AP_PARTNER=obj;
+    AP_CAL_MODE=(obj&&obj.cal==='copt')?'copt':'isl';
     AP_CLIENT=false;
     AP_PTAB='home';
     try{ document.body.classList.add('ap-client'); }catch(e){}
@@ -12298,6 +12364,10 @@ const AP_GUIDE={
   ['⚡ التحميل المباشر لجهاز معيّن','لو جهاز بيفتح النظام بعد كل نشر على طول (جهازك إنت مثلًا)، تقدر تطفّى التخزين المحلى عليه وحده: افتح aqua-pearl-erp.pages.dev/index.html?nosw=1 مرة واحدة. الجهاز ده هيحمّل النظام من الإنترنت مباشرة كل مرة، فمستحيل يشوف نسخة قديمة ولا صفحة خطأ. الثمن إنه بيستنى ثانية أو اتنين فى التحميل ومابيشتغلش من غير نت. للرجوع: نفس الرابط بـ nosw=0. المفتاح على الجهاز ده وحده — باقى الناس مايتأثروش، وبياناتك مابتتلمسش.'],
   ['⬆️ التحديث','لما ننزّل نسخة جديدة، النظام بيجيبها لوحده وبيركّبها من غير ما تعمل حاجة — بتلاقى رسالة صغيرة «اتحدّث للنسخة الجديدة ✔». ولو كنت بتكتب أو فاتح نافذة ساعتها، مابيقاطعكش: بيستنى ويطلّعلك شريط تحت فيه زرار «حدّث دلوقتى» تدوس عليه وقت ما تحب.'],
   ['👥 قاعدة العملاء — فلتر «مدين أكثر من شهر»','فى عمود «الحالة» فى قاعدة العملاء فيه فلتر فيه: منتظم · مدين · مدين أكثر من شهر · دائن. «مدين أكثر من شهر» بيطلّعلك العملاء اللى عليهم متأخرات وعدّى على أقدم قسط لسه عليه فلوس شهر تقويمى كامل (قسط مستحق ٥/١٠ يدخل الفلتر من ٦/١١). القسط اللى اتسدّد جزئى بيتحسب متأخر برضه زى ما البند التالت فى العقد بيقول. والعميل الكاش بيتحسب من تاريخ العقد. الفلتر ده بيشتغل مع فلاتر العمارة والنظام والبحث مع بعض، وعدّاد النتائج بيتحدّث، و«🖨️ طباعة» بتطبع المعروض بس — فتقدر تطبع كشف المتأخرات على طول.'],
+  ['📅 الكارت اليومى — نمطين','الكارت اليومى بيشتغل بنمطين، والافتراضى الإسلامى. النمط الإسلامى: الطقس · مواقيت الصلاة والتاريخ الهجرى · المناسبات الإسلامية والإجازات الرسمية · الدولار والذهب. والنمط المسيحى: الطقس · التاريخ القبطى والأعياد والأصوام المسيحية ومعاها الأعياد الإسلامية والإجازات الرسمية · الدولار والذهب، من غير مواقيت الصلاة. مفيش أى إعدادات للكارت عند الساكن ومفيش أى سؤال عن ديانة فى النظام — الاختيار من عندك إنت.'],
+  ['🕊️ عمود «تقويم» فى جدول المستخدمين','فى ⚙️ الإعدادات ← المستخدمين فيه عمود «🕊️ تقويم» فيه مربع اختيار لكل حساب (عميل أو موظف أو شريك). تعلّم عليه → الكارت اليومى عند الشخص ده يقلب للنمط المسيحى. حسابك إنت كمدير مكتوب جنبه «الكل» لأنك بتشوف التقويمين مع بعض. والعلامة بتتبعت جوّه نسخة العميل أو الشريك أول ما تحفظ، فبتتفعّل عنده من غير ما يعمل حاجة. وفى نفس الجدول عمود «الاسم» بيوريك اسم العميل أو الشريك الحقيقى جنب اسم المستخدم.'],
+  ['🗓️ المناسبات','زرار «كل المناسبات» فى الكارت بيفتح قايمة بالجاى: 🕊️ قبطية · 🕌 إسلامية · 🇪🇬 إجازة رسمية. القبطية فيها الميلاد المجيد والختان والغطاس وقانا الجليل والبشارة وأحد الشعانين وخميس العهد والجمعة العظيمة وعيد القيامة والصعود والعنصرة والنيروز والصليب والتجلى وصعود العذراء ودخول المسيح أرض مصر، والأصوام الستة (الكبير · الميلاد · الرسل · العذراء · نينوى · الأربعاء والجمعة). والإسلامية: رمضان والفطر والأضحى وعرفة وعاشوراء ورأس السنة الهجرية والمولد والإسراء والمعراج والنصف من شعبان وليلة القدر. والرسمية: ٧ و٢٥ يناير وشم النسيم وتحرير سيناء وعيد العمال و٣٠ يونيو و٢٣ يوليو و٦ أكتوبر. كله محسوب على الجهاز فبيشتغل من غير نت — القبطى بالتقويم القبطى وعيد القيامة الأرثوذكسى، والهجرى بالجدول الحسابى وبيتعاير على التاريخ الرسمى لما الإنترنت يشتغل. ⚠️ للاسترشاد: المرجع تقويم الكنيسة المعتمد والإعلان الرسمى لرؤية الهلال.'],
+  ['📱 المدير على الموبايل','لما تفتح البرنامج من موبايلك بحساب المدير، الرئيسية بتبقى زى باقى الحسابات: فيديو المشروع + الكارت اليومى + الأخبار والعروض. وشريط التبويبات الطويل بيتخفى ومكانه زرار ⋯ فيه كل الشاشات، ومعاها «👤 حسابى» (كلمة السر والبصمة والموسيقى وشكل الموبايل) و«📊 المبيعات» اللى فيها كروت لوحة التحكم العشرة بنفس خصائصها. على الكمبيوتر مفيش أى تغيير خالص — الشريط والكروت زى ما هم بالظبط. الشرط إن العرض أقل من ٨٢٠ بكسل والجهاز شاشته لمس، فتصغير نافذة المتصفح على الكمبيوتر مابيغيّرش حاجة. ولو حبيت تتحكم بإيدك فيه خيار «📱 شكل الموبايل» فى «حسابى»: تلقائى / دايمًا / أبدًا.'],
   ['📎 مرفقات ملف الشريك باللصق','فى «💸 دفعات الأرباح المصروفة» و«📎 مرفقات الشريك» بقى فيه نفس مربع المرفقات اللى فى ملف العميل: تضغط جوّه المربع وتعمل Ctrl+V فالسكرين شوت بيترفع على طول من غير ما تحفظه كملف، أو تسحب الملف وتفلته، أو تضغط وتختار ملفات. وبتشوف معاينة مصغّرة لكل مرفق قبل ما تحفظ وتقدر تشيل أى واحد. الصور بتتضغط تلقائيًا والمرفقات بتتخزّن فى IndexedDB زى باقى النظام، وبعد الحفظ المربع بيفضى لوحده.'],
   ['🖨️ اسم ملف الـPDF','أى طباعة من البرنامج بقى ليها اسم ملف معبّر لما تختار «Save as PDF» — مش «Aqua Pearl ERP» العام. الإيصال بيطلع باسم: نوع الإيصال + رقم الوحدة + تاريخ الدفعة + رقم الإيصال (مثلاً «إيصال تحصيل B08-102 — 01-07-2025 — TRM-000001»)، فكل إيصال اسمه فريد حتى لو العميل دفع مرتين فى نفس اليوم. وكشف الشريك: «كشف حساب — اسم الشريك — تاريخ اليوم». وملف العميل: «ملف العميل — اسم العميل — التاريخ». وعرض الوحدة: «عرض وحدة <كود الوحدة> — التاريخ». وإنذار المتأخرات: نوع الإخطار + اسم العميل + الوحدة + التاريخ. وأى شاشة تانية بتاخد اسمها من عنوانها + التاريخ تلقائيًا، وفى بوابة العميل بيتضاف رقم وحدته وفى بوابة الشريك اسمه. الحروف الممنوعة فى أسماء الملفات بتتشال لوحدها، والعنوان بيرجع لأصله بعد الطباعة على طول.'],
   ['⚠️ إنذار المتأخرات — تلات صيغ','الزرار الأحمر جنب العميل المدين فى قاعدة العملاء. عليه عدّاد بعدد شهور التأخير (شهور أقدم قسط لسه عليه فلوس) — نفس الرقم اللى فى عمود «شهور كاملة» فى الجدول جوّه، فمستحيل الرقمين يختلفوا، والعدّاد مابيظهرش فى الطباعة. جوّه النافذة فيه قايمة «نوع الإخطار»: «إنذار بالغرامة» (الافتراضى، الرسالة القديمة زى ما هى) · «إنذار بالفسخ» (بيديله مهلة لآخر يوم فى الشهر الجارى — النظام بيحسبها لوحده وتقدر تعدّلها — ويقوله هيتفسخ وتتطرح الوحدة للبيع ويترد المدفوع ناقص الغرامات طبقًا للبند العاشر) · «إعلام بالفسخ» (بيتبعت بعد الفسخ، وفيه تسوية مالية: المقدم والأقساط والوديعة ناقص الغرامات = الصافى اللى يترد بعد إعادة بيع الوحدة، وبيطلب التوجه للشركة لتوقيع عقد الفسخ وتسليم أصل العقد). النص والعنوان وملف الـPDF بيتغيروا مع اختيارك، والنص قابل للتعديل قبل الإرسال. مهم: التلاتة رسايل وبس — النظام مابياخدش أى إجراء لوحده، والفسخ الفعلى بيتعمل من «↩️ فسخ بيع الوحدة».'],
@@ -12731,12 +12801,57 @@ function apSvcPanelList(){
   if(typeof apPartnerMode==='function'&&apPartnerMode()&&typeof AP_PARTNER_MENU!=='undefined')
     return AP_PARTNER_MENU;
   if(apIsClientSession()) return AP_CLIENT_MENU;
+  /* v61.72: المدير على الموبايل — نفس الفكرة، مع «حسابى» و«المبيعات» */
+  if(apAdmMobile()){
+    return [['cog','حسابى','#4a5560',"apUserSettings()"],
+            ['union','المبيعات','#1195b2',"apAdmGo('stats')"]]
+      .concat(SCREENS.filter(x=>!x[2]&&allowed(x[0]))
+        .map(function(x){ const m=AP_STAFF_IC[x[0]]||['doc','#2f5675'];
+          const lb=(x[0]==='settings')?'إعدادات البرنامج':x[1].replace(/^[^\s]+\s/,'');
+          return [m[0],lb,m[1],(x[0]==='dashboard')?"apAdmGo('home')":"nav('"+x[0]+"')"]; }));
+  }
   /* v61.54: الموظف — شاشاته المسموح له بيها جوّه القائمة زى العميل،
      والإعدادات الشخصية معاها (كلمة السر والبصمة). */
   return [['cog','الإعدادات','#4a5560',"apUserSettings()"]].concat(
     SCREENS.filter(x=>!x[2]&&allowed(x[0]))
       .map(x=>{ const m=AP_STAFF_IC[x[0]]||['doc','#2f5675'];
         return [m[0], x[1].replace(/^[^\s]+\s/,''), m[1], "nav('"+x[0]+"')"]; }));
+}
+/* =====================================================================
+   v61.72 — شكل الموبايل للمدير
+   الكمبيوتر مايتلمسش: الشرط عرض أقل من ٨٢٠ **و** الجهاز شاشته لمس،
+   فلو صغّرت نافذة المتصفح على الكمبيوتر الشكل مايتغيّرش. ولو حصل أى
+   لخبطة، فيه خيار يدوى فى «👤 حسابى».
+   ===================================================================== */
+const AP_MFORM_KEY='apAdmMobileForm';
+function apTouchDevice(){
+  try{
+    if((navigator.maxTouchPoints||0)>0 && window.matchMedia &&
+        window.matchMedia('(pointer:coarse)').matches) return true;
+    return /Android|iPhone|iPad|iPod|Mobile|Silk|Opera Mini/i.test(navigator.userAgent||'');
+  }catch(e){ return false; }
+}
+function apAdmForm(){ try{ return localStorage.getItem(AP_MFORM_KEY)||'auto'; }catch(e){ return 'auto'; } }
+function apAdmFormSet(v){
+  try{ localStorage.setItem(AP_MFORM_KEY,v); }catch(e){}
+  AP_ADM_TAB='home';
+  try{ buildTabs(); nav('dashboard'); }catch(e){}
+  try{ closeModal('apUsModal'); }catch(e){}
+  toast(v==='on'?'شكل الموبايل: دايمًا':(v==='off'?'شكل الموبايل: أبدًا':'شكل الموبايل: تلقائى'),'ok');
+}
+function apAdmMobile(){
+  try{
+    if(!(CURRENT_USER&&CURRENT_USER.admin)) return false;
+    const f=apAdmForm();
+    if(f==='on')  return true;
+    if(f==='off') return false;
+    return window.innerWidth<820 && apTouchDevice();
+  }catch(e){ return false; }
+}
+let AP_ADM_TAB='home';          /* 'home' أو 'stats' */
+function apAdmGo(t){
+  AP_ADM_TAB=(t==='stats')?'stats':'home';
+  try{ nav('dashboard'); }catch(e){}
 }
 function apDotsRole(){
   if(apIsClientSession()) return 'client';
@@ -12746,7 +12861,8 @@ function apDotsRole(){
   return '';
 }
 /* القائمة والشريط للعميل والشريك والموظف — المدير شاشته زى ما هى */
-function apDotsOn(){ const r=apDotsRole(); return r==='client'||r==='partner'||r==='staff'; }
+function apDotsOn(){ const r=apDotsRole();
+  return r==='client'||r==='partner'||r==='staff'||(r==='admin'&&apAdmMobile()); }
 function apSvcPanelHTML(){
   return apSvcPanelList().map(it=>
     '<button type="button" class="svcRow" onclick="apSvcClose();'+it[3]+'">'+
@@ -12870,7 +12986,7 @@ const AP_WMO={0:['☀️','صحو'],1:['🌤️','صحو غالبًا'],2:['⛅'
   95:['⛈️','رعد'],96:['⛈️','رعد وبَرَد'],99:['⛈️','رعد وبَرَد']};
 const AP_PRAYERS=[['Fajr','الفجر'],['Sunrise','الشروق'],['Dhuhr','الظهر'],
                   ['Asr','العصر'],['Maghrib','المغرب'],['Isha','العشاء']];
-let AP_DAILY={pray:null,prayDate:'',prayOff:null,hijri:'',wx:null,wxAt:0,money:null};
+let AP_DAILY={pray:null,prayDate:'',prayOff:null,hijri:'',hijriYMD:null,wx:null,wxAt:0,money:null};
 /* v61.61: فرق التوقيت عن جرينتش بالدقايق. مصر بتغيّر التوقيت مرتين فى
    السنة، والمواقيت كانت بتتجاب مرة واحدة فى اليوم وتتخزّن — فلما الساعة
    بترجع ساعة بالليل تفضل المواقيت زيادة ساعة لحد بكرة الصبح.
@@ -12924,7 +13040,9 @@ async function apDailyPull(force){
         if(d&&d.timings){
           AP_DAILY.pray=d.timings; AP_DAILY.prayDate=t; AP_DAILY.prayOff=apTzOff();
           try{ const h=d.date&&d.date.hijri;
-            AP_DAILY.hijri=h?(h.day+' '+(h.month&&(h.month.ar||h.month.en))+' '+h.year+' هـ'):''; }catch(e){}
+            AP_DAILY.hijri=h?(h.day+' '+(h.month&&(h.month.ar||h.month.en))+' '+h.year+' هـ'):'';
+            if(h) AP_DAILY.hijriYMD={y:Number(h.year),m:Number(h.month&&h.month.number),d:Number(h.day)};
+            apHijCalibrate(); }catch(e){}
         }
       }).catch(()=>{}));
   }
@@ -13037,15 +13155,254 @@ function apMoneyNow(){
     at:  m.at||a.date||''
   };
 }
+/* =====================================================================
+   v61.71 — التقويمات والمناسبات
+   كله محسوب على الجهاز بخوارزميات معروفة، فبيشتغل من غير نت:
+   • التقويم القبطى (عصر الشهداء) وأعياده الثابتة.
+   • عيد القيامة الأرثوذكسى بحساب الفصح اليوليانى، وكل الأعياد
+     والأصوام المتغيّرة متولّدة منه.
+   • التقويم الهجرى بالجدول الحسابى — تقريبى لأن الشهور بالرؤية،
+     ولو الإنترنت جاب التاريخ الهجرى الرسمى بنعاير عليه.
+   ⚠️ القوايم دى لازم تتراجع على تقويم كنسى معتمد قبل الاعتماد عليها.
+   ===================================================================== */
+function apG2J(y,m,d){const a=Math.floor((14-m)/12),y2=y+4800-a,m2=m+12*a-3;
+  return d+Math.floor((153*m2+2)/5)+365*y2+Math.floor(y2/4)-Math.floor(y2/100)+Math.floor(y2/400)-32045;}
+function apJ2G(j){let a=j+32044,b=Math.floor((4*a+3)/146097),c=a-Math.floor(146097*b/4);
+  let d=Math.floor((4*c+3)/1461),e=c-Math.floor(1461*d/4),m=Math.floor((5*e+2)/153);
+  const y=100*b+d-4800+Math.floor(m/10), mo=m+3-12*Math.floor(m/10), da=e-Math.floor((153*m+2)/5)+1;
+  return y+'-'+String(mo).padStart(2,'0')+'-'+String(da).padStart(2,'0');}
+function apJ(iso){const a=String(iso||todayISO()).split('-').map(Number);return apG2J(a[0],a[1],a[2]);}
+function apShift(iso,n){return apJ2G(apJ(iso)+n);}
+function apDaysBetween(a,b){return apJ(b)-apJ(a);}
+
+/* ---------- التقويم القبطى ---------- */
+const AP_COPT_M=['توت','بابه','هاتور','كيهك','طوبة','أمشير','برمهات','برمودة',
+                 'بشنس','بؤونة','أبيب','مسرى','النسىء'];
+function apCopt(iso){
+  const t=apJ(iso)-1824665;
+  const y=Math.floor((4*t+3)/1461);
+  const doy=t-Math.floor(1461*y/4);
+  const m=Math.floor(doy/30)+1, d=doy-30*(m-1)+1;
+  return {y:y,m:m,d:d,name:AP_COPT_M[m-1]||''};
+}
+function apCopt2G(y,m,d){ return apJ2G(Math.floor(1461*y/4)+30*(m-1)+d-1+1824665); }
+function apCoptStr(iso){const c=apCopt(iso);return c.d+' '+c.name+' '+c.y+' ش';}
+/* عيد القيامة الأرثوذكسى (يوليانى + ١٣ يوم) */
+function apOrthEaster(y){
+  const a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7;
+  const mm=Math.floor((d+e+114)/31), dd=((d+e+114)%31)+1;
+  return apJ2G(apG2J(y,mm,dd)+13);
+}
+/* كل مناسبات سنة ميلادية — أعياد وأصوام */
+function apCoptYear(gy){
+  const E=apOrthEaster(gy), O=[];
+  const add=(date,name,kind)=>O.push({date:date,name:name,kind:kind||'feast'});
+  /* المتغيّرة */
+  add(apShift(E,-69),'صوم نينوى','fast');
+  add(apShift(E,-55),'بداية الصوم الكبير','fast');
+  add(apShift(E,-7),'أحد الشعانين');
+  add(apShift(E,-3),'خميس العهد');
+  add(apShift(E,-2),'الجمعة العظيمة');
+  add(E,'عيد القيامة المجيد','big');
+  add(apShift(E,1),'شم النسيم');
+  add(apShift(E,39),'عيد الصعود');
+  add(apShift(E,49),'عيد العنصرة');
+  add(apShift(E,50),'بداية صوم الرسل','fast');
+  /* الثابتة — السنة الميلادية بتقع على سنتين قبطيتين، فبنولّد الاتنين
+     كاملين وبنفلتر اللى واقع فى السنة الميلادية دى */
+  const cy=apCopt(gy+'-07-01').y;
+  const FIX=[[1,1,'عيد النيروز — رأس السنة القبطية','big'],
+             [1,17,'عيد الصليب'],
+             [3,16,'بداية صوم الميلاد','fast'],
+             [4,29,'عيد الميلاد المجيد','big'],
+             [5,6,'عيد الختان'],
+             [5,11,'عيد الغطاس','big'],
+             [5,13,'عرس قانا الجليل'],
+             [7,29,'عيد البشارة'],
+             [9,24,'دخول المسيح أرض مصر'],
+             [11,5,'عيد الرسل'],
+             [12,1,'بداية صوم العذراء','fast'],
+             [12,13,'عيد التجلى'],
+             [12,16,'عيد صعود العذراء']];
+  [cy,cy+1].forEach(function(Y){
+    FIX.forEach(function(r){
+      const g=apCopt2G(Y,r[0],r[1]);
+      if(g.slice(0,4)===String(gy)) add(g,r[2],r[3]);
+    });
+  });
+  return O.sort((a,b)=>a.date<b.date?-1:1);
+}
+/* صيام النهاردة؟ */
+function apCoptFastToday(iso){
+  const gy=Number(String(iso).slice(0,4));
+  const E=apOrthEaster(gy), c=apCopt(iso);
+  const inR=(a,b)=>iso>=a&&iso<=b;
+  if(inR(apShift(E,-69),apShift(E,-67))) return 'صوم نينوى';
+  if(inR(apShift(E,-55),apShift(E,-1)))  return 'الصوم الكبير';
+  const apostlesEnd=apCopt2G(apCopt(apShift(E,50)).y,11,4);
+  if(iso>=apShift(E,50)&&iso<=apostlesEnd) return 'صوم الرسل';
+  if(c.m===12&&c.d>=1&&c.d<=15) return 'صوم العذراء';
+  if((c.m===3&&c.d>=16)||c.m===4&&c.d<=28) return 'صوم الميلاد';
+  /* الأربعاء والجمعة — ما عدا الخماسين ومن الميلاد للغطاس */
+  const w=new Date(iso+'T00:00:00').getDay();
+  if(w===3||w===5){
+    if(inR(E,apShift(E,49))) return '';
+    if((c.m===4&&c.d>=29)||(c.m===5&&c.d<=10)) return '';
+    return w===3?'صيام الأربعاء':'صيام الجمعة';
+  }
+  return '';
+}
+function apCoptNext(iso){
+  const gy=Number(String(iso).slice(0,4));
+  const all=apCoptYear(gy).concat(apCoptYear(gy+1));
+  const n=all.find(x=>x.date>iso);
+  return n?Object.assign({},n,{days:apDaysBetween(iso,n.date)}):null;
+}
+
+/* ---------- التقويم الهجرى (جدولى + معايرة) ---------- */
+const AP_HIJ_M=['محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة',
+                'رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
+let AP_HIJ_ADJ=0;
+function apHij2J(y,m,d){return d+Math.ceil(29.5*(m-1))+(y-1)*354+Math.floor((3+11*y)/30)+1948440-1;}
+function apHij(iso){
+  const jd=apJ(iso)-AP_HIJ_ADJ;
+  const y=Math.floor((30*(jd-1948440)+10646)/10631);
+  const m=Math.min(12,Math.ceil((jd-(29+apHij2J(y,1,1)))/29.5)+1);
+  const d=jd-apHij2J(y,m,1)+1;
+  return {y:y,m:m,d:d,name:AP_HIJ_M[m-1]||''};
+}
+function apHijG(y,m,d){ return apJ2G(apHij2J(y,m,d)+AP_HIJ_ADJ); }
+/* لو الإنترنت جاب التاريخ الرسمى، بنعاير الجدول عليه مرة واحدة */
+function apHijCalibrate(){
+  try{
+    const o=AP_DAILY.hijriYMD; if(!o||!o.y) return;
+    AP_HIJ_ADJ=0;
+    const mine=apHij(todayISO());
+    const diff=apJ(apHijG(o.y,o.m,o.d))-apJ(apHijG(mine.y,mine.m,mine.d));
+    if(Math.abs(diff)<=3) AP_HIJ_ADJ=-diff;
+  }catch(e){ AP_HIJ_ADJ=0; }
+}
+function apHijYear(hy){
+  return [[1,1,'رأس السنة الهجرية'],[1,10,'يوم عاشوراء'],[3,12,'المولد النبوى الشريف'],
+          [7,27,'الإسراء والمعراج'],[8,15,'ليلة النصف من شعبان'],[9,1,'أول رمضان','big'],
+          [9,27,'ليلة القدر'],[10,1,'عيد الفطر المبارك','big'],[12,9,'يوم عرفة'],
+          [12,10,'عيد الأضحى المبارك','big']]
+    .map(r=>({date:apHijG(hy,r[0],r[1]),name:r[2],kind:r[3]||'feast'}))
+    .sort((a,b)=>a.date<b.date?-1:1);
+}
+function apIslNext(iso){
+  const h=apHij(iso);
+  const all=apHijYear(h.y).concat(apHijYear(h.y+1));
+  const n=all.find(x=>x.date>iso);
+  return n?Object.assign({},n,{days:apDaysBetween(iso,n.date)}):null;
+}
+function apIslToday(iso){
+  const h=apHij(iso);
+  if(h.m===9) return 'رمضان — يوم صيام';
+  if(h.m===12&&h.d===9) return 'يوم عرفة';
+  if(h.m===1&&h.d===10) return 'يوم عاشوراء';
+  if(h.d>=13&&h.d<=15) return 'الأيام البيض';
+  return '';
+}
+
+/* ---------- نمط التقويم ----------
+   الافتراضى إسلامى. المدير بيشوف الاتنين كاملين. والحساب المعلَّم فى
+   جدول المستخدمين بيقلب للنمط المسيحى: التقويم القبطى وكل الأعياد
+   (مسيحية وإسلامية ورسمية) من غير مواقيت الصلاة.
+   مفيش أى إعداد للكارت عند الساكن — الاختيار من عند المدير بس. */
+let AP_CAL_MODE='';
+function apCalMode(){
+  try{
+    if(CURRENT_USER&&CURRENT_USER.admin) return 'both';
+    if(AP_CAL_MODE==='copt'||AP_CAL_MODE==='isl') return AP_CAL_MODE;
+    if(CURRENT_USER&&CURRENT_USER.copt) return 'copt';
+  }catch(e){}
+  return 'isl';
+}
+function apPad2(n){ return String(n).padStart(2,'0'); }
+/* الإجازات الرسمية المصرية — للكل مهما كان النمط */
+function apEgyHolidays(gy){
+  const L=[[1,7,'عيد الميلاد المجيد'],[1,25,'عيد الثورة وعيد الشرطة'],
+           [4,25,'عيد تحرير سيناء'],[5,1,'عيد العمال'],[6,30,'ثورة 30 يونيو'],
+           [7,23,'ثورة 23 يوليو'],[10,6,'عيد القوات المسلحة']]
+    .map(r=>({date:gy+'-'+apPad2(r[0])+'-'+apPad2(r[1]),name:r[2],tag:'eg'}));
+  L.push({date:apShift(apOrthEaster(gy),1),name:'شم النسيم',tag:'eg'});
+  return L;
+}
+/* المناسبات الإسلامية الواقعة فى سنة ميلادية */
+function apIslYearG(gy){
+  const h1=apHij(gy+'-01-01').y, h2=apHij(gy+'-12-31').y, out=[];
+  for(let y=h1;y<=h2;y++) apHijYear(y).forEach(function(r){
+    if(r.date.slice(0,4)===String(gy)) out.push({date:r.date,name:r.name,tag:'isl',kind:r.kind});
+  });
+  return out;
+}
+/* كل مناسبات سنة ميلادية حسب النمط، من غير تكرار */
+function apOccAll(gy,mode){
+  let L=[];
+  if(mode!=='isl') L=L.concat(apCoptYear(gy).map(function(r){
+    return {date:r.date,name:r.name,tag:'copt',kind:r.kind};}));
+  L=L.concat(apIslYearG(gy)).concat(apEgyHolidays(gy));
+  const seen={}, out=[];
+  L.sort(function(a,b){ return a.date<b.date?-1:(a.date>b.date?1:0); })
+   .forEach(function(r){ const k=r.date+'|'+r.name; if(seen[k]) return; seen[k]=1; out.push(r); });
+  return out;
+}
+function apOccNext(t,mode){
+  const gy=Number(String(t).slice(0,4));
+  const n=apOccAll(gy,mode).concat(apOccAll(gy+1,mode)).find(function(x){ return x.date>t; });
+  return n?Object.assign({},n,{days:apDaysBetween(t,n.date)}):null;
+}
+function apOccToday(t,mode){
+  const gy=Number(String(t).slice(0,4)), out=[];
+  apOccAll(gy,mode).forEach(function(x){ if(x.date===t) out.push(x.name); });
+  if(mode!=='copt'){ const i=apIslToday(t); if(i) out.push(i); }
+  if(mode!=='isl'){ const f=apCoptFastToday(t); if(f) out.push(f); }
+  return out.filter(function(v,i,a){ return a.indexOf(v)===i; });
+}
+const AP_OCC_IC={copt:'🕊️',isl:'🕌',eg:'🇪🇬'};
+/* نافذة كل المناسبات */
+
+function apOccOpen(){
+  const t=todayISO(), gy=Number(t.slice(0,4)), mode=apCalMode();
+  const rows=apOccAll(gy,mode).concat(apOccAll(gy+1,mode))
+    .filter(function(x){ return x.date>=t; }).slice(0,22);
+  confirmBox('🗓️ المناسبات والإجازات',
+    '<table class="prayTbl occTbl">'+rows.map(function(r){
+      const dd=apDaysBetween(t,r.date);
+      return '<tr'+(dd===0?' class="now"':'')+'><td>'+(AP_OCC_IC[r.tag]||'')+' '+
+        (r.kind==='fast'?'🍃 ':'')+esc(r.name)+'</td><td>'+fmtD(r.date)+
+        '</td><td class="gray-note">'+(dd===0?'النهاردة':'بعد '+fmtN(dd)+' يوم')+'</td></tr>';
+      }).join('')+'</table>'+
+    '<p class="gray-note" style="margin:9px 0 0">🕊️ قبطية · 🕌 إسلامية · 🇪🇬 إجازة رسمية. '+
+    'التواريخ للاسترشاد — المرجع تقويم الكنيسة المعتمد والإعلان الرسمى لرؤية الهلال.</p>',
+    'تمام',function(){});
+}
+
 function apDailyHTML(){
   const c=apDailyCfg(); if(!c.on) return '';
+  const mode=apCalMode(), t=todayISO();
   const wx=c.wx?AP_DAILY.wx:null;
-  const np=c.pray?apNextPrayer():null;
+  const np=(c.pray&&mode!=='copt')?apNextPrayer():null;
   const M=apMoneyNow();
   const hasMoney=!!(M.usd||M.g21||M.g24);
-  if(!wx&&!np&&!hasMoney) return '';
+  const tod=apOccToday(t,mode), nx=apOccNext(t,mode);
+  const showOcc=!!(tod.length||nx);
+  if(!wx&&!np&&!hasMoney&&!showOcc) return '';
   const w=wx?(AP_WMO[wx.code]||['🌡️','']):null;
   const stale=(AP_DAILY.wxAt&&(Date.now()-AP_DAILY.wxAt)>7200000);
+  /* سطر المناسبات — التاريخ القبطى بيبان فى النمط المسيحى وعند المدير */
+  let occRow='';
+  if(showOcc){
+    const head='المناسبات'+(mode!=='isl'?' · '+esc(apCoptStr(t)):'');
+    const main=tod.length?tod.map(x=>'<b>'+esc(x)+'</b>').join(' · ')
+              :(nx?'فاضل '+fmtN(nx.days)+' يوم على <b>'+esc(nx.name)+'</b>':'');
+    const sub=(tod.length&&nx)?'<div class="dOcc">فاضل '+fmtN(nx.days)+' يوم على <b>'+esc(nx.name)+'</b></div>':'';
+    occRow='<div class="dRow"><span class="dIc">'+(mode==='isl'?'🗓️':'🕊️')+'</span>'+
+      '<div class="dMain"><div class="dT">'+head+'</div>'+
+      '<div class="dV" style="font-size:.95rem">'+main+'</div>'+sub+'</div>'+
+      '<button type="button" class="dBtn" onclick="event.stopPropagation();apOccOpen()">كل المناسبات</button></div>';
+  }
   return '<div class="apDaily">'+
     (wx?'<div class="dRow"><span class="dIc">'+w[0]+'</span>'+
       '<div class="dMain"><div class="dT">'+esc(c.city)+' · '+esc(w[1])+'</div>'+
@@ -13058,6 +13415,7 @@ function apDailyHTML(){
         ' <small class="dLeft">'+esc(apLeftTxt(np.left))+'</small></div></div>'+
       '<button type="button" class="dBtn" onclick="event.stopPropagation();apPrayOpen()">كل المواقيت</button>'+
       '</div>':'')+
+    occRow+
     (hasMoney?'<div class="dRow"><span class="dIc">💵</span><div class="dMain dMoney">'+
       (M.usd?'<div class="dChip"><span class="k">الدولار</span><span class="n">'+
         M.usd.v.toFixed(2)+' ج.م</span><span class="s">'+esc(M.usd.s)+'</span></div>':'')+
@@ -13711,6 +14069,16 @@ function apUserSettings(){
   const cloud  = (typeof window.apCloudOn==='function') && window.apCloudOn();
   const body=$('#apUsBody'); if(!body) return;
   body.innerHTML = `
+    ${(CURRENT_USER&&CURRENT_USER.admin)?`
+    <div class="usRow col">
+      <div><b>📱 شكل الموبايل</b>
+        <p class="gray-note">على الموبايل بتشوف الرئيسية بالفيديو والكارت اليومى والأخبار، وباقى الشاشات من زرار ⋯.
+        «تلقائى» بيشغّله على أجهزة اللمس الصغيرة بس — الكمبيوتر مابيتأثرش مهما صغّرت النافذة.</p></div>
+      <div class="grid g3" style="width:100%">
+        ${[['auto','تلقائى'],['on','دايمًا'],['off','أبدًا']].map(([v,lb])=>
+          `<button class="btn ${apAdmForm()===v?'green':'ghost'}" onclick="apAdmFormSet('${v}')">${lb}</button>`).join('')}
+      </div>
+    </div>`:''}
     <div class="usRow">
       <div><b>🎵 موسيقى الخلفية</b><p class="gray-note">تشتغل مع الفيديو فى الرئيسية.</p></div>
       ${apSwitchHTML('swMusic', apMusicOn(), 'apMusicToggle(!apMusicOn())')}
@@ -13823,11 +14191,13 @@ function apHomeHTML(title){
   /* v61.46: عند العميل الخدمات بقت جوّه زرار ⋮ فوق الفيديو، ومكانها فيد الأخبار.
      لو مفيش أخبار منشورة، الأيقونات بترجع مكانها زى الأول فمفيش فراغ. */
   const cli=apIsClientSession();
-  /* v61.54: الشريك كمان بياخد الكارت اليومى والتلات نقط */
-  const feed=cli?apFeedHTML():(apDotsRole()==='partner'?apDailyHTML():'');
+  /* v61.54: الشريك كمان بياخد الكارت اليومى والتلات نقط
+     v61.72: والمدير على الموبايل بياخد الفيد كامل زى العميل */
+  const admM=(typeof apAdmMobile==='function')&&apAdmMobile();
+  const feed=(cli||admM)?apFeedHTML():(apDotsRole()==='partner'?apDailyHTML():'');
   /* v61.54: الكارت اليومى بقى جزء من الفيد، فكان بيمنع رجوع الأيقونات لما
      ما يكونش فيه أخبار منشورة. المعيار بقى: فيه أخبار فعلًا ولا لأ. */
-  const hasNews=cli&&apFeedList().length>0;
+  const hasNews=(cli||admM)&&apFeedList().length>0;
   /* v61.56: العنوان جوّه الحاوية المثبّتة — العنوان والفيديو بيفضلوا
      فوق والكارت والأخبار بيعدّوا من تحتيهم. */
   return `<div class="apHome">
@@ -13877,7 +14247,9 @@ function apClientSlice(unitId){
   const st=Object.assign({},DB.settings||{});
   /* لا تُرسَل أى مفاتيح أو روابط خدمات مع نسخة العميل */
   ['gsUrl','gsSheet','gsEnabled','driveUrl','backupDirName','ffPdfPath','sfPdfPath'].forEach(k=>{ delete st[k]; });
+  const cu=(DB.users||[]).find(x=>x.client&&x.unitId===unitId);
   return {
+    cal:(cu&&cu.copt)?'copt':'isl',
     settings:st,
     seq:{year:new Date().getFullYear(),counter:0},
     units:[u],
@@ -13940,8 +14312,10 @@ function apPartnerSlice(partnerId){
   try{ c=partnerCalc(p); }catch(e){ return null; }
   try{ units=partnerUnitRows(p); }catch(e){ units=[]; }
   const st=S();
+  const pu=(DB.users||[]).find(x=>x.partner&&x.partnerId===partnerId);
   return {
     kind:'partner',
+    cal:(pu&&pu.copt)?'copt':'isl',
     name:p.name||'',
     company:st.companyName||'', project:st.projectName||'',
     at:new Date().toISOString(),
@@ -14001,6 +14375,7 @@ function apAccessMaps(){
 window.apAdoptClientDB=function(obj,info){
   try{
     AP_CLIENT=true;
+    AP_CAL_MODE=(obj&&obj.cal==='copt')?'copt':'isl';
     DB=migrateDB(obj);
     DB.users=[];
     try{ localStorage.setItem(LS_KEY_CLIENT,JSON.stringify(DB)); }catch(e){}
