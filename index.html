@@ -4893,7 +4893,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.79';
+const APP_VER  = 'v61.80';
 const APP_BUILD= '2026-11-05';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5132,7 +5132,7 @@ const S=()=>DB.settings;
 const unitById=id=>DB.units.find(u=>u.id===id);
 const saleById=id=>DB.sales.find(s=>s.id===id);
 const paymentsOf=saleId=>DB.payments.filter(p=>p.saleId===saleId);
-/* v61.79: دفعة «غرامة تأخير» إيراد مستقل — مابتتخصمش من ثمن الوحدة
+/* v61.80: دفعة «غرامة تأخير» إيراد مستقل — مابتتخصمش من ثمن الوحدة
    ولا بتتوزّع على الأقساط. */
 const isFineKind=k=>k==='fine';
 const instPaymentsOf=saleId=>DB.payments.filter(p=>p.saleId===saleId&&p.kind!=='delivery'&&!isFineKind(p.kind));
@@ -9204,7 +9204,7 @@ function monthsElapsed(dueISO,todayISO_){
   return Math.max(0,m);
 }
 /* صفوف المتأخرات: الأقساط غير المسدَّدة بالكامل والمستحقة
-   v61.79 — التجميد: لو مفتاح «احتساب الصافى» شغّال لهذا العميل،
+   v61.80 — التجميد: لو مفتاح «احتساب الصافى» شغّال لهذا العميل،
    القسط اللى اتسدَّد متأخر يفضل محتفظ بغرامته محسوبة حتى يوم سداده،
    فالغرامة مابتختفيش لحظة الدفع ويبقى ينفع تحصّلها بعد كده.
    المفتاح مطفى = السلوك القديم بالحرف: الغرامة تسقط بالسداد. */
@@ -9218,8 +9218,10 @@ function lateRows(sale){
     if(i.st==='محصل'&&!frz)return null;                // مسدَّد بالكامل والتجميد مطفى
     if(!bpIsOn(sale,'p',i.no))return null;             // v61.18: مستبعَد يدويًا
     const amount=Number(i.amount)||0;
+    if(amount<=0) return null;                       /* v61.80: صف بقيمة صفر مالوش غرامة أصلًا */
     const paid=Number(i.paid)||0;
     const done=(i.st==='محصل');
+    if(done&&!i.collectedDate) return null;          /* مُعلَّم محصل بلا تاريخ سداد = مالوش صف */
     const endISO=done?(i.collectedDate||today):today;  // المسدَّد: يتوقف يوم السداد
     const months=monthsElapsed(i.due,endISO);
     if(months<=0)return null;                          // لم يمضِ شهر كامل بعد
@@ -9239,7 +9241,7 @@ function lateOpenRows(sale){
 function lateTotals(sale){
   const rows=lateRows(sale);
   const penalty=rows.reduce((a,r)=>a+r.penalty,0);
-  /* v61.79: الغرامة اللى اتحصّلت فعلًا بإيصال مابتبقاش مستحقة على العميل */
+  /* v61.80: الغرامة اللى اتحصّلت فعلًا بإيصال مابتبقاش مستحقة على العميل */
   let collected=0;
   try{ collected=Math.round(fineCollectedOf(sale.id)); }catch(e){}
   return {
@@ -9307,7 +9309,7 @@ function lateSettlement(sale){
   const inst=collectedOf(sale.id);
   const dep =depositPaidOf(sale.id);
   const paid=down+inst+dep;
-  const pen =Math.round(lateTotals(sale).due);   /* v61.79: بعد خصم المحصَّل */
+  const pen =Math.round(lateTotals(sale).due);   /* v61.80: بعد خصم المحصَّل */
   return {down:down,inst:inst,dep:dep,paid:paid,pen:pen,net:Math.round(paid-pen)};
 }
 
@@ -9319,7 +9321,7 @@ function lateMsgText(sale,kind,opt){
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
   const owed=Math.max(0,due-col);
-  const grand=owed+L.due;                        /* v61.79: الغرامة المستحقة فقط */
+  const grand=owed+L.due;                        /* v61.80: الغرامة المستحقة فقط */
   const st=S();
   const sign=['','مع تحية إدارة الائتمان،',
               (st.companyName||'Trust Group')+' — '+(st.projectName||'Aqua Pearl City')];
@@ -9412,7 +9414,7 @@ function openLateNotice(saleId){
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
   const owed=Math.max(0,due-col);
-  const grand=owed+L.due;          /* v61.79: بعد خصم أعباء التأخير المحصَّلة */
+  const grand=owed+L.due;          /* v61.80: بعد خصم أعباء التأخير المحصَّلة */
   const rows=L.rows.map((r,n)=>`<tr>
     <td>${n+1}</td><td>${fmtD(r.due)}</td><td>${fmtM(r.amount)}</td>
     <td>${r.paid>0?fmtM(r.paid):'—'}</td><td>${fmtM(r.rest)}</td>
@@ -9489,7 +9491,7 @@ function lateNoticeHTML(sale){
   const u=unitById(sale.unitId)||{building:'—',unitNo:'—'};
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
-  const owed=Math.max(0,due-col), grand=owed+L.due;   /* v61.79: بعد خصم المحصَّل */
+  const owed=Math.max(0,due-col), grand=owed+L.due;   /* v61.80: بعد خصم المحصَّل */
   /* v61.68: المستند بيتغيّر مع نوع الإخطار المختار — نفس أرقام الرسالة */
   const KND=LATE_KINDS[lateKind]?lateKind:'fine';
   const SET=lateSettlement(sale);
@@ -10089,7 +10091,7 @@ function bpToggle(saleId,kind,no,on){
 }
 /* المفتاح العام لهذا العميل: هل يدخل الصافى فى المتبقى وحالة العميل؟ */
 /* =====================================================================
-   v61.79 — غرامات التأخير: المحسوبة − المحصَّل = المستحق.
+   v61.80 — غرامات التأخير: المحسوبة − المحصَّل = المستحق.
    التحصيل بيتسجّل دفعة kind:'fine' بإيصال عادى، ومابتتخصمش من ثمن
    الوحدة ولا بتتوزّع على الأقساط ولا تدخل توزيع أرباح الشركاء.
    ===================================================================== */
@@ -10503,7 +10505,7 @@ function apClientBpCard(sale){
   const pen=Math.round(B.late.penalty), bon=Math.round(B.early.bonus), net=Math.round(B.net);
   const good=net>=0;
   const col=good?'var(--green)':'var(--red)';
-  /* v61.79: العميل يشوف إن القسط اتسدَّد متأخر وغرامته اتجمّدت، وكمان
+  /* v61.80: العميل يشوف إن القسط اتسدَّد متأخر وغرامته اتجمّدت، وكمان
      المحصَّل من الغرامات والمتبقى منها — فمفيش رقم يفاجئه. */
   const rowsL=B.late.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.due)}</td>
       <td>${fmtM(Math.round(r.amount))}</td><td>${arMonthsPhrase(r.months)}</td>
@@ -13094,7 +13096,7 @@ function apAgo(iso){
   return fmtD(String(iso).slice(0,10));
 }
 const AP_NW_TYPE={news:'خبر',offer:'عرض',alert:'تنبيه'};
-/* v61.79: تنسيق بسيط وآمن لنص الخبر.
+/* v61.80: تنسيق بسيط وآمن لنص الخبر.
    النص بيتهرب أول حاجة (esc) فأى HTML حقيقى بيفضل معطّل، وبعدين
    بنحوّل **كده** لغامق و_كده_ لمائل وبس. */
 function apRich(t){
@@ -14508,7 +14510,7 @@ function apHomeHTML(title){
   /* v61.54: الشريك كمان بياخد الكارت اليومى والتلات نقط
      v61.72: والمدير على الموبايل بياخد الفيد كامل زى العميل */
   const admM=(typeof apAdmMobile==='function')&&apAdmMobile();
-  /* v61.79: الموظف بياخد الفيد من رئيسيته هو (renderDashboard) — المنشور بس.
+  /* v61.80: الموظف بياخد الفيد من رئيسيته هو (renderDashboard) — المنشور بس.
      الشريك لأ: الكارت اليومى بس زى ما هو. */
   const feedOn=(cli||admM);
   const feed=feedOn?apFeedHTML(!cli):(apDotsRole()==='partner'?apDailyHTML():'');
@@ -14911,7 +14913,7 @@ function savePayment(andPrint){
   const p={id:uid(),saleId:s.id,kind:payKind,receiptNo:nextReceiptNo(),amount,date:$('#payDate').value||todayISO(),method:$('#payMethod').value,notes:$('#payNotes').value.trim(),files:[],createdAt:new Date().toISOString()};
   const _payFiles=attGet('pay');
   if(p.kind==='delivery'||p.kind==='club')p.toPartners=(S().depositClubToPartners!==false);
-  if(p.kind==='fine')p.toPartners=false;   /* v61.79: الغرامة إيراد شركة، خارج توزيع الشركاء */
+  if(p.kind==='fine')p.toPartners=false;   /* v61.80: الغرامة إيراد شركة، خارج توزيع الشركاء */
   DB.payments.push(p);
   {const _u=unitById(s.unitId);if(_u)bankCredit(_u.building,kindAr(p.kind),p.amount,p.date,'إيصال '+p.receiptNo+' — '+s.customer.name);}
   if(_payFiles.length)attOffload(_payFiles,'إيصال سداد — '+p.receiptNo,
