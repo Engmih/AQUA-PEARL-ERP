@@ -360,6 +360,20 @@ h2.screen-title.apStickT{position:sticky;top:var(--hdrH,0px);z-index:18;
 .apDaily .dV .dLeft{display:inline-block;white-space:nowrap}
 .apDaily .dSide{flex:0 0 auto;text-align:center;font-size:.78rem;opacity:.9;line-height:1.5}
 .apDaily .dSide b{display:block;font-size:.95rem;font-weight:800}
+/* v61.74: زرار كتم الأذان وبانر الأذان */
+.apDaily .dIcBtn{border:0;cursor:pointer;transition:.18s}
+.apDaily .dIcBtn.off{opacity:.34;filter:grayscale(1)}
+.azBan{position:fixed;inset-inline:10px;bottom:14px;z-index:9400;display:flex;align-items:center;gap:10px;
+  padding:11px 13px;border-radius:14px;color:#fff;font-weight:700;
+  background:linear-gradient(135deg,#0d3b5c,#12547d);box-shadow:0 10px 30px rgba(8,25,45,.38);
+  animation:azIn .25s ease-out}
+.azBan.pre{background:linear-gradient(135deg,#145c4a,#13806a)}
+.azBan.quiet{background:linear-gradient(135deg,#334555,#4a5f73)}
+.azBan .azIc{font-size:22px;flex:0 0 auto}
+.azBan .azTx{flex:1;min-width:0;font-size:.95rem;line-height:1.6}
+.azBan .azTx b{font-weight:900}
+@keyframes azIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media print{.azBan{display:none!important}}
 /* v61.72: سطر المناسبات */
 .apDaily .dOcc{font-size:11.5px;color:#bcd6e6;margin-top:3px;line-height:1.7}
 .apDaily .dOcc b{color:#fff;font-weight:800}
@@ -715,6 +729,9 @@ body.pvOn #shareFab{display:none!important}
 .pvCompact .field>div{min-width:0;flex-wrap:wrap;row-gap:0}
 .pvCompact .grid{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
 /* v61.72: شاشة «📊 المبيعات» على الموبايل — عمودين زى الكمبيوتر */
+/* v61.74: جدول المستخدمين — حشو أقل عشان كل الأعمدة تبان بلا سكرول */
+#scr-settings .usrTbl th,#scr-settings .usrTbl td{padding:6px 7px}
+#scr-settings .usrTbl .btn.sm.icon{padding:2px 7px;font-size:14px;line-height:1.5}
 .dash-wrap.dash-mob{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dash-wrap.dash-mob .dash-col{display:flex;flex-direction:column;gap:10px}
 .pvCompact .grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
@@ -4870,7 +4887,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.73';
+const APP_VER  = 'v61.75';
 const APP_BUILD= '2026-10-23';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -6699,7 +6716,7 @@ function renderSettings(){
     <p class="gray-note" style="margin:-4px 0 10px">${AP_SIGNUP_ON
       ? '⚠️ التسجيل الذاتى <b>مفتوح</b> — أى حد معاه رابط التطبيق يقدر يبعت طلب. مفيش حد بيشوف أى بيانات قبل موافقتك.'
       : 'التسجيل الذاتى مقفول. افتحه لما تحتاج، واقفله تانى بعد ما تخلص.'}</p>
-    <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>الاسم</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th title="التقويم القبطى بدل مواقيت الصلاة فى الكارت اليومى">🕊️ تقويم</th><th class="no-print"></th></tr></thead><tbody>
+    <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl usrTbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>الاسم</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th title="التقويم القبطى بدل مواقيت الصلاة فى الكارت اليومى">🕊️ تقويم</th><th class="no-print"></th></tr></thead><tbody>
     ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':(u.partner?'<span class="badge ret">شريك</span>':'<span class="badge av">مستخدم</span>'))}</td>
       <td style="white-space:nowrap">${(function(){
           if(u.client){ const sl=(DB.sales||[]).find(x=>x.unitId===u.unitId);
@@ -6711,25 +6728,27 @@ function renderSettings(){
       <!-- v61.06: مستخدم السحابة كلمة سره فى Firebase لا هنا — فلا نعرض
            كلمة محلية لم تعد تفتح شيئًا، ولا مفتاحًا يوهم بأنه يغيّرها. -->
       <td style="white-space:nowrap">${u.email
-          ? `<span class="gray-note">عبر السحابة</span>
+          ? `<span class="gray-note" title="كلمة السر على السحابة">☁️</span>
              ${u.admin
                ? '<span class="gray-note"> — من «تغيير كلمة سر المدير» بالأسفل</span>'
-               : `<button class="btn sm ghost no-print" style="padding:1px 7px;margin-inline-start:6px" onclick="cloudResetUser('${u.id}')" title="إرسال رابط تغيير كلمة السر">📨 إرسال رابط</button>`}`
+               : `<button class="btn sm ghost no-print" style="padding:1px 6px" onclick="cloudResetUser('${u.id}')" title="إرسال رابط تغيير كلمة السر">📨</button>`}`
           : `${u.pPlain
               ? `<span class="pwCell" id="pw_${u.id}" data-p="${esc(u.pPlain)}" data-on="0">••••••••</span>
                  <button class="btn sm ghost no-print" style="padding:1px 7px" onclick="togglePw('${u.id}')" title="إظهار / إخفاء">👁</button>`
               : '<span class="gray-note">— غير متاحة (قديمة)</span>'}
              <button class="btn sm gold no-print" style="padding:1px 7px" onclick="setUserPass('${u.id}')" title="تغيير كلمة السر">🔑</button>`}</td>
-      <td style="white-space:normal">${u.admin?'كل البوابات'
-        :(u.client?(function(){const un=unitById(u.unitId);return '📄 ملفه فقط'+(un?(' — وحدة '+esc(un.unitNo||'')+' '+esc(un.building||'')):'');})()
-        :(u.partner?(function(){const pr=partnerById(u.partnerId);return '🤝 حسابه فقط'+(pr?(' — '+esc(pr.name||'')):'');})()
+      <td style="white-space:nowrap">${u.admin?'كل البوابات'
+        :(u.client?(function(){const un=unitById(u.unitId);
+            return '<span title="ملفه فقط">'+(un?esc((un.building||'')+' '+(un.unitNo||'')):'—')+'</span>';})()
+        :(u.partner?(function(){const pr=partnerById(u.partnerId);
+            return '<span title="حسابه فقط">'+(pr?esc(pr.name||''):'—')+'</span>';})()
         :((u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—')))}</td>
       <td style="text-align:center">${u.admin
         ? '<span class="gray-note" title="المدير بيشوف التقويمين">الكل</span>'
         : `<input type="checkbox" ${u.copt?'checked':''} onchange="setUserCopt('${u.id}',this.checked)"
              title="التقويم القبطى بدل مواقيت الصلاة" style="width:17px;height:17px;cursor:pointer">`}</td>
-      <td class="no-print">${u.admin?'':`<button class="btn sm ghost" onclick="editUser('${u.id}')" title="تعديل الصلاحيات والبيانات">✏️ تعديل</button>
-        <button class="btn sm red" onclick="deleteUser('${u.id}')">🗑️ حذف</button>`}</td></tr>`).join('')}
+      <td class="no-print" style="white-space:nowrap">${u.admin?'':`<button class="btn sm ghost icon" onclick="editUser('${u.id}')" title="تعديل الصلاحيات والبيانات">✏️</button>
+        <button class="btn sm red icon" onclick="deleteUser('${u.id}')" title="حذف المستخدم">🗑️</button>`}</td></tr>`).join('')}
     </tbody></table>
     <p class="gray-note">كلمات السر القديمة مُشفّرة ولا يمكن استرجاعها — غيّرها مرة واحدة من 🔑 لتظهر هنا. تظهر لحساب المدير فقط وتُحفظ ضمن النسخة الاحتياطية.</p></div>
     <h3 style="margin-top:6px">➕ إضافة مستخدم جديد</h3>
@@ -12367,6 +12386,7 @@ const AP_GUIDE={
   ['📅 الكارت اليومى — نمطين','الكارت اليومى بيشتغل بنمطين، والافتراضى الإسلامى. النمط الإسلامى: الطقس · مواقيت الصلاة والتاريخ الهجرى · المناسبات الإسلامية والإجازات الرسمية · الدولار والذهب. والنمط المسيحى: الطقس · التاريخ القبطى والأعياد والأصوام المسيحية ومعاها الأعياد الإسلامية والإجازات الرسمية · الدولار والذهب، من غير مواقيت الصلاة. مفيش أى إعدادات للكارت عند الساكن ومفيش أى سؤال عن ديانة فى النظام — الاختيار من عندك إنت.'],
   ['🕊️ عمود «تقويم» فى جدول المستخدمين','فى ⚙️ الإعدادات ← المستخدمين فيه عمود «🕊️ تقويم» فيه مربع اختيار لكل حساب (عميل أو موظف أو شريك). تعلّم عليه → الكارت اليومى عند الشخص ده يقلب للنمط المسيحى. حسابك إنت كمدير مكتوب جنبه «الكل» لأنك بتشوف التقويمين مع بعض. والعلامة بتتبعت جوّه نسخة العميل أو الشريك أول ما تحفظ، فبتتفعّل عنده من غير ما يعمل حاجة. وفى نفس الجدول عمود «الاسم» بيوريك اسم العميل أو الشريك الحقيقى جنب اسم المستخدم.'],
   ['🗓️ المناسبات','زرار «كل المناسبات» فى الكارت بيفتح قايمة بالجاى: 🕊️ قبطية · 🕌 إسلامية · 🇪🇬 إجازة رسمية. القبطية فيها الميلاد المجيد والختان والغطاس وقانا الجليل والبشارة وأحد الشعانين وخميس العهد والجمعة العظيمة وعيد القيامة والصعود والعنصرة والنيروز والصليب والتجلى وصعود العذراء ودخول المسيح أرض مصر، والأصوام الستة (الكبير · الميلاد · الرسل · العذراء · نينوى · الأربعاء والجمعة). والإسلامية: رمضان والفطر والأضحى وعرفة وعاشوراء ورأس السنة الهجرية والمولد والإسراء والمعراج والنصف من شعبان وليلة القدر. والرسمية: ٧ و٢٥ يناير وشم النسيم وتحرير سيناء وعيد العمال و٣٠ يونيو و٢٣ يوليو و٦ أكتوبر. كله محسوب على الجهاز فبيشتغل من غير نت — القبطى بالتقويم القبطى وعيد القيامة الأرثوذكسى، والهجرى بالجدول الحسابى وبيتعاير على التاريخ الرسمى لما الإنترنت يشتغل. ⚠️ للاسترشاد: المرجع تقويم الكنيسة المعتمد والإعلان الرسمى لرؤية الهلال.'],
+  ['🔊 الأذان الصوتى','على الموبايل، ولأى حساب على النمط الإسلامى (اللى معلّم عليه «🕊️ تقويم» مابيسمعش حاجة). وقت كل أذان بيظهر بانر «حان الآن موعد أذان المغرب» والأذان بيشتغل، ومعاه زرار إيقاف. وقبل الأذان بعشر دقايق بيظهر بانر «باقى ١٠ دقايق» مع تكبيرتين. شغّال افتراضيًا، والكتم من أيقونة الجامع 🕌 نفسها فى الكارت اليومى: منوّرة = الصوت شغّال، مضلّمة = مكتوم، والاختيار محفوظ على الجهاز. مهم: ده بيشتغل والبرنامج مفتوح قدامك؛ المتصفح بيجمّد الصفحة لما تخرج منها، فلو فات أذان وإنت برة البرنامج بيظهرلك بانر هادى من غير صوت «فات أذان المغرب من ١٢ دقيقة» أول ما ترجع. الملفات المطلوبة جنب البرنامج: adhan.mp3 للأذان و takbir.mp3 للتكبيرتين — ولو مش موجودة البانر بيظهر عادى من غير صوت. وبتتخزّن فى مخزن مستقل عن رقم النسخة فمابتتحملش من أول وجديد مع كل تحديث.'],
   ['📱 المدير على الموبايل','لما تفتح البرنامج من موبايلك بحساب المدير، الرئيسية بتبقى زى باقى الحسابات: فيديو المشروع + الكارت اليومى + الأخبار والعروض. والفيد ده بيوريك اللى العملاء شايفينه فعلًا — يعنى المنشور بس؛ أما الخبر اللى لسه «⏳ ماتنشرش» فمابيبانش غير فى معاينة «شكلها عند العميل» جوّه شاشة الأخبار. وشريط التبويبات الطويل بيتخفى ومكانه زرار ⋯ فيه كل الشاشات، ومعاها «👤 حسابى» (كلمة السر والبصمة والموسيقى وشكل الموبايل) و«📊 المبيعات» اللى فيها كروت لوحة التحكم العشرة بنفس خصائصها. على الكمبيوتر مفيش أى تغيير خالص — الشريط والكروت زى ما هم بالظبط. الشرط إن العرض أقل من ٨٢٠ بكسل والجهاز شاشته لمس، فتصغير نافذة المتصفح على الكمبيوتر مابيغيّرش حاجة. ولو حبيت تتحكم بإيدك فيه خيار «📱 شكل الموبايل» فى «حسابى»: تلقائى / دايمًا / أبدًا.'],
   ['📎 مرفقات ملف الشريك باللصق','فى «💸 دفعات الأرباح المصروفة» و«📎 مرفقات الشريك» بقى فيه نفس مربع المرفقات اللى فى ملف العميل: تضغط جوّه المربع وتعمل Ctrl+V فالسكرين شوت بيترفع على طول من غير ما تحفظه كملف، أو تسحب الملف وتفلته، أو تضغط وتختار ملفات. وبتشوف معاينة مصغّرة لكل مرفق قبل ما تحفظ وتقدر تشيل أى واحد. الصور بتتضغط تلقائيًا والمرفقات بتتخزّن فى IndexedDB زى باقى النظام، وبعد الحفظ المربع بيفضى لوحده.'],
   ['🖨️ اسم ملف الـPDF','أى طباعة من البرنامج بقى ليها اسم ملف معبّر لما تختار «Save as PDF» — مش «Aqua Pearl ERP» العام. الإيصال بيطلع باسم: نوع الإيصال + رقم الوحدة + تاريخ الدفعة + رقم الإيصال (مثلاً «إيصال تحصيل B08-102 — 01-07-2025 — TRM-000001»)، فكل إيصال اسمه فريد حتى لو العميل دفع مرتين فى نفس اليوم. وكشف الشريك: «كشف حساب — اسم الشريك — تاريخ اليوم». وملف العميل: «ملف العميل — اسم العميل — التاريخ». وعرض الوحدة: «عرض وحدة <كود الوحدة> — التاريخ». وإنذار المتأخرات: نوع الإخطار + اسم العميل + الوحدة + التاريخ. وأى شاشة تانية بتاخد اسمها من عنوانها + التاريخ تلقائيًا، وفى بوابة العميل بيتضاف رقم وحدته وفى بوابة الشريك اسمه. الحروف الممنوعة فى أسماء الملفات بتتشال لوحدها، والعنوان بيرجع لأصله بعد الطباعة على طول.'],
@@ -13370,14 +13390,132 @@ function apOccOpen(){
   confirmBox('🗓️ المناسبات والإجازات',
     '<table class="prayTbl occTbl">'+rows.map(function(r){
       const dd=apDaysBetween(t,r.date);
-      return '<tr'+(dd===0?' class="now"':'')+'><td>'+(AP_OCC_IC[r.tag]||'')+' '+
-        (r.kind==='fast'?'🍃 ':'')+esc(r.name)+'</td><td>'+fmtD(r.date)+
+      return '<tr'+(dd===0?' class="now"':'')+'><td>'+esc(r.name)+'</td><td>'+fmtD(r.date)+
         '</td><td class="gray-note">'+(dd===0?'النهاردة':'بعد '+fmtN(dd)+' يوم')+'</td></tr>';
-      }).join('')+'</table>'+
-    '<p class="gray-note" style="margin:9px 0 0">🕊️ قبطية · 🕌 إسلامية · 🇪🇬 إجازة رسمية. '+
-    'التواريخ للاسترشاد — المرجع تقويم الكنيسة المعتمد والإعلان الرسمى لرؤية الهلال.</p>',
+      }).join('')+'</table>',
     'تمام',function(){});
 }
+
+/* =====================================================================
+   v61.74 — الأذان الصوتى والبانر
+   بيشتغل على الموبايل بس، وللنمط الإسلامى بس (اللى معلّم عليه «تقويم
+   قبطى» مابيسمعش حاجة). شغّال افتراضيًا، والكتم من أيقونة الجامع 🕌
+   فى الكارت اليومى: منوّرة = صوت، مضلّمة = مكتوم.
+   مهم: ده بيشتغل والصفحة مفتوحة. المتصفح بيجمّد الصفحة لما تخرج منها،
+   فلو فات أذان وإنت برة البرنامج، بيظهرلك بانر هادى أول ما ترجع.
+   الملفات المتوقّعة جنب index.html: adhan.mp3 و takbir.mp3 — ولو مش
+   موجودة، البانر بيظهر عادى من غير صوت.
+   ===================================================================== */
+const AP_AZ_FILE='./adhan.mp3', AP_AZ_PRE_FILE='./takbir.mp3';
+const AP_AZ_MUTE_KEY='apAdhanMute';
+let AP_AZ_EL=null, AP_AZ_FIRED={}, AP_AZ_TICK=null;
+function apAzMuted(){ try{ return localStorage.getItem(AP_AZ_MUTE_KEY)==='1'; }catch(e){ return false; } }
+/* الأذان للموبايل بس، والنمط الإسلامى بس */
+function apAzOn(){
+  try{
+    if(apCalMode()==='copt') return false;
+    if(typeof apTouchDevice!=='function') return false;
+    return apTouchDevice() && window.innerWidth<900;
+  }catch(e){ return false; }
+}
+function apAzToggle(){
+  const m=!apAzMuted();
+  try{ localStorage.setItem(AP_AZ_MUTE_KEY,m?'1':'0'); }catch(e){}
+  if(m) apAzStop();
+  apDailyRedraw();
+  toast(m?'🔇 الأذان مكتوم على الجهاز ده':'🔊 الأذان شغّال','ok');
+}
+function apDailyRedraw(){
+  try{
+    const el=document.querySelector('.apDaily'); if(!el) return;
+    const t=document.createElement('div'); t.innerHTML=apDailyHTML();
+    if(t.firstChild) el.replaceWith(t.firstChild); else el.remove();
+  }catch(e){}
+}
+function apAzStop(){
+  try{ if(AP_AZ_EL){ AP_AZ_EL.pause(); AP_AZ_EL.currentTime=0; } }catch(e){}
+  AP_AZ_EL=null;
+  const b=document.getElementById('apAzBan'); if(b) b.remove();
+}
+function apAzPlay(file,onFail){
+  if(apAzMuted()){ if(onFail) onFail('muted'); return; }
+  try{
+    apAzStopAudio();
+    AP_AZ_EL=new Audio(file);
+    AP_AZ_EL.preload='auto';
+    const pr=AP_AZ_EL.play();
+    if(pr&&pr.catch) pr.catch(function(){ if(onFail) onFail('blocked'); });
+  }catch(e){ if(onFail) onFail('err'); }
+}
+function apAzStopAudio(){ try{ if(AP_AZ_EL){ AP_AZ_EL.pause(); AP_AZ_EL.currentTime=0; } }catch(e){} AP_AZ_EL=null; }
+/* البانر */
+function apAzBanner(html,kind,withPlay,file){
+  const old=document.getElementById('apAzBan'); if(old) old.remove();
+  const d=document.createElement('div');
+  d.id='apAzBan'; d.className='azBan no-print'+(kind?' '+kind:'');
+  d.innerHTML='<span class="azIc">🕌</span><div class="azTx">'+html+'</div>'+
+    (withPlay?'<button class="btn sm green" onclick="apAzManual(\''+file+'\')">▶️ شغّل</button>':'')+
+    '<button class="btn sm ghost" onclick="apAzStop()">✕</button>';
+  document.body.appendChild(d);
+  if(kind==='quiet'||kind==='pre') setTimeout(function(){ if(d.parentNode) d.remove(); },25000);
+}
+function apAzManual(f){
+  const b=document.getElementById('apAzBan');
+  const pb=b?b.querySelector('.btn.green'):null; if(pb) pb.remove();
+  apAzPlay(f);
+}
+function apAzNow(ar){
+  apAzBanner('حان الآن موعد أذان <b>'+esc(ar)+'</b>','now',false,AP_AZ_FILE);
+  apAzPlay(AP_AZ_FILE,function(why){
+    if(why==='muted'){ return; }
+    apAzBanner('حان الآن موعد أذان <b>'+esc(ar)+'</b>','now',true,AP_AZ_FILE);
+  });
+}
+function apAzPre(ar){
+  apAzBanner('باقى ١٠ دقايق على أذان <b>'+esc(ar)+'</b>','pre',false,AP_AZ_PRE_FILE);
+  apAzPlay(AP_AZ_PRE_FILE,function(){});
+}
+function apAzLate(ar,mins){
+  apAzBanner('فات أذان <b>'+esc(ar)+'</b> من '+fmtN(mins)+' دقيقة','quiet',false,'');
+}
+function apAzCheck(){
+  try{
+    if(!apAzOn()) return;
+    const P=AP_DAILY.pray; if(!P) return;
+    const now=new Date(), mins=now.getHours()*60+now.getMinutes();
+    const day=todayISO();
+    AP_PRAYERS.forEach(function(pr){
+      const k=pr[0], ar=pr[1];
+      if(k==='Sunrise') return;                 /* الشروق مش صلاة */
+      const a=String(P[k]||'').slice(0,5).split(':');
+      if(a.length<2) return;
+      const pm=Number(a[0])*60+Number(a[1]);
+      if(isNaN(pm)) return;
+      const d=mins-pm;
+      const kPre=day+'|'+k+'|pre', kNow=day+'|'+k;
+      if(d>=-10&&d<-8&&!AP_AZ_FIRED[kPre]&&!AP_AZ_FIRED[kNow]){ AP_AZ_FIRED[kPre]=1; apAzPre(ar); return; }
+      if(d>=0&&d<=2&&!AP_AZ_FIRED[kNow]){ AP_AZ_FIRED[kNow]=1; apAzNow(ar); return; }
+      /* فات وإحنا برة الصفحة — بانر هادى من غير صوت */
+      if(d>2&&d<=30&&!AP_AZ_FIRED[kNow]){ AP_AZ_FIRED[kNow]=1; apAzLate(ar,d); }
+    });
+  }catch(e){}
+}
+/* بنحمّل الملفين مرة واحدة فى الخلفية عشان الأذان يشتغل حتى من غير نت.
+   التكبير الأول (صغير)، والأذان بعده بشوية عشان مايزاحمش تحميل الصفحة. */
+let AP_AZ_WARM=false;
+function apAzWarm(){
+  if(AP_AZ_WARM||!apAzOn()||apAzMuted()) return;
+  AP_AZ_WARM=true;
+  try{ fetch(AP_AZ_PRE_FILE,{cache:'force-cache'}).catch(function(){}); }catch(e){}
+  setTimeout(function(){ try{ fetch(AP_AZ_FILE,{cache:'force-cache'}).catch(function(){}); }catch(e){} },9000);
+}
+function apAzBoot(){
+  if(AP_AZ_TICK) clearInterval(AP_AZ_TICK);
+  AP_AZ_TICK=setInterval(apAzCheck,20000);
+  apAzCheck();
+  try{ apAzWarm(); }catch(e){}
+}
+try{ document.addEventListener('visibilitychange',function(){ if(!document.hidden) apAzCheck(); }); }catch(e){}
 
 function apDailyHTML(){
   const c=apDailyCfg(); if(!c.on) return '';
@@ -13409,7 +13547,12 @@ function apDailyHTML(){
       '<div class="dV">'+fmtN(wx.t)+'°<small> دلوقتى</small></div></div>'+
       (wx.hi!=null?'<div class="dSide">العظمى / الصغرى<b>'+fmtN(wx.hi)+'° / '+fmtN(wx.lo)+'°</b></div>':'')+
       '</div>':'')+
-    (np?'<div class="dRow"><span class="dIc">🕌</span>'+
+    (np?'<div class="dRow">'+
+      (apAzOn()
+        ? '<button type="button" class="dIc dIcBtn'+(apAzMuted()?' off':'')+'" '+
+          'title="'+(apAzMuted()?'الأذان مكتوم — اضغط لتشغيله':'الأذان شغّال — اضغط لكتمه')+'" '+
+          'onclick="event.stopPropagation();apAzToggle()">🕌</button>'
+        : '<span class="dIc">🕌</span>')+
       '<div class="dMain"><div class="dT">الصلاة الجاية'+(AP_DAILY.hijri?' · '+esc(AP_DAILY.hijri):'')+'</div>'+
       '<div class="dV">'+esc(np.ar)+' '+esc(ap12(np.at))+
         ' <small class="dLeft">'+esc(apLeftTxt(np.left))+'</small></div></div>'+
@@ -13442,6 +13585,7 @@ function apPrayOpen(){
 }
 /* العدّاد بيتحدّث كل نص دقيقة والعميل فى الرئيسية */
 function apDailyTick(){
+  try{ apAzBoot(); }catch(e){}
   if(AP_DAILY_TICK) clearInterval(AP_DAILY_TICK);
   AP_DAILY_TICK=setInterval(function(){
     const el=document.querySelector('.apDaily');

@@ -38,11 +38,14 @@
    غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
    أى تدخل.
    ===================================================================== */
-const VER   = 'v61.73';
+const VER   = 'v61.75';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
 const DOC_KEY = './index.html';
+/* v61.74: ملفات الصوت (الأذان والتكبير) فى مخزن مستقل عن رقم النسخة،
+   زى المخططات — عشان ما تتحملش من أول وجديد مع كل تحديث. */
+const AUDIO = 'aqua-pearl-audio';
 
 /* ملفات صغيرة تُحمَّل مسبقًا. الفيديو والموسيقى والمخططات غير موجودة هنا
    عمدًا: حجمها كبير ولا يحتاجها كل مستخدم فورًا، ومعالج fetch يخزّنها أول
@@ -291,7 +294,8 @@ self.addEventListener('fetch', e => {
   if (isDoc) { e.respondWith(handleDoc(e, req)); return; }
 
   // ملف المخططات: مخزن مستقل يعيش عبر التحديثات
-  const bucket = /plans\.js$/.test(path) ? PLANS : CACHE;
+  const bucket = /plans\.js$/.test(path) ? PLANS
+               : (/\.(mp3|m4a|ogg|wav|aac)$/i.test(path) ? AUDIO : CACHE);
 
   // باقى الملفات: المخزّن أولًا — ولا ترجع أبدًا قيمة فارغة
   e.respondWith((async () => {
