@@ -76,7 +76,12 @@ window.apToolsDrawer=function(open){
   if(apTOpen){ apTRender(); d.classList.add('open'); }
   else { d.classList.remove('open'); apTPage=''; }
 };
-window.apToolsGo=function(id){ apTPage=id||''; apTRender(); };
+window.apToolsGo=function(id){
+  apTPage=id||'';
+  apTRender();
+  /* v61.94: سجل الاستخدام — الأدوات بتتعدّ زى الشاشات، بالاسم بس */
+  try{ if(typeof apUseHit==='function') apUseHit(id?('#'+id):'#list'); }catch(e){}
+};
 
 function apTRender(){
   const b=$$('#apTBody'); if(!b) return;

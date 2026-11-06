@@ -16,6 +16,9 @@
   --r:14px; --shadow:0 2px 10px rgba(11,42,74,.08);
 }
 /* ===== v61.93: الأدوات التجريبية — درج جانبى مستقل ===== */
+/* v61.94: شارات شاشات سجل الاستخدام */
+.useChip{display:inline-block;margin:0 0 6px;padding:3px 10px;border-radius:999px;
+  background:#eef4f8;border:1px solid var(--line);font-size:12.5px;color:var(--navy2)}
 .apTTab{position:fixed;top:50%;transform:translateY(-50%);right:0;z-index:80;display:none;
   width:19px;height:66px;padding:0;border:0;cursor:pointer;
   border-radius:9px 0 0 9px;background:linear-gradient(180deg,var(--navy2),var(--aqua));
@@ -2032,6 +2035,7 @@ if (!AP_NOSW && 'serviceWorker' in navigator && location.protocol.startsWith('ht
       <div class="screen" id="scr-reports"></div>
       <div class="screen" id="scr-attach"></div>
       <div class="screen" id="scr-importScr"></div>
+      <div class="screen" id="scr-usage"></div>
       <div class="screen" id="scr-settings"></div>
     </main>
     <!-- Receipt print area (inside page-cell so letterhead repeats above it too) -->
@@ -5156,7 +5160,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.93';
+const APP_VER  = 'v61.94';
 const APP_BUILD= '2026-11-06';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5491,7 +5495,7 @@ const SCREENS=[
  ['sold','🏷️ الوحدات المباعة',1],['returnedScr','↩️ الوحدات المرتجعة',1],
  ['wallets','💰 رصيد العملاء'],['news','📢 الأخبار والعروض'],['cashflow','📈 التدفقات النقدية'],['partners','🤝 شركاء وبنوك'],['expenses','🧾 مصروفات عامة'],['zakat','🕌 الزكاة'],['reports','📊 التقارير'],['attach','📎 المرفقات'],
  /* v61.46: الاستيراد اتشال من الشريط ومدخله بقى جوّه الإعدادات — الشاشة زى ما هى */
- ['importScr','⬆️ استيراد البيانات',1],['settings','⚙️ الإعدادات']
+ ['importScr','⬆️ استيراد البيانات',1],['usage','📊 سجل الاستخدام'],['settings','⚙️ الإعدادات']
 ];
 const SESSION_KEY='aquaPearlERP_session';
 let CURRENT_USER=null;
@@ -5513,7 +5517,7 @@ function allowed(id){
   /* v61.20: الشريك لا يمر عبر nav أصلًا — شاشاته تُرسم مباشرة */
   if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER) return false;
   if(CURRENT_USER.admin)return true;
-  if(id==='settings')return false;               // الإعدادات للمدير فقط
+  if(id==='settings'||id==='usage')return false; // الإعدادات وسجل الاستخدام للمدير فقط
   /* v61.37: قاعدة العملاء وملف العميل للمدير وحده — الموظف لا يراهما إطلاقًا،
      ولا حتى بالضغط على عميل من شاشة الأقساط أو المحصّل. */
   if(id==='customers'||id==='customerFile'||id==='wallets'||id==='news')return false;
@@ -6449,8 +6453,9 @@ function nav(id,arg){
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===id));
   const r={dashboard:renderDashboard,unitView:()=>renderUnitView(arg),availEdit:renderAvailEdit,sales:()=>renderSales(arg),customers:renderCustomers,
     customerFile:()=>renderCustomerFile(arg),due:renderDue,collected:renderCollected,sold:renderSold,returnedScr:renderReturned,
-    wallets:renderWallets,news:renderNewsScr,reports:renderReports,attach:()=>renderAttachScreen(arg),importScr:renderImport,settings:renderSettings,partners:()=>renderPartnersPortal(arg),expenses:()=>renderExpenses(arg),zakat:renderZakat,cashflow:renderCashflow}[id];
+    wallets:renderWallets,news:renderNewsScr,reports:renderReports,attach:()=>renderAttachScreen(arg),importScr:renderImport,settings:renderSettings,partners:()=>renderPartnersPortal(arg),expenses:()=>renderExpenses(arg),zakat:renderZakat,cashflow:renderCashflow,usage:renderUsage}[id];
   r&&r();
+  try{ apUseHit(id); }catch(e){}          /* v61.94: سجل الاستخدام */
   try{ apBarMount(); }catch(e){}          /* v61.54: الشريط والتلات نقط للموظف */
   const fab=$('#shareFab');
   if(fab)fab.style.display=['dashboard','unitView','sales','customers','customerFile','due','collected','sold','returnedScr','reports','attach','expenses'].includes(id)?'flex':'none';
@@ -11062,6 +11067,7 @@ function apPartnerGo(tab){
   AP_PTAB=tab;
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===tab));
   apPartnerRender();
+  try{ apUseHit('p:'+tab); }catch(e){}    /* v61.94: سجل الاستخدام */
   window.scrollTo({top:0});
 }
 function apPartnerRender(){
@@ -12884,6 +12890,12 @@ const AP_GUIDE={
   ['🗑️ ذِكران اتشالوا','«حسبى الله لا إله إلا هو عليه توكلت» سبع مرات فى الصباح والمساء — اتشال من التطبيق. السبب إنه فى سنن أبى داود ٥٠٨١ وحكم عليه الألبانى بأنه «موضوع»، والحكم ده منقول من المصدر مش اجتهاد منى. وواتشال كمان «اللهم إنى أصبحت/أمسيت أُشهدك» (أبو داود ٥٠٦٩ — ضعيف عند الألبانى)، و«اللهم صل على محمد عشرًا صباحًا ومساءً» (ضعَّفه العراقى والسخاوى والوادعى، وتراجع الألبانى عن تحسينه وضعَّفه فى الضعيفة ٥٧٨٨، ولم يوجد فى المطبوع من المعجم الكبير). إجمالى اللى اتشال: تلات أذكار فى ستة مواضع. لو شيخك شاف إنها ترجع، قوللى وأرجّعها.'],
   ['📎 مصدر كل ذِكر تحته','البانر الأصفر اللى كان فوق قسم الأذكار اتشال، لأنه كان بيشكّك الناس فى نصوص كل واحد فيها مصدره مكتوب تحته برقمه أصلًا. المرجع بقى فى الكارت نفسه: كل ذِكر تحته سطر صغير باسم الكتاب ورقم الحديث، والنص القرآنى عليه علامة «قرآن»، والحديث اللى له حكم صريح بالصحة أو الحُسن عليه علامة «مُخرَّج». والبنود اللى عددها أو موضعها محلّ خلاف لسه عليها علامة «للمراجعة» — زى عدد المعوّذات بعد الصلاة — والاستغفار مائة مرة مكتوب جنبه إنه ذِكر مطلق فى اليوم مش مقيّد بالصباح والمساء.'],
   ['🕊️ الأذكار والمسبحة والتقويم القبطى','الأداتين دول بيختفوا تلقائيًا عن أى حساب مختار التقويم القبطى — نفس القاعدة بالظبط اللى ماشى عليها الأذان. باقى الأدوات والألعاب بتظهرلهم عادى. ومش إخفاء بالشكل بس: الأداة اللى مش مسموح بيها مابتترسمش أصلًا فى القايمة، ولو حد حاول يفتحها بأى طريقة تانية بترفض تتفتح.'],
+  ['📊 سجل الاستخدام','تاب جديد عندك إنت وحدك. التطبيق بيعدّ على جهاز كل مستخدم كام مرة فتح كل شاشة وكام ثانية قعد فيها، وبيبعت الحصيلة كتابة واحدة لما يقفل التطبيق — مش مع كل دوسة. بتدوس «☁️ تحميل السجل» فيقرا من السحابة لحظيًا. فيه أربع كروت: ترتيب الشاشات بالفتحات ومتوسط القعدة، وقايمة الشاشات اللى مامحدش فتحها مقسّمة لإدارة وعميل وشريك، والأدوات والألعاب، وجدول المستخدمين. والنسخة اللى بالأحمر معناها إن الجهاز ده لسه واقف على نسخة أقدم — ده بيوريك مين محتاج يحدّث.'],
+  ['🙍 الأسامى فى السجل','السحابة مافيهاش ولا اسم. اللى بيتكتب هو بريد الحساب (وهو أصلًا مفتاح عقدته) ونوع الحساب وأرقام، وبس. الاسم بيتركّب عندك إنت محليًا من بياناتك: العميل باسمه اللى فى التعاقد، والشريك باسمه اللى فى كشفه، والموظف باسم دخوله. فلو حد وصل للعقدة مش هيلاقى فيها اسم إنسان واحد.'],
+  ['🔒 السجل مابيلمسش أى بيانات','العقدة اسمها usage ومنفصلة تمامًا عن بيانات النظام ونسخ العملاء والشركاء. كل حساب بيكتب تحت نفسه وبس، والقراءة ليك إنت لوحدك بقواعد السيرفر. ومافيش أى محتوى بيتسجّل: لا مبالغ ولا أسماء وحدات ولا أى حاجة كتبها المستخدم — أسامى شاشات وأرقام. والسجل مابيدخلش نسختك الاحتياطية أصلًا.'],
+  ['⏱️ إزاى الوقت بيتحسب','من ساعة ما يفتح الشاشة لحد ما يسيبها. العدّاد بيقف لوحده لما يصغّر التطبيق أو يقفل الشاشة، وفيه سقف عشر دقايق للقعدة الواحدة — فواحد سايب التطبيق مفتوح ونايم مابيبوّظش المتوسط. وقراءة الأرقام كدة: شاشة بتتفتح كتير وبيقعد فيها تانيتين يعنى مش بتوصّل اللى هو عايزه، وشاشة بتتفتح قليل وبيقعد فيها دقيقة يعنى مهمة بس مخبّية.'],
+  ['📅 العدّاد بدأ من يوم التحديث','السجل مش بأثر رجعى — الأرقام بتبدأ من صفر من يوم ما تنشر النسخة دى. فاستنى أسبوعين على الأقل قبل ما تاخد قرار بشيل شاشة. واللى بيفتح التطبيق أوفلاين رقمه بيتحفظ على جهازه ومابيوصلش غير لما ينوّر النت — وساعتها بيوصل كامل مش ناقص. ولو مستخدم على جهازين، كل جهاز بيبعت لوحده والسجل بيجمّعهم فى سطر واحد.'],
+  ['🔕 مفتاح إيقاف السجل','التسجيل كله واقف على مفتاح واحد. لما تيجى بعدين تضيف خطوة «موافق على الشروط والأحكام» فى التفعيل، تربطها بالمفتاح ده وخلاص — من غير ما نرجع نفكّك حاجة. ولو حبيت توقّف التسجيل على جهاز معيّن دلوقتى، ده بيتعمل من نفس المفتاح.'],
   ['👉 السهم بيفتح وبيقفل','السحب من جوّه الدرج اتشال خالص، لأنه كان بيتعارض مع أى حاجة جوّاه بتتسحب بالإصبع — شريط تبويبات الأذكار أو جدول المقايسة أو شبكة لعبة: كنت بتسحب الشريط فالدرج يقفل. بقى الفتح والقفل من السهم نفسه زى ما إنت قلت: دوسة على السهم تفتح، ودوسة تانية تقفل. وإنت فاتح، السهم مابيختفيش تحت الدرج — بيزحف ويقف على حرفه ويلف لجهة تانية. والسحب كمان من على السهم: سحبة لليمين وهو فاتح تقفله، وسحبة للشمال وهو مقفول تفتحه. والقفل برضه بالدوسة على الخلفية الغامقة أو بزرار ✕ أو بـ Escape على الكمبيوتر. وجوّه الدرج كل حاجة بقت تتسحب بحرية.'],
   ['🖨️ طباعة المقايسة','طباعة حاسبة التشطيب بقت بهوية الشركة بالكامل زى الإيصالات والإنذارات: ترويسة اللوجوهات، وكروت زرقا بالبيانات، وبلوك أخضر بالإجمالى مكتوب بالحروف، وفوتر TRUST GROUP بأرقام الصفحات — من غير توقيعات ولا أختام. وفيه خانتين اختياريتين «اسم العميل» و«الوحدة» بتظهروا فى المستند، واسم ملف الـPDF بيتكوّن منهم تلقائيًا. والمقايسة بتطلع صفحة واحدة A4 بالظبط فيها كل البنود والإجمالى وبند الإشراف والتنويه.'],
   ['⚙️ إدارة الأدوات التجريبية','فى شاشة «الإعدادات» فيه كارت بكل أداة وحالتها: «المدير فقط» (الوضع الحالى لكلهم) أو «كل المستخدمين» أو «مقفولة تمامًا». التغيير بيتحفظ على طول وبيتزامن مع باقى أجهزتك. كلها دلوقتى «كل المستخدمين». ترجّعها «المدير فقط» أو تقفلها فى أى وقت. ولو قفلت أداة، بتختفى من الدرج فورًا، ولو قفلتهم كلهم التبويب نفسه بيختفى.'],
@@ -13318,7 +13330,8 @@ const AP_STAFF_IC={
   customers:['guest','#157a8c'],  due:['cal','#d64545'],        collected:['receipt','#1e9e6a'],
   wallets:['wallet','#c8a24b'],   news:['book','#1195b2'],      cashflow:['coins','#157a8c'],
   partners:['union','#2f5675'],   expenses:['card','#d8a257'],  zakat:['spa','#1e9e6a'],
-  reports:['doc','#2f5675'],      attach:['doc','#4a5560'],     settings:['cog','#4a5560']
+  reports:['doc','#2f5675'],      attach:['doc','#4a5560'],     settings:['cog','#4a5560'],
+  usage:['book','#157a8c']        /* v61.94 */
 };
 function apSvcPanelList(){
   if(typeof apPartnerMode==='function'&&apPartnerMode()&&typeof AP_PARTNER_MENU!=='undefined')
@@ -13465,8 +13478,11 @@ function apToolsOpen(){
 }
 function apToolsClose(){
   const d=document.getElementById('apTDrawer'), b=document.getElementById('apTBack2');
+  const was=!!(d&&d.classList.contains('open'));
   if(d) d.classList.remove('open'); if(b) b.classList.remove('open');
   document.body.classList.remove('apTOn');
+  /* v61.94: رجعنا للشاشة اللى تحت — نكمّل عدّ وقتها من غير فتحة جديدة */
+  if(was){ try{ apUseResume(apUseScrKey()); }catch(e){} }
   try{ if(window.AP_TOOLS_READY) apToolsDrawer(false); }catch(e){}
 }
 /* v61.93: الفتح والقفل من السهم نفسه.
@@ -13507,6 +13523,375 @@ function apToolsToggle(){
     if(e.key==='Escape') apToolsClose();
   });
 })();
+
+/* =====================================================================
+   v61.94 — سجل الاستخدام
+   بيعدّ على الجهاز: كام مرة اتفتحت كل شاشة وكام ثانية اتقعد فيها، وكام
+   مرة اتفتح التطبيق نفسه فى اليوم. بيتجمّع فى localStorage وبيتبعت
+   للسحابة كتابة واحدة لما التطبيق يتصغّر أو يتقفل.
+
+   قواعد ثابتة:
+   • مافيش أى محتوى بيتسجّل — أسامى شاشات وأرقام وبس. لا مبالغ ولا نصوص
+     ولا أسامى عملاء. الأسامى بتتركّب عند المدير محليًا من بياناته هو.
+   • العدّاد بيقف لما التطبيق يتصغّر، وفيه سقف ١٠ دقايق للجلسة الواحدة
+     على الشاشة، فواحد سايب التطبيق مفتوح ونايم مابيبوّظش المتوسط.
+   • مفتاح واحد (apUseOn) بيقفل كل ده. لما تيجى شاشة «موافق على الشروط»
+     بعدين، تربطها بالمفتاح ده وخلاص.
+   • العقدة على السحابة منفصلة تمامًا (/usage) — مابتلمسش بيانات النظام
+     ولا نسخ العملاء ولا الشركاء، ومحدش بيقراها غير المدير.
+   ===================================================================== */
+const AP_USE_KEY='apUseBuf', AP_USE_DEV='apUseDev';
+const AP_USE_CAP=600;               /* سقف ١٠ دقايق للقعدة الواحدة */
+function apUseOn(){
+  /* المفتاح الوحيد اللى بيقفل التسجيل كله — جاهز لشاشة الموافقة بعدين */
+  try{ if(localStorage.getItem('apUseOff')==='1') return false; }catch(e){}
+  return true;
+}
+function apUseDevId(){
+  try{
+    let d=localStorage.getItem(AP_USE_DEV);
+    if(!d){ d='d'+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-4);
+            localStorage.setItem(AP_USE_DEV,d); }
+    return d;
+  }catch(e){ return 'd0'; }
+}
+function apUseKind(){
+  try{
+    const ua=navigator.userAgent||'';
+    if(/iPad|Tablet/i.test(ua)) return 'تابلت';
+    if(/iPhone|iPod/i.test(ua)) return 'آيفون';
+    if(/Android/i.test(ua))     return /Mobile/i.test(ua)?'أندرويد':'تابلت أندرويد';
+    return 'كمبيوتر';
+  }catch(e){ return '—'; }
+}
+function apUseRole(){
+  try{
+    if(AP_CLIENT) return 'client';
+    if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER) return 'partner';
+    if(CURRENT_USER&&CURRENT_USER.admin) return 'admin';
+    if(CURRENT_USER) return 'staff';
+  }catch(e){}
+  return '';
+}
+function apUseLoad(){
+  try{ return JSON.parse(localStorage.getItem(AP_USE_KEY)||'{}')||{}; }catch(e){ return {}; }
+}
+function apUseStore(b){ try{ localStorage.setItem(AP_USE_KEY,JSON.stringify(b)); }catch(e){} }
+function apUseMonth(){ return todayISO().slice(0,7); }
+/* بنجيب (ونعمل لو مش موجود) عقدة الشهر الحالى */
+function apUseNode(b){
+  const m=apUseMonth();
+  if(!b[m]) b[m]={d:{},s:{},g:{}};
+  const n=b[m];
+  if(!n.d)n.d={}; if(!n.s)n.s={}; if(!n.g)n.g={};
+  return n;
+}
+let AP_USE_CUR=null, AP_USE_T0=0;
+/* بنقفل القعدة الحالية ونسجّل ثوانيها */
+function apUseStop(){
+  if(!AP_USE_CUR||!AP_USE_T0) { AP_USE_CUR=null; AP_USE_T0=0; return; }
+  const sec=Math.min(AP_USE_CAP,Math.round((Date.now()-AP_USE_T0)/1000));
+  const key=AP_USE_CUR; AP_USE_CUR=null; AP_USE_T0=0;
+  if(sec<1) return;
+  if(!apUseOn()) return;
+  const b=apUseLoad(), n=apUseNode(b);
+  const bag=key.charAt(0)==='#'?n.g:n.s, id=key.charAt(0)==='#'?key.slice(1):key;
+  if(!bag[id]) bag[id]={n:0,t:0};
+  bag[id].t+=sec;
+  apUseStore(b);
+}
+/* فتح شاشة: بنقفل اللى قبلها ونعدّ الجديدة */
+function apUseHit(key){
+  if(!apUseOn()||!key) return;
+  apUseStop();
+  const b=apUseLoad(), n=apUseNode(b);
+  const bag=key.charAt(0)==='#'?n.g:n.s, id=key.charAt(0)==='#'?key.slice(1):key;
+  if(!bag[id]) bag[id]={n:0,t:0};
+  bag[id].n++;
+  n.last=new Date().toISOString();
+  apUseStore(b);
+  AP_USE_CUR=key; AP_USE_T0=Date.now();
+}
+/* مفتاح الشاشة المفتوحة دلوقتى حسب نوع الجلسة */
+function apUseScrKey(){
+  try{
+    if(AP_CLIENT) return 'c:'+(typeof AP_CTAB!=='undefined'&&AP_CTAB?AP_CTAB:'file');
+    if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER)
+      return 'p:'+(typeof AP_PTAB!=='undefined'&&AP_PTAB?AP_PTAB:'sum');
+    return currentScreen||'dashboard';
+  }catch(e){ return 'dashboard'; }
+}
+/* رجوع لشاشة كانت مفتوحة — بنكمّل عدّ الوقت من غير ما نزوّد عدد الفتحات */
+function apUseResume(key){
+  if(!apUseOn()||!key) return;
+  apUseStop();
+  AP_USE_CUR=key; AP_USE_T0=Date.now();
+}
+/* فتحة تطبيق جديدة — مرة واحدة لكل جلسة دخول */
+function apUseSession(){
+  if(!apUseOn()) return;
+  const b=apUseLoad(), n=apUseNode(b);
+  const dd=todayISO().slice(8,10);
+  n.d[dd]=(Number(n.d[dd])||0)+1;
+  n.last=new Date().toISOString();
+  n.v=APP_VER; n.dev=apUseKind(); n.r=apUseRole();
+  apUseStore(b);
+}
+/* البعتة: عقدة الشهر الحالى كاملة — set مش update، فالإعادة مابتضاعفش */
+let AP_USE_BUSY=false;
+async function apUseFlush(){
+  if(!apUseOn()||AP_USE_BUSY) return;
+  if(typeof window.apUsePush!=='function') return;
+  apUseStop();
+  const b=apUseLoad(), m=apUseMonth(), n=b[m];
+  if(!n) return;
+  if(!n.r) n.r=apUseRole();
+  if(!n.r) return;                       /* لسه مادخلش — مافيش حاجة تتبعت */
+  n.v=APP_VER; n.dev=apUseKind();
+  AP_USE_BUSY=true;
+  try{ await window.apUsePush(m,apUseDevId(),n); }catch(e){}
+  AP_USE_BUSY=false;
+}
+/* الفتحة بتتسجّل أول ما تبان هوية الجلسة — مهما كان مدخل الدخول
+   (اسم مستخدم، بريد، عميل، شريك). مرة واحدة لكل تحميل للصفحة. */
+let AP_USE_SESSION_DONE=false;
+(function(){
+  const t=setInterval(function(){
+    if(AP_USE_SESSION_DONE){ clearInterval(t); return; }
+    let r=''; try{ r=apUseRole(); }catch(e){}
+    if(!r) return;
+    AP_USE_SESSION_DONE=true; clearInterval(t);
+    /* لو nav سجّل الشاشة خلاص مانعدّهاش تانى — بنكمّل وقتها بس */
+    try{ apUseSession(); if(AP_USE_CUR===null) apUseHit(apUseScrKey()); }catch(e){}
+  },1500);
+})();
+/* بنوقف العدّاد لما التطبيق يتصغّر، وبنبعت. ولما يرجع بنشغّله تانى. */
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden'){ apUseFlush(); }
+  else if(AP_USE_CUR===null&&currentScreen){ AP_USE_CUR=null; }
+});
+window.addEventListener('pagehide',function(){ try{ apUseStop(); apUseFlush(); }catch(e){} });
+/* شبكة أمان: بعتة كل ٣ دقايق للجلسات الطويلة */
+setInterval(function(){ try{ apUseFlush(); }catch(e){} },180000);
+
+/* =====================================================================
+   v61.94 — شاشة «📊 سجل الاستخدام» (للمدير وحده)
+   بتقرا العقدة من السحابة وبتترجم البريد لاسم من بيانات المدير المحلية:
+   العميل باسمه فى التعاقد، والشريك باسمه فى كشفه، والموظف باسم دخوله.
+   ولا اسم بيتكتب على السحابة أصلًا.
+   ===================================================================== */
+const AP_USE_TOOLNM={calc:'الآلة الحاسبة',athkar:'الأذكار',tasbih:'المسبحة',
+  fin:'حاسبة التشطيب',sudoku:'سودوكو',xo:'إكس أو',mem:'الذاكرة',guess:'خمّن الرقم',
+  slide:'ترتيب الأرقام',quiz:'معلومات عامة',cw:'كلمات متقاطعة',list:'قايمة الأدوات'};
+let AP_USE_ROWS=null, AP_USE_MO='';
+function apUseMenuMap(menu,pfx){
+  const out={};
+  (menu||[]).forEach(function(it){
+    const m=/\(\s*'([^']+)'\s*\)/.exec(String(it[3]||''));
+    if(m) out[pfx+m[1]]=it[1];
+  });
+  return out;
+}
+/* مفتاح → اسم عربى مفهوم */
+function apUseLabels(){
+  const L={};
+  SCREENS.forEach(function(x){ L[x[0]]=x[1]; });
+  Object.assign(L,apUseMenuMap(typeof AP_CLIENT_MENU!=='undefined'?AP_CLIENT_MENU:[],'c:'));
+  Object.assign(L,apUseMenuMap(typeof AP_PARTNER_MENU!=='undefined'?AP_PARTNER_MENU:[],'p:'));
+  L['c:home']='🏠 رئيسية العميل'; L['p:home']='🏠 رئيسية الشريك';
+  L['customerFile']='📄 ملف العميل'; L['availEdit']='🅿️ تعديل المتاح';
+  Object.keys(AP_USE_TOOLNM).forEach(function(k){ L['#'+k]='🧰 '+AP_USE_TOOLNM[k]; });
+  return L;
+}
+function apUseLb(L,k){ return L[k]||k; }
+/* البريد → اسم حسب نوع الحساب */
+function apUseNames(){
+  const out={};
+  let maps=null; try{ maps=apAccessMaps(); }catch(e){ maps=null; }
+  (DB.users||[]).forEach(function(u){
+    const em=String(u.email||'').trim().toLowerCase(); if(!em) return;
+    let nm=u.name, role='staff';
+    if(u.client){ role='client';
+      try{ const s=(DB.sales||[]).find(x=>x.unitId===u.unitId);
+           if(s&&s.customer&&s.customer.name) nm=s.customer.name; }catch(e){}
+    }else if(u.partner){ role='partner';
+      try{ const p=partnerById(u.partnerId); if(p&&p.name) nm=p.name; }catch(e){}
+    }else if(u.admin){ role='admin'; }
+    out[em]={name:nm,role:role,login:u.name};
+  });
+  if(maps){
+    /* احتياطى: لو حساب على السحابة مش موجود محليًا */
+    try{
+      const c=(typeof window.apCloudCfg==='function')?window.apCloudCfg():null;
+      if(c&&c.adminEmail&&!out[String(c.adminEmail).toLowerCase()])
+        out[String(c.adminEmail).toLowerCase()]={name:'المدير',role:'admin',login:'ADMIN'};
+    }catch(e){}
+  }
+  return out;
+}
+function apUseMins(sec){
+  sec=Math.round(Number(sec)||0);
+  if(sec<60) return sec+' ث';
+  const m=Math.floor(sec/60), s=sec%60;
+  if(m<60) return m+'د '+(s?s+'ث':'');
+  return Math.floor(m/60)+'س '+(m%60)+'د';
+}
+function apUseRoleLb(r){
+  return {client:'عميل',partner:'شريك',staff:'موظف',admin:'مدير'}[r]||'—';
+}
+function renderUsage(){
+  const box=$('#scr-usage'); if(!box) return;
+  const head='<h2 class="screen-title">📊 سجل الاستخدام'
+    +'<span class="gray-note"> — مين بيفتح إيه، وقدّ إيه بيقعد فيه. أرقام بس: مفيش أى محتوى بيتسجّل.</span></h2>';
+  if(AP_USE_ROWS===null){
+    box.innerHTML=head+'<div class="toolbar no-print">'
+      +'<button class="btn" onclick="apUseLoadRows()">☁️ تحميل السجل</button>'
+      +'<span class="gray-note">السجل بيتقرا من السحابة لحظيًا — مش محفوظ فى ملفك.</span></div>';
+    return;
+  }
+  if(AP_USE_ROWS.err){
+    box.innerHTML=head+'<div class="toolbar no-print">'
+      +'<button class="btn" onclick="apUseLoadRows()">🔄 إعادة المحاولة</button></div>'
+      +'<p class="gray-note">⚠️ '+esc(AP_USE_ROWS.err)+'</p>';
+    return;
+  }
+  const all=AP_USE_ROWS.rows||[];
+  const months=[...new Set(all.map(r=>r.month))].sort().reverse();
+  if(!AP_USE_MO||(AP_USE_MO!=='*'&&months.indexOf(AP_USE_MO)<0)) AP_USE_MO=months[0]||'*';
+  const rows=AP_USE_MO==='*'?all:all.filter(r=>r.month===AP_USE_MO);
+  const L=apUseLabels(), NM=apUseNames();
+
+  /* ---- تجميع الشاشات والأدوات ---- */
+  const scr={}, tool={}, vers={}, devs={};
+  rows.forEach(function(r){
+    Object.keys(r.scr||{}).forEach(function(k){
+      const x=r.scr[k]||{}; if(!scr[k]) scr[k]={n:0,t:0};
+      scr[k].n+=Number(x.n)||0; scr[k].t+=Number(x.t)||0; });
+    Object.keys(r.tools||{}).forEach(function(k){
+      const x=r.tools[k]||{}; if(!tool[k]) tool[k]={n:0,t:0};
+      tool[k].n+=Number(x.n)||0; tool[k].t+=Number(x.t)||0; });
+    if(r.ver) vers[r.ver]=(vers[r.ver]||0)+1;
+    if(r.dev) devs[r.dev]=(devs[r.dev]||0)+1;
+  });
+  const scrList=Object.keys(scr).map(k=>({k:k,n:scr[k].n,t:scr[k].t}))
+    .sort((a,b)=>b.n-a.n);
+  const toolList=Object.keys(tool).map(k=>({k:k,n:tool[k].n,t:tool[k].t}))
+    .sort((a,b)=>b.n-a.n);
+
+  /* ---- المستخدمين: سطر لكل بريد (بنجمع أجهزته) ---- */
+  const byMail={};
+  rows.forEach(function(r){
+    const em=(r.mail||'').toLowerCase(); if(!em) return;
+    if(!byMail[em]) byMail[em]={mail:em,role:r.role,opens:0,secs:0,last:'',
+                                vers:{},devs:{},scr:{},nDev:{}};
+    const u=byMail[em];
+    if(r.role&&!u.role) u.role=r.role;
+    Object.keys(r.days||{}).forEach(d=>{ u.opens+=Number(r.days[d])||0; });
+    Object.keys(r.scr||{}).forEach(function(k){
+      const x=r.scr[k]||{}; u.secs+=Number(x.t)||0;
+      u.scr[k]=(u.scr[k]||0)+(Number(x.n)||0); });
+    Object.keys(r.tools||{}).forEach(function(k){ u.secs+=Number((r.tools[k]||{}).t)||0; });
+    if(r.last>u.last) u.last=r.last;
+    if(r.ver) u.vers[r.ver]=1;
+    if(r.dev) u.devs[r.dev]=1;
+    u.nDev[r.devId]=1;
+  });
+  const users=Object.keys(byMail).map(k=>byMail[k])
+    .sort((a,b)=>(b.last||'').localeCompare(a.last||''));
+
+  /* ---- شاشات مهجورة ---- */
+  const live=new Set(Object.keys(scr));
+  const dead=Object.keys(L).filter(function(k){
+    if(k.charAt(0)==='#') return false;             /* الأدوات ليها كارت لوحدها */
+    if(k==='usage') return false;                   /* الشاشة دى نفسها */
+    return !live.has(k);
+  });
+
+  const moOpts=['<option value="*"'+(AP_USE_MO==='*'?' selected':'')+'>كل الشهور</option>']
+    .concat(months.map(m=>'<option value="'+m+'"'+(m===AP_USE_MO?' selected':'')+'>'+m+'</option>'))
+    .join('');
+  const totOpens=users.reduce((a,u)=>a+u.opens,0);
+  const totSecs=users.reduce((a,u)=>a+u.secs,0);
+
+  box.innerHTML=head
+  +'<div class="toolbar no-print">'
+   +'<label class="gray-note">الشهر: <select onchange="AP_USE_MO=this.value;renderUsage()">'+moOpts+'</select></label>'
+   +'<button class="btn ghost" onclick="apUseLoadRows()">🔄 تحديث</button>'
+   +'<button class="btn ghost" style="margin-inline-start:auto" onclick="printScreen()">🖨️ طباعة</button>'
+  +'</div>'
+  +'<div class="grid g4">'
+   +fld('👥','مستخدمين نشطين',String(users.length),'')
+   +fld('📲','مرات فتح التطبيق',String(totOpens),'')
+   +fld('⏱️','إجمالى وقت الاستخدام',apUseMins(totSecs),'')
+   +fld('🖥️','أجهزة',String(new Set(rows.map(r=>r.uid+'|'+r.devId)).size),'')
+  +'</div>'
+
+  +'<div class="card"><h3>🔥 الشاشات — ترتيب حسب الاستعمال</h3>'
+   +'<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الشاشة</th><th>فتحات</th>'
+   +'<th>إجمالى الوقت</th><th>متوسط القعدة</th></tr></thead><tbody>'
+   +(scrList.length?scrList.map(x=>'<tr><td>'+esc(apUseLb(L,x.k))+'</td><td>'+x.n+'</td><td>'
+       +apUseMins(x.t)+'</td><td>'+apUseMins(x.n?x.t/x.n:0)+'</td></tr>').join('')
+     :'<tr><td colspan="4" class="gray-note">مفيش بيانات لسه</td></tr>')
+   +'</tbody></table></div></div>'
+
+  +'<div class="card"><h3>🗑️ شاشات مامحدش فتحها</h3>'
+   +'<p class="gray-note">دى المرشّحة للشيل — بس استنى أسبوعين على الأقل بعد النشر قبل ما تحكم، '
+   +'لأن العدّاد بدأ من يوم التحديث مش بأثر رجعى.</p>'
+   +(dead.length?['','c:','p:'].map(function(pfx){
+       const g=dead.filter(function(k){
+         if(pfx) return k.indexOf(pfx)===0;
+         return k.indexOf('c:')!==0 && k.indexOf('p:')!==0;
+       });
+       if(!g.length) return '';
+       const ttl=pfx==='c:'?'شاشات العميل':(pfx==='p:'?'شاشات الشريك':'شاشات الإدارة');
+       return '<p class="gray-note" style="margin:10px 0 4px"><b>'+ttl+'</b></p><p>'
+         +g.map(k=>'<span class="useChip">'+esc(apUseLb(L,k))+'</span>').join(' ')+'</p>';
+     }).join('')
+     :'<p class="gray-note">مفيش — كل شاشة اتفتحت مرة على الأقل.</p>')
+  +'</div>'
+
+  +'<div class="card"><h3>🧰 الأدوات والألعاب</h3>'
+   +'<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الأداة</th><th>فتحات</th>'
+   +'<th>إجمالى الوقت</th><th>متوسط القعدة</th></tr></thead><tbody>'
+   +(toolList.length?toolList.map(x=>'<tr><td>'+esc(AP_USE_TOOLNM[x.k]||x.k)+'</td><td>'+x.n+'</td><td>'
+       +apUseMins(x.t)+'</td><td>'+apUseMins(x.n?x.t/x.n:0)+'</td></tr>').join('')
+     :'<tr><td colspan="4" class="gray-note">مفيش بيانات لسه</td></tr>')
+   +'</tbody></table></div></div>'
+
+  +'<div class="card"><h3>👥 المستخدمين</h3>'
+   +'<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الاسم</th><th>النوع</th><th>آخر دخول</th>'
+   +'<th>فتحات</th><th>الوقت</th><th>أكتر&nbsp;٣ شاشات</th><th>النسخة</th><th>الجهاز</th>'
+   +'</tr></thead><tbody>'
+   +(users.length?users.map(function(u){
+       const info=NM[u.mail]||null;
+       const nm=info?info.name:(u.mail.split('@')[0]);
+       const rl=info?info.role:u.role;
+       const top=Object.keys(u.scr).sort((a,b)=>u.scr[b]-u.scr[a]).slice(0,3)
+         .map(k=>esc(apUseLb(L,k))+' ('+u.scr[k]+')').join('، ')||'—';
+       const vs=Object.keys(u.vers).join('، ')||'—';
+       const dv=Object.keys(u.devs).join('، ')||'—';
+       const old=Object.keys(u.vers).some(v=>v&&v!==APP_VER);
+       return '<tr><td><b>'+esc(nm)+'</b></td><td>'+apUseRoleLb(rl)+'</td><td>'
+         +(u.last?esc(new Date(u.last).toLocaleString('ar-EG')):'—')+'</td><td>'
+         +u.opens+'</td><td>'+apUseMins(u.secs)+'</td><td class="gray-note">'+top+'</td><td>'
+         +(old?'<b style="color:#d64545">'+esc(vs)+'</b>':esc(vs))+'</td><td>'+esc(dv)+'</td></tr>';
+     }).join('')
+     :'<tr><td colspan="8" class="gray-note">مفيش بيانات لسه</td></tr>')
+   +'</tbody></table></div>'
+   +'<p class="gray-note">النسخة بالأحمر معناها إن الجهاز ده لسه واقف على نسخة أقدم من '+APP_VER+'.</p>'
+  +'</div>';
+}
+async function apUseLoadRows(){
+  const box=$('#scr-usage');
+  if(box) box.innerHTML='<h2 class="screen-title">📊 سجل الاستخدام</h2>'
+    +'<p class="gray-note">⏳ بيحمّل من السحابة…</p>';
+  if(typeof window.apUseFetch!=='function'){
+    AP_USE_ROWS={err:'السحابة مش مهيأة على الجهاز ده'}; renderUsage(); return; }
+  try{ AP_USE_ROWS=await window.apUseFetch(); }
+  catch(e){ AP_USE_ROWS={err:(e&&e.message)||'تعذرت القراءة'}; }
+  renderUsage();
+}
+
 function apDotsOn(){ const r=apDotsRole();
   return r==='client'||r==='partner'||r==='staff'||(r==='admin'&&apAdmMobile()); }
 function apSvcPanelHTML(){
@@ -15048,6 +15433,7 @@ function apClientGo(tab){
   AP_CTAB=tab;
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===tab));
   renderCustomerFile(cfSaleId);
+  try{ apUseHit('c:'+tab); }catch(e){}    /* v61.94: سجل الاستخدام */
   window.scrollTo({top:0});
 }
 function apUnitOptionsHTML(sel){
@@ -19961,6 +20347,49 @@ function apSetAttUrl(key,url){
     } catch (e) {
       return { err: 'تعذر الحجز: ' + (e && (e.code || e.message) || '') };
     }
+  };
+
+  /* =====================================================================
+     v61.94 — سجل الاستخدام
+     عقدة مستقلة تمامًا: /usage/<uid>/<الشهر>/<الجهاز>. مافيهاش أى اسم
+     ولا أى محتوى — بريد المستخدم بس (وهو أصلًا مفتاح عقدته)، ونوع حسابه،
+     وأرقام. الأسامى بتتركّب عند المدير من بياناته المحلية.
+     كل حساب بيكتب تحت uid بتاعه هو وبس، والقراءة للمدير وحده.
+     ===================================================================== */
+  window.apUsePush = async function (month, dev, node) {
+    if (!rtdb || !cloudUser || !month || !dev || !node) return false;
+    const rec = {
+      m: (cloudUser.email || '').toLowerCase(),
+      r: node.r || '', v: node.v || '', dv: node.dev || '',
+      last: node.last || new Date().toISOString(),
+      d: node.d || {}, s: node.s || {}, g: node.g || {}
+    };
+    try { await rtdb.ref('usage/' + cloudUser.uid + '/' + month + '/' + dev).set(rec); return true; }
+    catch (e) { console.warn('usage', e && e.code); return false; }
+  };
+  /* القراءة: المدير بس. بترجّع قايمة مسطّحة — سطر لكل (مستخدم × شهر × جهاز) */
+  window.apUseFetch = async function () {
+    if (!rtdb) return { err: 'غير متصل بالسحابة' };
+    if (!isCloudAdmin()) return { err: 'للمدير فقط' };
+    let v = null;
+    try { const sn = await rtdb.ref('usage').get(); v = sn.val() || {}; }
+    catch (e) { return { err: 'تعذرت القراءة: ' + ((e && (e.code || e.message)) || '') }; }
+    const rows = [];
+    Object.keys(v).forEach(uid => {
+      const months = v[uid] || {};
+      Object.keys(months).forEach(mo => {
+        const devs = months[mo] || {};
+        Object.keys(devs).forEach(dv => {
+          const r = devs[dv] || {};
+          rows.push({
+            uid: uid, month: mo, devId: dv,
+            mail: r.m || '', role: r.r || '', ver: r.v || '', dev: r.dv || '',
+            last: r.last || '', days: r.d || {}, scr: r.s || {}, tools: r.g || {}
+          });
+        });
+      });
+    });
+    return { ok: true, rows: rows };
   };
 
   /* v61.34: المدير يقرأ أوقات دخول العملاء — مفتاح البريد ← آخر دخول */
