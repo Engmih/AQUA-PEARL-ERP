@@ -346,6 +346,12 @@ function apTFinHTML(){
     +'</div>'
     +'<label class="apTFx"><input type="checkbox" id="tfSup" '+(st.sup?'checked':'')
       +' onchange="apTFinCalc()"> إضافة إشراف الشركة ١٥٪ على قيمة الأعمال</label>'
+    +'<div class="grid g2" style="margin-top:8px">'
+      +'<div class="form-row"><label>👤 اسم العميل (للطباعة)</label>'
+        +'<input id="tfName" value="'+esc2(st.name||'')+'" placeholder="اختيارى"></div>'
+      +'<div class="form-row"><label>🏢 الوحدة (للطباعة)</label>'
+        +'<input id="tfUnit" value="'+esc2(st.unit||'')+'" placeholder="مثال: B08-103"></div>'
+    +'</div>'
   +'</div>'
   +'<div id="tfOut"></div>'
   +'<div class="apTBtns">'
@@ -367,6 +373,8 @@ function apTFinRead(keepEdits){
   st.ac=(($$('#tfAc')||{}).value==='1');
   st.sup=!!(($$('#tfSup')||{}).checked);
   st.pkg=(($$('#tfPkg')||{}).value)||st.pkg;
+  st.name=(($$('#tfName')||{}).value)||'';
+  st.unit=(($$('#tfUnit')||{}).value)||'';
   if(!keepEdits){
     document.querySelectorAll('[data-fq]').forEach(el=>{ st.q[el.dataset.fq]=n2(el.value); });
     document.querySelectorAll('[data-fp]').forEach(el=>{ st.p[el.dataset.fp]=n2(el.value); });
@@ -383,7 +391,7 @@ window.apTFinCalc=function(resetQty){
   const sup=st.sup?Math.round(sum*0.15):0;
   const tot=sum+sup;
   const official=Math.round(n2(st.area)*n2(P.pm));
-  const diff=tot-official;
+  const diff=Math.round(sum-official);   /* المقارنة على الأعمال قبل الإشراف */
   const perM=n2(st.area)>0?Math.round(tot/n2(st.area)):0;
   const o=$$('#tfOut'); if(!o) return;
   const body=rows.map(r=>'<tr>'
@@ -407,7 +415,7 @@ window.apTFinCalc=function(resetQty){
       +tile('💰','الإجمالى',fmm(tot),'var(--aqua)')
       +tile('📊','متوسط المتر',fmm(perM))
       +tile('🏷️','سعر الباقة الرسمى',fmm(official))
-      +tile(Math.abs(diff)<official*0.03?'✔️':'⚠️','الفرق عن الباقة',
+      +tile(Math.abs(diff)<official*0.03?'✔️':'⚠️','فرق الأعمال عن الباقة',
             (diff>0?'+':'')+fmm(diff),Math.abs(diff)<official*0.03?'var(--green)':'var(--amber)')
     +'</div>'
     +'<div class="apTCard"><h4>توزيع التكلفة</h4>'+bars+'</div>'
@@ -423,43 +431,110 @@ window.apTFinReset=function(){
   const st=finState(); st.q={}; st.p={}; st.pkgOf=''; lsSet('fin',st); apTRender();
   try{ toast('رجعت للكميات والأسعار الافتراضية','ok'); }catch(e){}
 };
-window.apTFinPrint=function(){
+/* الطباعة بهوية الشركة: المستند بيتحط جوّه #receiptArea اللى تحت
+   ترويسة الشركة فى جدول الصفحة، فبيطلع بنفس اللوجوهات والفوتر وأرقام
+   الصفحات بتاعة الإيصالات والإنذارات بالظبط — مش نافذة منفصلة. */
+function apTFinDocHTML(){
   const st=apTF||finState(), rows=finRows(st), P=finPkgs()[st.pkg]||{};
-  const sum=rows.reduce((a,r)=>a+r.total,0), sup=st.sup?Math.round(sum*0.15):0, tot=sum+sup;
+  const sum=rows.reduce((a,r)=>a+r.total,0);
+  const sup=st.sup?Math.round(sum*0.15):0, tot=Math.round(sum+sup);
   const perM=n2(st.area)>0?Math.round(tot/n2(st.area)):0;
-  const w=window.open('','_blank'); if(!w){ try{ toast('المتصفح منع النافذة','err'); }catch(e){} return; }
-  w.document.write('<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
-    +'<title>تقدير تشطيب — '+esc2(P.ar||'')+'</title><style>'
-    +'body{font-family:Tahoma,Arial,sans-serif;direction:rtl;padding:26px;color:#15293b}'
-    +'h1{color:#0b2a4a;font-size:20px;margin:0 0 2px}h2{color:#1195b2;font-size:13.5px;margin:0 0 16px;font-weight:600}'
-    +'table{width:100%;border-collapse:collapse;margin-bottom:12px}'
-    +'td,th{border:1px solid #dbe6ee;padding:6px 8px;font-size:12.5px}'
-    +'thead th{background:#0b2a4a;color:#fff}tfoot th{background:#e3f3f8}'
-    +'.nt{font-size:11.5px;color:#5b7186;border-top:1px dashed #dbe6ee;padding-top:9px}'
-    +'</style></head><body>'
-    +'<h1>Aqua Pearl City — تقدير تكلفة تشطيب</h1>'
-    +'<h2>'+esc2(P.ar||'')+' ('+esc2(P.name||'')+') · '+fm(st.area)+' م² · '
-    +fm(st.rooms)+' غرف و'+fm(st.baths)+' حمامات · '+(new Date()).toLocaleDateString('ar-EG')+'</h2>'
-    +'<table><thead><tr><th>البند</th><th>الكمية</th><th>الوحدة</th><th>سعر الوحدة</th><th>الإجمالى</th><th>٪</th></tr></thead><tbody>'
-    +rows.map(r=>'<tr><td>'+esc2(r.n)+'</td><td>'+fm(r.q)+'</td><td>'+esc2(r.u)+'</td><td>'+fm(r.price)
-      +'</td><td>'+fm(r.total)+'</td><td>'+(sum>0?(r.total/sum*100).toFixed(1):'0')+'٪</td></tr>').join('')
-    +'</tbody><tfoot>'
-    +'<tr><th colspan="4">إجمالى الأعمال</th><th colspan="2">'+fm(sum)+'</th></tr>'
-    +(sup?'<tr><th colspan="4">إشراف الشركة ١٥٪</th><th colspan="2">'+fm(sup)+'</th></tr>':'')
-    +'<tr><th colspan="4">الإجمالى</th><th colspan="2">'+fm(tot)+'</th></tr>'
-    +'<tr><th colspan="4">متوسط تكلفة المتر</th><th colspan="2">'+fm(perM)+'</th></tr>'
-    +'</tfoot></table>'
-    +(st.sup?'<p class="nt">'+esc2((typeof FIN_SUPERVISION_TEXT!=='undefined')?FIN_SUPERVISION_TEXT:'')+'</p>':'')
-    +'<p class="nt">النتائج تقديرية ولا تمثل عرض سعر أو إيجابًا أو تعاقدًا مُلزمًا للشركة. '
-    +'سعر متر الباقة الرسمى '+fm(P.pm)+' ج.م/م²، وتوزيع التكلفة على البنود تقديرى قابل للمراجعة.</p>'
-    +'</body></html>');
-  w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },350);
+  const official=Math.round(n2(st.area)*n2(P.pm));
+  const diff=Math.round(sum-official);   /* الأعمال مقابل الباقة — الإشراف بند منفصل */
+  const row=(ic,l,v)=>'<div class="rc2-row"><span class="ic">'+ic+'</span><div style="flex:1">'
+    +'<span class="lbl">'+l+'</span><span class="val">'+v+'</span></div></div>';
+  const body=rows.map(function(r){
+    return '<tr><td style="text-align:start">'+esc2(r.n)+'</td>'
+      +'<td>'+(r.bal?'—':fm(r.q))+'</td><td>'+(r.bal?'مقطوعية':esc2(r.u))+'</td>'
+      +'<td>'+fm(r.price)+'</td><td style="font-weight:700">'+fm(r.total)+'</td>'
+      +'<td>'+(sum>0?(r.total/sum*100).toFixed(1):'0')+'٪</td></tr>';
+  }).join('');
+  const wrd=(function(){ try{ return tafqit(tot); }catch(e){ return ''; } })();
+  return '<div class="rc2" id="receiptDoc">'
+  +'<div class="rc2-title">'
+    +'<h2>مقايسة تشطيب تقديرية</h2>'
+    +'<div class="rc2-badge" style="background:var(--aqua)">'+esc2(P.ar||'')+' — '+esc2(P.name||'')+'</div>'
+    +'<div class="rc2-date">📅 تاريخ الإصدار: '+fmtD(todayISO())+'</div>'
+  +'</div>'
+  +'<div class="rc2-cards">'
+    +'<div class="rc2-card"><div class="hd">👤 بيانات التقدير</div>'
+      +row('🙍','اسم العميل',esc2(st.name||'—'))
+      +row('🏢','الوحدة',esc2(st.unit||'—'))
+      +row('📐','المساحة',fm(st.area)+' م²')
+      +row('🚪','الغرف والحمامات',fm(st.rooms)+' غرف · '+fm(st.baths)+' حمامات')
+    +'</div>'
+    +'<div class="rc2-card"><div class="hd">🎨 الباقة</div>'
+      +row('🏷️','سعر متر الباقة',fm(P.pm)+' ج.م/م²')
+      +row('💵','سعر الباقة للوحدة',fm(official)+' ج.م')
+      +row('❄️','التكييفات',st.ac?'مشمولة':'غير مشمولة')
+      +row('📐','إشراف الشركة',st.sup?'١٥٪ مضافة':'غير مضافة')
+    +'</div>'
+    +'<div class="rc2-card"><div class="hd">🧮 الإجمالى</div>'
+      +row('🧾','إجمالى الأعمال',fm(sum)+' ج.م')
+      +(sup?row('📐','إشراف ١٥٪',fm(sup)+' ج.م'):'')
+      +row('📊','متوسط تكلفة المتر',fm(perM)+' ج.م/م²')
+      +row(Math.abs(diff)<official*0.03?'✔️':'⚠️','فرق الأعمال عن الباقة',
+           (diff>0?'+':'')+fm(diff)+' ج.م')
+    +'</div>'
+  +'</div>'
+  +'<div class="rc2-amount">'
+    +'<div class="l">الإجمالى التقديرى لأعمال التشطيب</div>'
+    +'<div class="n">'+fm(tot)+' <span style="font-size:14px">جنيه</span></div>'
+    +(wrd?'<div class="w">فقط '+wrd+' لا غير</div>':'')
+  +'</div>'
+  +'<div class="rc2-legal" style="padding:0;overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:10.4px">'
+    +'<thead><tr style="background:var(--navy2);color:#fff">'
+      +'<th style="padding:5px 8px;text-align:start">البند</th><th style="padding:5px">الكمية</th>'
+      +'<th style="padding:5px">الوحدة</th><th style="padding:5px">سعر الوحدة</th>'
+      +'<th style="padding:5px">الإجمالى</th><th style="padding:5px">٪</th></tr></thead>'
+    +'<tbody>'+body+'</tbody>'
+    +'<tfoot><tr style="background:#eef5f9;font-weight:800">'
+      +'<th colspan="4" style="padding:5px 8px;text-align:start">إجمالى الأعمال</th>'
+      +'<th colspan="2" style="padding:5px">'+fm(sum)+' ج.م</th></tr>'
+    +(sup?'<tr style="background:#fdf7ea;font-weight:800">'
+      +'<th colspan="4" style="padding:5px 8px;text-align:start">إشراف الشركة ١٥٪</th>'
+      +'<th colspan="2" style="padding:5px">'+fm(sup)+' ج.م</th></tr>':'')
+    +'<tr style="background:var(--aqua-soft);font-weight:800">'
+      +'<th colspan="4" style="padding:6px 8px;text-align:start">الإجمالى التقديرى</th>'
+      +'<th colspan="2" style="padding:6px">'+fm(tot)+' ج.م</th></tr>'
+    +'</tfoot></table></div>'
+  +(st.sup&&typeof FIN_SUPERVISION_TEXT!=='undefined'
+    ?'<div class="rc2-legal"><b>بند الإشراف:</b> '+esc2(FIN_SUPERVISION_TEXT)+'</div>':'')
+  +'<div class="rc2-legal" style="background:#fdf3f2;border-color:#f0cfcb">'
+    +'<b>تنويه:</b> هذه الأرقام تقديرية استرشادية لغرض التفاوض والتخطيط فقط، ولا تُعد عرض سعر '
+    +'ولا إيجابًا ولا تعاقدًا مُلزمًا للشركة، وتخضع للمراجعة والاعتماد قبل التعاقد. '
+    +'سعر متر الباقة المعتمد '+fm(P.pm)+' ج.م/م²، وتوزيع التكلفة على البنود تقديرى قابل للمراجعة. '
+    +'والكميات محسوبة على مساحات الأعمال الفعلية لا على مساحة الوحدة.'
+  +'</div>'
+  +'</div>';
+}
+window.apTFinPrint=function(){
+  apTFinRead();
+  const st=apTF||finState(), P=finPkgs()[st.pkg]||{};
+  const area=document.getElementById('receiptArea');
+  if(!area){ try{ toast('تعذّر تجهيز المستند','err'); }catch(e){} return; }
+  area.innerHTML=apTFinDocHTML();
+  try{ setPrintMeta(); }catch(e){}
+  const nm=['مقايسة تشطيب',P.ar||'',st.name||'',st.unit||'',
+            (typeof apFileDate==='function')?apFileDate(todayISO()):''].filter(Boolean).join(' — ');
+  const open=document.getElementById('apTDrawer')&&document.getElementById('apTDrawer').classList.contains('open');
+  try{
+    apPrintAs(nm,
+      function(){ if(open) apToolsClose(); document.body.classList.add('print-receipt'); },
+      function(){ document.body.classList.remove('print-receipt');
+                  if(open) setTimeout(function(){ try{ apToolsOpen(); }catch(e){} },120); });
+  }catch(e){
+    document.body.classList.add('print-receipt');
+    window.print();
+    document.body.classList.remove('print-receipt');
+  }
 };
 
-AP_T_HTML.calc =apTCalcHTML;  AP_T_INIT.calc =apTCalcAfter;
-AP_T_HTML.tasbih=apTTasbihHTML;AP_T_INIT.tasbih=apTTasbihAfter;
-AP_T_HTML.fin  =apTFinHTML;   AP_T_INIT.fin  =apTFinAfter;
-
+/* تسجيل الأدوات فى خريطة الصفحات */
+AP_T_HTML.calc  =apTCalcHTML;   AP_T_INIT.calc  =apTCalcAfter;
+AP_T_HTML.tasbih=apTTasbihHTML; AP_T_INIT.tasbih=apTTasbihAfter;
+AP_T_HTML.fin   =apTFinHTML;    AP_T_INIT.fin   =apTFinAfter;
 
 /* =====================================================================
    🎮 ألعاب وتسلية — كلها من غير أى مكتبة خارجية
@@ -1410,7 +1485,7 @@ window.apTCwCheck=function(){
 AP_T_HTML.cw=apTCwHTML; AP_T_INIT.cw=function(){ if(CW&&!CW.done) cwTick(); };
 
 window.AP_TDBG={sdMake:sdMake,sdCount:sdCount,sdOk:sdOk,xoMinimax:xoMinimax,xoWin:xoWin,
-  slNew:slNew,slSolvable:slSolvable,qzNew:qzNew,cwNew:cwNew,cwBuild:cwBuild,cwFits:cwFits,CW_BANK:CW_BANK,
+  slNew:slNew,slSolvable:slSolvable,qzNew:qzNew,cwNew:cwNew,apTFinRead:apTFinRead,apTFinDocHTML:apTFinDocHTML,cwBuild:cwBuild,cwFits:cwFits,CW_BANK:CW_BANK,
   memNew:memNew,guNew:guNew,lsGet:lsGet,lsSet:lsSet,gScore:gScore,
   get SD(){return SD;}, get MM(){return MM;}, get SL(){return SL;},
   get QZ(){return QZ;}, get CW(){return CW;}, get GU(){return GU;}, get XO(){return XO;}};
