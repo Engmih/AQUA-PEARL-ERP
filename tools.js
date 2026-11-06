@@ -28,7 +28,16 @@ function apTSoundSet(v){ lsSet('fx',!!v); apTRender(); }
 const TOOLS=[
   {id:'quote', ic:'🧮', name:'حاسبة عرض السعر', sub:'قسط شهرى وجدول مبدئى قدام العميل'},
   {id:'calc',  ic:'🔢', name:'الآلة الحاسبة',   sub:'بالنِسب والسجل'},
-  {id:'tasbih',ic:'📿', name:'المسبحة',          sub:'عدّاد بيتحفظ لوحده'}
+  {id:'tasbih',ic:'📿', name:'المسبحة',          sub:'عدّاد بيتحفظ لوحده'},
+  {id:'fin',   ic:'🎨', name:'حاسبة التشطيب',    sub:'من باقاتك الحقيقية، بند بند'},
+  {id:'sudoku',ic:'🔲', name:'سودوكو',           sub:'ألغاز حقيقية بحل وحيد', g:1},
+  {id:'xo',    ic:'⭕', name:'إكس أو',            sub:'ضد الكمبيوتر أو اتنين', g:1},
+  {id:'mem',   ic:'🧠', name:'الذاكرة',           sub:'بطاقات متطابقة', g:1},
+  {id:'g2048', ic:'🔢', name:'2048',              sub:'بالسحب، وفيها تراجع', g:1},
+  {id:'guess', ic:'🎯', name:'خمّن الرقم',        sub:'أعلى / أقل', g:1},
+  {id:'slide', ic:'🧩', name:'ترتيب الأرقام',     sub:'ألغاز قابلة للحل دايمًا', g:1},
+  {id:'speed', ic:'⚡', name:'الحساب السريع',      sub:'تحدى ٦٠ ثانية', g:1},
+  {id:'quiz',  ic:'❓', name:'معلومات عامة',       sub:'٥ تصنيفات', g:1}
 ];
 let apTOpen=false, apTPage='';
 
@@ -52,12 +61,14 @@ window.apToolsGo=function(id){ apTPage=id||''; apTRender(); };
 function apTRender(){
   const b=$$('#apTBody'); if(!b) return;
   if(!apTPage){
-    b.innerHTML='<div class="apTList">'+apTList().map(t=>
-      '<button class="apTItem" onclick="apToolsGo(\''+t.id+'\')">'
+    const L=apTList(), tools=L.filter(t=>!t.g), games=L.filter(t=>t.g);
+    const row=t=>'<button class="apTItem" onclick="apToolsGo(\''+t.id+'\')">'
       +'<span class="apTIc">'+t.ic+'</span>'
       +'<span class="apTTx"><b>'+esc2(t.name)+'</b><i>'+esc2(t.sub)+'</i></span>'
-      +'<span class="apTAr">‹</span></button>').join('')
-      +'</div>'
+      +'<span class="apTAr">‹</span></button>';
+    b.innerHTML=(tools.length?'<div class="apTList">'+tools.map(row).join('')+'</div>':'')
+      +(games.length?'<h4 class="apTSec">🎮 ألعاب وتسلية</h4><div class="apTList">'
+        +games.map(row).join('')+'</div>':'')
       +'<label class="apTFx"><input type="checkbox" '+(apTSound()?'checked':'')
       +' onchange="apTSoundSet(this.checked)"> المؤثرات والاهتزاز</label>'
       +'<p class="apTNote">أدوات تحت التجربة — منفصلة تمامًا عن حسابات النظام، '
@@ -70,8 +81,9 @@ function apTRender(){
   if(!t||!apTAllowed(t.id)){ apTPage=''; apTRender(); return; }
   const h=$$('#apTHead'); if(h) h.textContent=t.ic+' '+t.name;
   const bk=$$('#apTBack'); if(bk) bk.style.display='';
-  b.innerHTML=({quote:apTQuoteHTML,calc:apTCalcHTML,tasbih:apTTasbihHTML}[t.id])();
-  const after={quote:apTQuoteAfter,calc:apTCalcAfter,tasbih:apTTasbihAfter}[t.id];
+  const H=AP_T_HTML[t.id]; if(!H){ apTPage=''; apTRender(); return; }
+  b.innerHTML=H();
+  const after=AP_T_INIT[t.id];
   if(after) try{ after(); }catch(e){ console.warn('tool init',e); }
 }
 window.apTRender=apTRender;
@@ -127,6 +139,7 @@ function apTQuoteHTML(){
   +'<p class="apTNote">أرقام استرشادية للتفاوض — مش عرض سعر ولا تعاقد مُلزم، '
   +'ومابتتسجّلش فى النظام ولا بتأثر على أى وحدة أو عميل.</p>';
 }
+const AP_T_HTML={}, AP_T_INIT={};
 let apTQ=null;
 function apTQuoteRead(){
   const g=id=>n2(($$('#'+id)||{}).value);
@@ -397,6 +410,953 @@ window.apTTbReset=function(){
       '<p>هيترجع العدّاد صفر. إحصائية النهاردة هتفضل زى ما هى.</p>','🔄 صفّر',go); }
   catch(e){ if(confirm('تصفير العدّاد؟')) go(); }
 };
+
+/* =====================================================================
+   ٤) حاسبة التشطيب — من باقات النظام الحقيقية
+   مابتخترعش أسعار: بتاخد سعر المتر الرسمى للباقة من FIN_PKGS (نفس
+   الأرقام اللى فى استمارة الحجز وشاشة عرض الوحدة)، وتستخدمه كمرجع،
+   وتفصّل عليه بنود بكميات حقيقية — لأن مساحة الدهانات مش مساحة الشقة،
+   ومساحة الأرضيات مش مساحة الشقة كمان. وبتوريك الفرق بين تفصيلتك
+   وسعر الباقة الرسمى عشان تعرف إنت فوق ولا تحت.
+   ===================================================================== */
+function finPkgs(){
+  try{ if(typeof FIN_PKGS==='object'&&FIN_PKGS) return FIN_PKGS; }catch(e){}
+  return {};
+}
+/* البنود الافتراضية.
+   الكمية بتتولّد من المساحة والغرف والحمامات — مش من مساحة الوحدة
+   وبس، لأن الدهانات بتتحسب على الحوائط والسقف (≈٣ أمثال المساحة)
+   والأرضيات على الأرضيات والحوائط الرطبة (≈١٫١٥).
+   وسعر الوحدة (up) أسعار سوق تقريبية لمستوى CLASSIC، بتتضاعف
+   للباقات الأعلى بنسبة سعر مترها لسعر متر الكلاسيك.
+   والفرق بين مجموع البنود دى وسعر الباقة الرسمى بيتحط فى بند
+   «بنود أخرى ومستلزمات ومصنعيات» بدل ما نضخّم أسعار الوحدة. */
+const FIN_BASE_PM=6500;
+const FIN_ITEMS=[
+  {k:'floor', n:'الأرضيات والحوائط',  u:'م²',   q:(a,r,b)=>Math.round(a*1.15), up:800},
+  {k:'paint', n:'الدهانات',            u:'م²',   q:(a,r,b)=>Math.round(a*3.0),  up:160},
+  {k:'gyp',   n:'الأسقف الجبسية',      u:'م²',   q:(a,r,b)=>Math.round(a*0.35), up:400},
+  {k:'doors', n:'الأبواب والنجارة',    u:'باب',  q:(a,r,b)=>r+b+1,              up:9000},
+  {k:'elec',  n:'الأعمال الكهربائية',  u:'م²',   q:(a,r,b)=>Math.round(a),      up:700},
+  {k:'plumb', n:'الأعمال الصحية',      u:'حمام', q:(a,r,b)=>Math.max(1,b),      up:70000},
+  {k:'kitch', n:'المطبخ',              u:'مقطوعية', q:()=>1,                    up:120000},
+  {k:'light', n:'الإضاءة',             u:'م²',   q:(a,r,b)=>Math.round(a),      up:250},
+  {k:'ac',    n:'التكييفات',           u:'وحدة', q:(a,r,b)=>r+1,                up:35000, opt:true},
+  {k:'smart', n:'Smart Home ونظام الصوت', u:'مقطوعية', q:()=>1,                 up:70000, lux:true},
+  {k:'misc',  n:'بنود أخرى ومستلزمات ومصنعيات', u:'مقطوعية', q:()=>1, up:0, bal:true}
+];
+function finState(){
+  const d=lsGet('fin',null)||{};
+  return {pkg:d.pkg||'premium', area:d.area||140, rooms:d.rooms==null?3:d.rooms,
+          baths:d.baths==null?2:d.baths, sup:!!d.sup, ac:!!d.ac,
+          q:d.q||{}, p:d.p||{}, pkgOf:d.pkgOf||''};
+}
+let apTF=null;
+function finRows(st){
+  const P=finPkgs()[st.pkg], pm=P?n2(P.pm):0;
+  const lux=(st.pkg==='luxury');
+  const f=FIN_BASE_PM>0?(pm/FIN_BASE_PM):1;          /* معامل مستوى الباقة */
+  const official=Math.round(n2(st.area)*pm);
+  const items=FIN_ITEMS.filter(it=>(it.lux?lux:true)&&(it.opt?st.ac:true));
+  const mine=st.pkgOf===st.pkg;
+  const out=items.filter(it=>!it.bal).map(it=>{
+    const qd=it.q(n2(st.area),n2(st.rooms),n2(st.baths));
+    const q=(mine&&st.q[it.k]!=null)?n2(st.q[it.k]):qd;
+    const pd=Math.round(n2(it.up)*f/10)*10;           /* سعر سوق تقريبى لمستوى الباقة */
+    const price=(mine&&st.p[it.k]!=null)?n2(st.p[it.k]):pd;
+    return {k:it.k,n:it.n,u:it.u,q:q,qd:qd,price:price,pd:pd,total:q*price};
+  });
+  /* بند الموازنة: الفرق لحد سعر الباقة الرسمى — قابل للتعديل زى أى بند */
+  const bal=items.find(it=>it.bal);
+  if(bal){
+    const sum=out.reduce((a,r)=>a+r.total,0);
+    const pd=Math.max(0,Math.round(official-sum));
+    const price=(mine&&st.p[bal.k]!=null)?n2(st.p[bal.k]):pd;
+    out.push({k:bal.k,n:bal.n,u:bal.u,q:1,qd:1,price:price,pd:pd,total:price,bal:true});
+  }
+  return out;
+}
+function apTFinHTML(){
+  const st=finState(), PK=finPkgs();
+  const keys=Object.keys(PK);
+  if(!keys.length) return '<p class="apTNote">مش لاقى باقات التشطيب فى النظام.</p>';
+  return '<div class="apTCard">'
+    +'<div class="form-row"><label>🎨 الباقة</label>'
+      +'<select id="tfPkg" onchange="apTFinPkg(this.value)">'
+      +keys.map(k=>'<option value="'+k+'"'+(k===st.pkg?' selected':'')+'>'
+        +esc2(PK[k].ar)+' — '+esc2(PK[k].name)+' · '+fm(PK[k].pm)+' ج.م/م²</option>').join('')
+      +'</select><span class="gray-note" id="tfTag"></span></div>'
+    +'<div class="grid g2">'
+      +'<div class="form-row"><label>📐 مساحة الوحدة (م²)</label>'
+        +'<input type="number" id="tfArea" value="'+st.area+'" step="1" oninput="apTFinCalc(1)"></div>'
+      +'<div class="form-row"><label>🚪 عدد الغرف</label>'
+        +'<input type="number" id="tfRooms" value="'+st.rooms+'" step="1" min="0" oninput="apTFinCalc(1)"></div>'
+      +'<div class="form-row"><label>🚿 عدد الحمامات</label>'
+        +'<input type="number" id="tfBaths" value="'+st.baths+'" step="1" min="0" oninput="apTFinCalc(1)"></div>'
+      +'<div class="form-row"><label>❄️ التكييفات</label>'
+        +'<select id="tfAc" onchange="apTFinCalc(1)">'
+        +'<option value="0"'+(!st.ac?' selected':'')+'>من غير تكييفات</option>'
+        +'<option value="1"'+(st.ac?' selected':'')+'>تشمل التكييفات</option></select></div>'
+    +'</div>'
+    +'<label class="apTFx"><input type="checkbox" id="tfSup" '+(st.sup?'checked':'')
+      +' onchange="apTFinCalc()"> إضافة إشراف الشركة ١٥٪ على قيمة الأعمال</label>'
+  +'</div>'
+  +'<div id="tfOut"></div>'
+  +'<div class="apTBtns">'
+    +'<button class="btn ghost" onclick="apTFinReset()">↺ رجّع الافتراضى</button>'
+    +'<button class="btn aqua" onclick="apTFinSave()">💾 حفظ</button>'
+    +'<button class="btn green" onclick="apTFinPrint()">🖨️ طباعة / PDF</button>'
+  +'</div>'
+  +'<p class="apTNote">النتائج تقديرية ولا تمثل عرض سعر أو تعاقدًا مُلزمًا. '
+  +'سعر متر الباقة مأخوذ من بيانات النظام، وتوزيعه على البنود اجتهاد قابل للتعديل — '
+  +'عدّل أى كمية أو سعر وحدة والإجمالى هيتحرّك معاك. والكميات مفصولة عن مساحة الوحدة: '
+  +'الدهانات ٣ أمثال المساحة والأرضيات ١٫١٥ مثلها بشكل مبدئى.</p>';
+}
+window.apTFinPkg=function(k){
+  const st=finState(); st.pkg=k; st.q={}; st.p={}; st.pkgOf=k; lsSet('fin',st);
+  apTRender();
+};
+function apTFinRead(keepEdits){
+  const st=finState();
+  st.area=n2(($$('#tfArea')||{}).value);
+  st.rooms=Math.max(0,Math.round(n2(($$('#tfRooms')||{}).value)));
+  st.baths=Math.max(0,Math.round(n2(($$('#tfBaths')||{}).value)));
+  st.ac=(($$('#tfAc')||{}).value==='1');
+  st.sup=!!(($$('#tfSup')||{}).checked);
+  st.pkg=(($$('#tfPkg')||{}).value)||st.pkg;
+  if(!keepEdits){
+    document.querySelectorAll('[data-fq]').forEach(el=>{ st.q[el.dataset.fq]=n2(el.value); });
+    document.querySelectorAll('[data-fp]').forEach(el=>{ st.p[el.dataset.fp]=n2(el.value); });
+    st.pkgOf=st.pkg;
+  }
+  return st;
+}
+window.apTFinCalc=function(resetQty){
+  const st=apTFinRead(!!resetQty);
+  if(resetQty){ st.q={}; st.p={}; st.pkgOf=''; }
+  lsSet('fin',st); apTF=st;
+  const rows=finRows(st), P=finPkgs()[st.pkg]||{};
+  const sum=rows.reduce((a,r)=>a+r.total,0);
+  const sup=st.sup?Math.round(sum*0.15):0;
+  const tot=sum+sup;
+  const official=Math.round(n2(st.area)*n2(P.pm));
+  const diff=tot-official;
+  const perM=n2(st.area)>0?Math.round(tot/n2(st.area)):0;
+  const o=$$('#tfOut'); if(!o) return;
+  const body=rows.map(r=>'<tr>'
+    +'<td>'+esc2(r.n)+'</td>'
+    +'<td>'+(r.bal?'<i class="apTU">موازنة</i>'
+      :'<input type="number" data-fq="'+r.k+'" value="'+r.q+'" step="1" oninput="apTFinCalc()" class="apTMini"> <i class="apTU">'+r.u+'</i>')+'</td>'
+    +'<td><input type="number" data-fp="'+r.k+'" value="'+r.price+'" step="50" oninput="apTFinCalc()" class="apTMini"></td>'
+    +'<td><b>'+fm(r.total)+'</b></td>'
+    +'<td>'+(sum>0?(r.total/sum*100).toFixed(1):'0')+'٪</td></tr>').join('');
+  const bars=rows.slice().sort((a,b)=>b.total-a.total).map(r=>{
+    const pc=sum>0?(r.total/sum*100):0;
+    return '<div class="apTBar"><span>'+esc2(r.n)+'</span>'
+      +'<div><i style="width:'+pc.toFixed(1)+'%"></i></div>'
+      +'<b>'+pc.toFixed(0)+'٪</b></div>';
+  }).join('');
+  const tile=(ic,lb,v,c)=>'<div class="apTTile"><span>'+ic+'</span><div><i>'+lb+'</i><b'
+    +(c?' style="color:'+c+'"':'')+'>'+v+'</b></div></div>';
+  o.innerHTML='<div class="apTTiles">'
+      +tile('🧾','إجمالى الأعمال',fmm(sum))
+      +(sup?tile('📐','إشراف ١٥٪',fmm(sup),'var(--amber)'):'')
+      +tile('💰','الإجمالى',fmm(tot),'var(--aqua)')
+      +tile('📊','متوسط المتر',fmm(perM))
+      +tile('🏷️','سعر الباقة الرسمى',fmm(official))
+      +tile(Math.abs(diff)<official*0.03?'✔️':'⚠️','الفرق عن الباقة',
+            (diff>0?'+':'')+fmm(diff),Math.abs(diff)<official*0.03?'var(--green)':'var(--amber)')
+    +'</div>'
+    +'<div class="apTCard"><h4>توزيع التكلفة</h4>'+bars+'</div>'
+    +'<div class="tbl-wrap"><table class="tbl"><thead><tr>'
+      +'<th>البند</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالى</th><th>٪</th>'
+    +'</tr></thead><tbody>'+body+'</tbody>'
+    +'<tfoot><tr><th colspan="3">الإجمالى</th><th>'+fm(tot)+'</th><th>100٪</th></tr></tfoot></table></div>';
+  const tg=$$('#tfTag'); if(tg) tg.textContent=P.tag||'';
+};
+function apTFinAfter(){ apTFinCalc(); }
+window.apTFinSave=function(){ apTFinRead(); lsSet('fin',apTFinRead()); try{ toast('اتحفظ على الجهاز ده ✔','ok'); }catch(e){} };
+window.apTFinReset=function(){
+  const st=finState(); st.q={}; st.p={}; st.pkgOf=''; lsSet('fin',st); apTRender();
+  try{ toast('رجعت للكميات والأسعار الافتراضية','ok'); }catch(e){}
+};
+window.apTFinPrint=function(){
+  const st=apTF||finState(), rows=finRows(st), P=finPkgs()[st.pkg]||{};
+  const sum=rows.reduce((a,r)=>a+r.total,0), sup=st.sup?Math.round(sum*0.15):0, tot=sum+sup;
+  const perM=n2(st.area)>0?Math.round(tot/n2(st.area)):0;
+  const w=window.open('','_blank'); if(!w){ try{ toast('المتصفح منع النافذة','err'); }catch(e){} return; }
+  w.document.write('<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
+    +'<title>تقدير تشطيب — '+esc2(P.ar||'')+'</title><style>'
+    +'body{font-family:Tahoma,Arial,sans-serif;direction:rtl;padding:26px;color:#15293b}'
+    +'h1{color:#0b2a4a;font-size:20px;margin:0 0 2px}h2{color:#1195b2;font-size:13.5px;margin:0 0 16px;font-weight:600}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:12px}'
+    +'td,th{border:1px solid #dbe6ee;padding:6px 8px;font-size:12.5px}'
+    +'thead th{background:#0b2a4a;color:#fff}tfoot th{background:#e3f3f8}'
+    +'.nt{font-size:11.5px;color:#5b7186;border-top:1px dashed #dbe6ee;padding-top:9px}'
+    +'</style></head><body>'
+    +'<h1>Aqua Pearl City — تقدير تكلفة تشطيب</h1>'
+    +'<h2>'+esc2(P.ar||'')+' ('+esc2(P.name||'')+') · '+fm(st.area)+' م² · '
+    +fm(st.rooms)+' غرف و'+fm(st.baths)+' حمامات · '+(new Date()).toLocaleDateString('ar-EG')+'</h2>'
+    +'<table><thead><tr><th>البند</th><th>الكمية</th><th>الوحدة</th><th>سعر الوحدة</th><th>الإجمالى</th><th>٪</th></tr></thead><tbody>'
+    +rows.map(r=>'<tr><td>'+esc2(r.n)+'</td><td>'+fm(r.q)+'</td><td>'+esc2(r.u)+'</td><td>'+fm(r.price)
+      +'</td><td>'+fm(r.total)+'</td><td>'+(sum>0?(r.total/sum*100).toFixed(1):'0')+'٪</td></tr>').join('')
+    +'</tbody><tfoot>'
+    +'<tr><th colspan="4">إجمالى الأعمال</th><th colspan="2">'+fm(sum)+'</th></tr>'
+    +(sup?'<tr><th colspan="4">إشراف الشركة ١٥٪</th><th colspan="2">'+fm(sup)+'</th></tr>':'')
+    +'<tr><th colspan="4">الإجمالى</th><th colspan="2">'+fm(tot)+'</th></tr>'
+    +'<tr><th colspan="4">متوسط تكلفة المتر</th><th colspan="2">'+fm(perM)+'</th></tr>'
+    +'</tfoot></table>'
+    +(st.sup?'<p class="nt">'+esc2((typeof FIN_SUPERVISION_TEXT!=='undefined')?FIN_SUPERVISION_TEXT:'')+'</p>':'')
+    +'<p class="nt">النتائج تقديرية ولا تمثل عرض سعر أو إيجابًا أو تعاقدًا مُلزمًا للشركة. '
+    +'سعر متر الباقة الرسمى '+fm(P.pm)+' ج.م/م²، وتوزيع التكلفة على البنود تقديرى قابل للمراجعة.</p>'
+    +'</body></html>');
+  w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },350);
+};
+
+AP_T_HTML.quote=apTQuoteHTML; AP_T_INIT.quote=apTQuoteAfter;
+AP_T_HTML.calc =apTCalcHTML;  AP_T_INIT.calc =apTCalcAfter;
+AP_T_HTML.tasbih=apTTasbihHTML;AP_T_INIT.tasbih=apTTasbihAfter;
+AP_T_HTML.fin  =apTFinHTML;   AP_T_INIT.fin  =apTFinAfter;
+
+
+/* =====================================================================
+   🎮 ألعاب وتسلية — كلها من غير أى مكتبة خارجية
+   كل لعبة بتحفظ تقدّمها وأفضل نتيجة فى localStorage، فالخروج من
+   الدرج أو قفل التطبيق مابيضيّعش حاجة.
+   ===================================================================== */
+function gScore(k,d){ return lsGet('g_'+k,d); }
+function gSave(k,v){ lsSet('g_'+k,v); }
+function gBar(html){ return '<div class="apTBtns" style="margin:0 0 9px">'+html+'</div>'; }
+function mmss(sec){ sec=Math.max(0,Math.round(sec));
+  return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0'); }
+
+/* ═════════════ ١) سودوكو ═════════════
+   توليد حقيقى: شبكة كاملة بالـbacktracking العشوائى، وبعدين بنشيل
+   خانات واحدة واحدة ونتأكد بعد كل شيلة إن الحل لسه وحيد (العدّاد
+   بيقف عند حلّين). فمفيش لغز مكرر ولا لغز بأكتر من حل. */
+function sdBox(r,c){ return (Math.floor(r/3)*3)+Math.floor(c/3); }
+function sdOk(g,i,v){
+  const r=Math.floor(i/9), c=i%9;
+  for(let k=0;k<9;k++){
+    if(g[r*9+k]===v) return false;
+    if(g[k*9+c]===v) return false;
+  }
+  const br=Math.floor(r/3)*3, bc=Math.floor(c/3)*3;
+  for(let a=0;a<3;a++)for(let b2=0;b2<3;b2++) if(g[(br+a)*9+bc+b2]===v) return false;
+  return true;
+}
+function sdShuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function sdFill(g,i){
+  if(i>=81) return true;
+  if(g[i]) return sdFill(g,i+1);
+  const nums=sdShuffle([1,2,3,4,5,6,7,8,9]);
+  for(let k=0;k<9;k++){
+    const v=nums[k];
+    if(sdOk(g,i,v)){ g[i]=v; if(sdFill(g,i+1)) return true; g[i]=0; }
+  }
+  return false;
+}
+function sdCount(g,limit){
+  /* عدّاد الحلول — بيقف أول ما يوصل للحد عشان مايعلّقش */
+  let best=-1, min=10;
+  for(let i=0;i<81;i++){
+    if(g[i]) continue;
+    let n=0;
+    for(let v=1;v<=9;v++) if(sdOk(g,i,v)) n++;
+    if(n===0) return 0;
+    if(n<min){ min=n; best=i; if(n===1) break; }
+  }
+  if(best<0) return 1;
+  let total=0;
+  for(let v=1;v<=9;v++){
+    if(!sdOk(g,best,v)) continue;
+    g[best]=v; total+=sdCount(g,limit-total); g[best]=0;
+    if(total>=limit) break;
+  }
+  return total;
+}
+function sdMake(level){
+  const sol=new Array(81).fill(0); sdFill(sol,0);
+  const puz=sol.slice();
+  const target={easy:44,med:34,hard:28}[level]||34;
+  const order=sdShuffle(Array.from({length:81},(_,i)=>i));
+  let clues=81;
+  for(let n=0;n<order.length&&clues>target;n++){
+    const i=order[n], keep=puz[i];
+    if(!keep) continue;
+    puz[i]=0;
+    if(sdCount(puz.slice(),2)!==1){ puz[i]=keep; } else clues--;
+  }
+  return {sol,puz,clues};
+}
+function sdState(){
+  const d=lsGet('sudoku',null);
+  if(d&&d.puz&&d.puz.length===81) return d;
+  return null;
+}
+function sdNew(level){
+  const m=sdMake(level);
+  const st={level:level,puz:m.puz,sol:m.sol,cur:m.puz.slice(),
+    notes:{},sel:-1,t:0,hints:0,undo:[],redo:[],done:false,paused:false,start:Date.now()};
+  lsSet('sudoku',st); return st;
+}
+let SD=null, SD_T=null;
+function sdTick(){
+  clearInterval(SD_T);
+  SD_T=setInterval(function(){
+    if(!SD||SD.done||SD.paused) return;
+    SD.t=n2(SD.t)+1;
+    const e=$$('#sdT'); if(e) e.textContent=mmss(SD.t);
+    if(SD.t%10===0) lsSet('sudoku',SD);
+  },1000);
+}
+function apTSudokuHTML(){
+  SD=sdState();
+  const best=gScore('sdBest',{easy:0,med:0,hard:0});
+  const lv={easy:'سهل',med:'متوسط',hard:'صعب'};
+  if(!SD) return '<div class="apTCard"><h4>اختار المستوى</h4>'
+    +'<div class="apTBtns">'+Object.keys(lv).map(k=>
+      '<button class="btn '+(k==='easy'?'green':(k==='med'?'aqua':'red'))+'" onclick="apTSdNew(\'' +k+ '\')">'
+      +lv[k]+(best[k]?' · '+mmss(best[k]):'')+'</button>').join('')+'</div>'
+    +'<p class="apTNote">كل لغز بيتولّد من الأول وبحل وحيد — مفيش شبكة ثابتة ولا لغز بيتكرر.</p></div>';
+  return apTSdBoard();
+}
+function apTSdBoard(){
+  const lv={easy:'سهل',med:'متوسط',hard:'صعب'}[SD.level];
+  const best=gScore('sdBest',{easy:0,med:0,hard:0})[SD.level]||0;
+  let cells='';
+  for(let i=0;i<81;i++){
+    const fixed=!!SD.puz[i], v=SD.cur[i];
+    const r=Math.floor(i/9), c=i%9;
+    const sel=(SD.sel===i);
+    const peer=(SD.sel>=0)&&(Math.floor(SD.sel/9)===r||SD.sel%9===c||sdBox(Math.floor(SD.sel/9),SD.sel%9)===sdBox(r,c));
+    const same=(SD.sel>=0&&v&&SD.cur[SD.sel]===v);
+    const bad=v&&!fixed&&v!==SD.sol[i];
+    const nt=SD.notes[i]||[];
+    cells+='<div class="sdC'+(fixed?' fx':'')+(sel?' sel':'')+(peer&&!sel?' pr':'')
+      +(same&&!sel?' sm':'')+(bad?' bad':'')
+      +(c%3===2&&c<8?' br':'')+(r%3===2&&r<8?' bb':'')+'" onclick="apTSdSel('+i+')">'
+      +(v?v:(nt.length?'<u>'+nt.join('')+'</u>':''))+'</div>';
+  }
+  const left=SD.cur.filter((v,i)=>!v).length;
+  return gBar(
+     '<span class="apTDay">⏱ <b id="sdT">'+mmss(SD.t)+'</b> · '+lv
+     +(best?' · أفضل '+mmss(best):'')+' · فاضل '+left+'</span>'
+    +'<button class="btn ghost sm" onclick="apTSdPause()">'+(SD.paused?'▶️ كمّل':'⏸ وقف')+'</button>'
+    +'<button class="btn ghost sm" onclick="apTSdQuit()">🔄 لعبة جديدة</button>')
+  +'<div class="sdWrap'+(SD.paused?' pz':'')+'"><div class="sdG">'+cells+'</div>'
+    +(SD.paused?'<div class="sdPz">موقوفة</div>':'')+'</div>'
+  +'<div class="sdKeys">'+[1,2,3,4,5,6,7,8,9].map(v=>
+      '<button class="apTK" onclick="apTSdPut('+v+')">'+v+'</button>').join('')
+    +'<button class="apTK fn" onclick="apTSdPut(0)">⌫</button></div>'
+  +gBar('<button class="btn '+(SD.note?'aqua':'ghost')+' sm" onclick="apTSdNote()">✏️ ملاحظات '+(SD.note?'(شغّالة)':'')+'</button>'
+    +'<button class="btn ghost sm" onclick="apTSdUndo()">↶</button>'
+    +'<button class="btn ghost sm" onclick="apTSdRedo()">↷</button>'
+    +'<button class="btn ghost sm" onclick="apTSdHint()">💡 تلميح ('+(3-n2(SD.hints))+')</button>'
+    +'<button class="btn green sm" onclick="apTSdCheck()">✔️ تحقّق</button>')
+  +(SD.done?'<p class="apTWin">🎉 خلصتها فى '+mmss(SD.t)+'</p>':'');
+}
+window.apTSdNew=function(l){ SD=sdNew(l); apTRender(); sdTick(); };
+window.apTSdQuit=function(){
+  const go=function(){ lsSet('sudoku',null); SD=null; clearInterval(SD_T); apTRender(); };
+  try{ confirmBox('🔄 لعبة جديدة','<p>هتسيب اللعبة الحالية وتبدأ من الأول.</p>','ابدأ من الأول',go); }
+  catch(e){ go(); }
+};
+window.apTSdPause=function(){ SD.paused=!SD.paused; lsSet('sudoku',SD); apTRender(); };
+window.apTSdSel=function(i){ if(SD.paused||SD.done) return; SD.sel=i; lsSet('sudoku',SD); apTRender(); };
+window.apTSdNote=function(){ SD.note=!SD.note; lsSet('sudoku',SD); apTRender(); };
+window.apTSdPut=function(v){
+  if(SD.paused||SD.done) return;
+  const i=SD.sel; if(i<0||SD.puz[i]) return;
+  SD.undo=(SD.undo||[]).concat([{i:i,v:SD.cur[i],n:(SD.notes[i]||[]).slice()}]);
+  if(SD.undo.length>120) SD.undo.shift();
+  SD.redo=[];
+  if(SD.note&&v){
+    const nt=SD.notes[i]||[];
+    const k=nt.indexOf(v);
+    SD.notes[i]=(k>=0)?nt.filter(x=>x!==v):nt.concat([v]).sort();
+  }else{
+    SD.cur[i]=v||0;
+    if(v) SD.notes[i]=[];
+  }
+  buzz(8); sdDone(); lsSet('sudoku',SD); apTRender();
+};
+function sdDone(){
+  if(SD.cur.some((v,i)=>v!==SD.sol[i])) return;
+  SD.done=true; clearInterval(SD_T);
+  const b=gScore('sdBest',{easy:0,med:0,hard:0});
+  if(!b[SD.level]||SD.t<b[SD.level]){ b[SD.level]=SD.t; gSave('sdBest',b);
+    try{ toast('رقم قياسى جديد! '+mmss(SD.t),'ok'); }catch(e){} }
+  else { try{ toast('تمام — خلصتها فى '+mmss(SD.t),'ok'); }catch(e){} }
+  buzz([40,60,40]);
+}
+window.apTSdUndo=function(){
+  if(!SD.undo||!SD.undo.length) return;
+  const u=SD.undo.pop();
+  SD.redo=(SD.redo||[]).concat([{i:u.i,v:SD.cur[u.i],n:(SD.notes[u.i]||[]).slice()}]);
+  SD.cur[u.i]=u.v; SD.notes[u.i]=u.n; lsSet('sudoku',SD); apTRender();
+};
+window.apTSdRedo=function(){
+  if(!SD.redo||!SD.redo.length) return;
+  const r=SD.redo.pop();
+  SD.undo=(SD.undo||[]).concat([{i:r.i,v:SD.cur[r.i],n:(SD.notes[r.i]||[]).slice()}]);
+  SD.cur[r.i]=r.v; SD.notes[r.i]=r.n; lsSet('sudoku',SD); apTRender();
+};
+window.apTSdHint=function(){
+  if(SD.done||SD.paused) return;
+  if(n2(SD.hints)>=3){ try{ toast('خلصت التلميحات','err'); }catch(e){} return; }
+  const empty=[]; for(let i=0;i<81;i++) if(SD.cur[i]!==SD.sol[i]) empty.push(i);
+  if(!empty.length) return;
+  const i=(SD.sel>=0&&SD.cur[SD.sel]!==SD.sol[SD.sel])?SD.sel:empty[Math.floor(Math.random()*empty.length)];
+  SD.cur[i]=SD.sol[i]; SD.notes[i]=[]; SD.hints=n2(SD.hints)+1; SD.sel=i;
+  sdDone(); lsSet('sudoku',SD); apTRender();
+};
+window.apTSdCheck=function(){
+  const wrong=SD.cur.filter((v,i)=>v&&v!==SD.sol[i]).length;
+  const left=SD.cur.filter(v=>!v).length;
+  try{ toast(wrong?(wrong+' خانة غلط'):(left?('كله سليم — فاضل '+left)+' خانة':'تمام ✔'), wrong?'err':'ok'); }catch(e){}
+};
+AP_T_HTML.sudoku=apTSudokuHTML; AP_T_INIT.sudoku=function(){ if(SD&&!SD.done) sdTick(); };
+
+
+/* ═════════════ ٢) إكس أو ═════════════ */
+const XO_W=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function xoWin(b){ for(const w of XO_W){ const [a,c,d]=w; if(b[a]&&b[a]===b[c]&&b[a]===b[d]) return {p:b[a],w:w}; }
+  return b.indexOf('')<0?{p:'-',w:null}:null; }
+function xoMinimax(b,me,turn){
+  const r=xoWin(b);
+  if(r) return {s:r.p==='-'?0:(r.p===me?10:-10)};
+  let best=null;
+  for(let i=0;i<9;i++){
+    if(b[i]) continue;
+    b[i]=turn;
+    const v=xoMinimax(b,me,turn==='X'?'O':'X').s;
+    b[i]='';
+    const sc=v>0?v-1:(v<0?v+1:0);
+    if(best===null||(turn===me?sc>best.s:sc<best.s)) best={s:sc,i:i};
+  }
+  return best;
+}
+function xoState(){
+  const d=lsGet('xo',null)||{};
+  return {b:(d.b&&d.b.length===9)?d.b:['','','','','','','','',''],
+    turn:d.turn||'X', mode:d.mode||'cpu', hard:d.hard!==false,
+    w:gScore('xoW',{win:0,lose:0,draw:0}), over:d.over||null};
+}
+function xoSave(st){ lsSet('xo',{b:st.b,turn:st.turn,mode:st.mode,hard:st.hard,over:st.over}); }
+let XO=null;
+function apTXoHTML(){
+  XO=xoState();
+  const r=XO.over;
+  return gBar('<button class="btn '+(XO.mode==='cpu'?'aqua':'ghost')+' sm" onclick="apTXoMode(\'cpu\')">ضد الكمبيوتر</button>'
+    +'<button class="btn '+(XO.mode==='two'?'aqua':'ghost')+' sm" onclick="apTXoMode(\'two\')">اتنين</button>'
+    +(XO.mode==='cpu'?'<button class="btn '+(XO.hard?'red':'ghost')+' sm" onclick="apTXoHard()">'
+      +(XO.hard?'صعب':'عادى')+'</button>':''))
+  +'<div class="xoG">'+XO.b.map((v,i)=>'<button class="xoC'+(r&&r.w&&r.w.indexOf(i)>=0?' win':'')
+      +'" onclick="apTXoPlay('+i+')">'+(v||'')+'</button>').join('')+'</div>'
+  +'<p class="apTWin">'+(r?(r.p==='-'?'تعادل':(r.p+' كسب'))
+      :(XO.mode==='two'?('دور '+XO.turn):(XO.turn==='X'?'دورك':'بيفكّر…')))+'</p>'
+  +gBar('<span class="apTDay">كسبت <b>'+fm(XO.w.win)+'</b> · خسرت <b>'+fm(XO.w.lose)
+      +'</b> · تعادل <b>'+fm(XO.w.draw)+'</b></span>'
+    +'<button class="btn ghost sm" onclick="apTXoReset()">🔄 لوحة جديدة</button>'
+    +'<button class="btn ghost sm" onclick="apTXoZero()">🧹 صفّر العدّاد</button>');
+}
+window.apTXoMode=function(m){ XO.mode=m; XO.b=['','','','','','','','','']; XO.turn='X'; XO.over=null; xoSave(XO); apTRender(); };
+window.apTXoHard=function(){ XO.hard=!XO.hard; xoSave(XO); apTRender(); };
+window.apTXoReset=function(){ XO.b=['','','','','','','','','']; XO.turn='X'; XO.over=null; xoSave(XO); apTRender(); };
+window.apTXoZero=function(){ gSave('xoW',{win:0,lose:0,draw:0}); apTRender(); };
+function xoEnd(){
+  const r=xoWin(XO.b);
+  if(!r) return false;
+  XO.over=r;
+  const w=gScore('xoW',{win:0,lose:0,draw:0});
+  if(XO.mode==='cpu'){ if(r.p==='X') w.win++; else if(r.p==='O') w.lose++; else w.draw++; }
+  else { if(r.p==='-') w.draw++; }
+  gSave('xoW',w); xoSave(XO); return true;
+}
+window.apTXoPlay=function(i){
+  if(XO.over||XO.b[i]) return;
+  if(XO.mode==='cpu'&&XO.turn!=='X') return;
+  XO.b[i]=XO.turn; buzz(10);
+  if(xoEnd()){ apTRender(); return; }
+  if(XO.mode==='two'){ XO.turn=XO.turn==='X'?'O':'X'; xoSave(XO); apTRender(); return; }
+  XO.turn='O'; xoSave(XO); apTRender();
+  setTimeout(function(){
+    if(XO.over) return;
+    let mv;
+    if(XO.hard) mv=xoMinimax(XO.b.slice(),'O','O').i;
+    else { const free=XO.b.map((v,k)=>v?-1:k).filter(k=>k>=0);
+           mv=free[Math.floor(Math.random()*free.length)]; }
+    if(mv==null) return;
+    XO.b[mv]='O';
+    if(!xoEnd()) XO.turn='X';
+    xoSave(XO); apTRender();
+  },260);
+};
+AP_T_HTML.xo=apTXoHTML;
+
+/* ═════════════ ٣) الذاكرة ═════════════ */
+const MEM_ICONS=['🌊','🏖️','🏝️','⛵','🐚','🐬','🌴','☀️','🦩','🪸','🧿','🛟','🐟','🦀','🌅','⚓'];
+function memState(){
+  const d=lsGet('mem',null);
+  if(d&&d.cards) return d;
+  return null;
+}
+function memNew(size){
+  const [c,r]={s1:[4,3],s2:[4,4],s3:[6,4]}[size]||[4,4];
+  const pairs=(c*r)/2;
+  const pool=sdShuffle(MEM_ICONS.slice()).slice(0,pairs);
+  const cards=sdShuffle(pool.concat(pool)).map((ic,i)=>({i:i,ic:ic,up:false,done:false}));
+  const st={size:size,c:c,r:r,cards:cards,moves:0,t:0,open:[],done:false};
+  lsSet('mem',st); return st;
+}
+let MM=null, MM_T=null;
+function memTick(){ clearInterval(MM_T); MM_T=setInterval(function(){
+  if(!MM||MM.done) return; MM.t=n2(MM.t)+1;
+  const e=$$('#mmT'); if(e) e.textContent=mmss(MM.t);
+  if(MM.t%10===0) lsSet('mem',MM); },1000); }
+function apTMemHTML(){
+  MM=memState();
+  const names={s1:'4×3',s2:'4×4',s3:'6×4'};
+  const best=gScore('memBest',{});
+  if(!MM) return '<div class="apTCard"><h4>اختار الحجم</h4><div class="apTBtns">'
+    +Object.keys(names).map(k=>'<button class="btn aqua" onclick="apTMemNew(\''+k+'\')">'+names[k]
+      +(best[k]?' · '+mmss(best[k].t)+' / '+best[k].m+' حركة':'')+'</button>').join('')
+    +'</div></div>';
+  const b=best[MM.size];
+  return gBar('<span class="apTDay">⏱ <b id="mmT">'+mmss(MM.t)+'</b> · حركات <b>'+fm(MM.moves)+'</b>'
+      +(b?' · أفضل '+mmss(b.t)+'/'+b.m:'')+'</span>'
+    +'<button class="btn ghost sm" onclick="apTMemQuit()">🔄 جديدة</button>')
+  +'<div class="mmG" style="grid-template-columns:repeat('+MM.c+',1fr)">'
+    +MM.cards.map(c=>'<button class="mmC'+(c.up||c.done?' up':'')+(c.done?' ok':'')
+      +'" onclick="apTMemFlip('+c.i+')"><span>'+(c.up||c.done?c.ic:'')+'</span></button>').join('')
+  +'</div>'+(MM.done?'<p class="apTWin">🎉 خلصتها فى '+mmss(MM.t)+' و'+fm(MM.moves)+' حركة</p>':'');
+}
+window.apTMemNew=function(s){ MM=memNew(s); apTRender(); memTick(); };
+window.apTMemQuit=function(){ lsSet('mem',null); MM=null; clearInterval(MM_T); apTRender(); };
+window.apTMemFlip=function(i){
+  if(!MM||MM.done) return;
+  const c=MM.cards[i];
+  if(!c||c.done||c.up||MM.open.length>=2) return;
+  c.up=true; MM.open.push(i); buzz(8);
+  if(MM.open.length===2){
+    MM.moves=n2(MM.moves)+1;
+    const [a,b]=MM.open.map(k=>MM.cards[k]);
+    if(a.ic===b.ic){
+      a.done=b.done=true; a.up=b.up=false; MM.open=[];
+      if(MM.cards.every(x=>x.done)){
+        MM.done=true; clearInterval(MM_T);
+        const best=gScore('memBest',{}), cur=best[MM.size];
+        if(!cur||MM.t<cur.t){ best[MM.size]={t:MM.t,m:MM.moves}; gSave('memBest',best);
+          try{ toast('رقم قياسى! '+mmss(MM.t),'ok'); }catch(e){} }
+        buzz([40,60,40]);
+      }
+      lsSet('mem',MM); apTRender(); return;
+    }
+    lsSet('mem',MM); apTRender();
+    setTimeout(function(){
+      if(!MM) return;
+      MM.open.forEach(k=>{ if(MM.cards[k]) MM.cards[k].up=false; });
+      MM.open=[]; lsSet('mem',MM); apTRender();
+    },720);
+    return;
+  }
+  lsSet('mem',MM); apTRender();
+};
+AP_T_HTML.mem=apTMemHTML; AP_T_INIT.mem=function(){ if(MM&&!MM.done) memTick(); };
+
+
+/* ═════════════ ٤) 2048 ═════════════ */
+function g2New(){
+  const st={b:new Array(16).fill(0),s:0,prev:null,over:false,won:false};
+  g2Add(st); g2Add(st); lsSet('g2048',st); return st;
+}
+function g2Add(st){
+  const free=[]; st.b.forEach((v,i)=>{ if(!v) free.push(i); });
+  if(!free.length) return false;
+  st.b[free[Math.floor(Math.random()*free.length)]]=Math.random()<0.9?2:4;
+  return true;
+}
+function g2Line(a){
+  const f=a.filter(v=>v); let gained=0; const out=[];
+  for(let i=0;i<f.length;i++){
+    if(f[i]===f[i+1]){ out.push(f[i]*2); gained+=f[i]*2; i++; }
+    else out.push(f[i]);
+  }
+  while(out.length<4) out.push(0);
+  return {a:out,g:gained};
+}
+function g2Move(st,dir){
+  const b=st.b.slice(); let gained=0, moved=false;
+  for(let i=0;i<4;i++){
+    let line=[];
+    for(let j=0;j<4;j++){
+      line.push(dir==='L'?b[i*4+j]:dir==='R'?b[i*4+3-j]:dir==='U'?b[j*4+i]:b[(3-j)*4+i]);
+    }
+    const r=g2Line(line); gained+=r.g;
+    for(let j=0;j<4;j++){
+      const v=r.a[j];
+      const k=dir==='L'?i*4+j:dir==='R'?i*4+3-j:dir==='U'?j*4+i:(3-j)*4+i;
+      if(b[k]!==v) moved=true;
+      b[k]=v;
+    }
+  }
+  if(!moved) return false;
+  st.prev={b:st.b.slice(),s:st.s};
+  st.b=b; st.s=n2(st.s)+gained;
+  g2Add(st);
+  if(st.b.indexOf(2048)>=0) st.won=true;
+  st.over=g2Dead(st);
+  return true;
+}
+function g2Dead(st){
+  if(st.b.indexOf(0)>=0) return false;
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+    const v=st.b[i*4+j];
+    if(j<3&&st.b[i*4+j+1]===v) return false;
+    if(i<3&&st.b[(i+1)*4+j]===v) return false;
+  }
+  return true;
+}
+let G2=null;
+function apTG2HTML(){
+  G2=lsGet('g2048',null); if(!G2||!G2.b||G2.b.length!==16) G2=g2New();
+  const best=gScore('g2Best',0);
+  return gBar('<span class="apTDay">النقاط <b>'+fm(G2.s)+'</b> · الأعلى <b>'+fm(best)+'</b></span>'
+    +'<button class="btn ghost sm" onclick="apTG2Undo()"'+(G2.prev?'':' disabled')+'>↶ تراجع</button>'
+    +'<button class="btn ghost sm" onclick="apTG2New()">🔄 جديدة</button>')
+  +'<div class="g2G" id="g2G">'+G2.b.map(v=>'<div class="g2C v'+(v>2048?4096:v)+'">'+(v||'')+'</div>').join('')+'</div>'
+  +'<div class="g2Pad">'
+    +'<button class="apTK" onclick="apTG2Go(\'U\')">↑</button>'
+    +'<div><button class="apTK" onclick="apTG2Go(\'R\')">→</button>'
+    +'<button class="apTK" onclick="apTG2Go(\'D\')">↓</button>'
+    +'<button class="apTK" onclick="apTG2Go(\'L\')">←</button></div></div>'
+  +(G2.over?'<p class="apTWin">خلاص — مفيش حركة. نقاطك '+fm(G2.s)+'</p>'
+    :(G2.won?'<p class="apTWin">🎉 وصلت 2048</p>':''))
+  +'<p class="apTNote">اسحب على اللوحة أو استخدم الأسهم.</p>';
+}
+window.apTG2New=function(){ G2=g2New(); apTRender(); };
+window.apTG2Undo=function(){ if(!G2||!G2.prev) return; G2.b=G2.prev.b; G2.s=G2.prev.s; G2.prev=null; G2.over=false; lsSet('g2048',G2); apTRender(); };
+window.apTG2Go=function(d){
+  if(!G2||G2.over) return;
+  if(g2Move(G2,d)){
+    buzz(10);
+    const best=gScore('g2Best',0); if(G2.s>best) gSave('g2Best',G2.s);
+    lsSet('g2048',G2); apTRender();
+  }
+};
+AP_T_INIT.g2048=function(){
+  const g=$$('#g2G'); if(!g) return;
+  let x0=0,y0=0;
+  g.addEventListener('touchstart',e=>{ const t=e.touches[0]; x0=t.clientX; y0=t.clientY; },{passive:true});
+  g.addEventListener('touchend',e=>{
+    const t=e.changedTouches[0], dx=t.clientX-x0, dy=t.clientY-y0;
+    if(Math.abs(dx)<24&&Math.abs(dy)<24) return;
+    e.stopPropagation();
+    apTG2Go(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'));
+  },{passive:true});
+};
+AP_T_HTML.g2048=apTG2HTML;
+
+/* ═════════════ ٥) خمّن الرقم ═════════════ */
+function guNew(lv){
+  const max={e:50,m:200,h:1000}[lv]||200;
+  const tries={e:8,m:9,h:12}[lv]||9;
+  const st={lv:lv,max:max,n:1+Math.floor(Math.random()*max),left:tries,log:[],done:0,t0:Date.now()};
+  lsSet('guess',st); return st;
+}
+let GU=null;
+function apTGuHTML(){
+  GU=lsGet('guess',null);
+  const nm={e:'سهل (١–٥٠)',m:'متوسط (١–٢٠٠)',h:'صعب (١–١٠٠٠)'};
+  const best=gScore('guBest',{});
+  if(!GU) return '<div class="apTCard"><h4>اختار المستوى</h4><div class="apTBtns">'
+    +Object.keys(nm).map(k=>'<button class="btn aqua" onclick="apTGuNew(\''+k+'\')">'+nm[k]
+      +(best[k]?' · أفضل '+best[k]+' محاولات':'')+'</button>').join('')+'</div></div>';
+  const done=GU.done;
+  return gBar('<span class="apTDay">'+nm[GU.lv]+' · فاضل <b>'+fm(GU.left)+'</b> محاولة</span>'
+    +'<button class="btn ghost sm" onclick="apTGuQuit()">🔄 جديدة</button>')
+  +(done?'':'<div class="apTCard"><div class="apTBtns">'
+    +'<input type="number" id="guIn" placeholder="رقمك" style="flex:2" '
+    +'onkeydown="if(event.key===\'Enter\')apTGuTry()">'
+    +'<button class="btn aqua" onclick="apTGuTry()">خمّن</button></div></div>')
+  +(GU.log.length?'<div class="apTCard">'+GU.log.map(l=>
+      '<div class="apTHRow"><span>'+l.h+'</span><b>'+l.v+'</b></div>').join('')+'</div>':'')
+  +(done===1?'<p class="apTWin">🎉 صح! الرقم '+GU.n+' فى '+fm(GU.log.length)+' محاولة</p>'
+    :done===2?'<p class="apTWin" style="color:var(--red)">خلصت المحاولات — الرقم كان '+GU.n+'</p>':'');
+}
+window.apTGuNew=function(l){ GU=guNew(l); apTRender(); setTimeout(()=>{const i=$$('#guIn');if(i)i.focus();},60); };
+window.apTGuQuit=function(){ lsSet('guess',null); GU=null; apTRender(); };
+window.apTGuTry=function(){
+  if(!GU||GU.done) return;
+  const el=$$('#guIn'); const v=Math.round(n2(el&&el.value));
+  if(!v||v<1||v>GU.max){ try{ toast('اكتب رقم بين ١ و'+GU.max,'err'); }catch(e){} return; }
+  GU.left=n2(GU.left)-1;
+  const h=v===GU.n?'صح 🎯':(v<GU.n?'أعلى ⬆️':'أقل ⬇️');
+  GU.log=[{v:v,h:h}].concat(GU.log);
+  if(v===GU.n){
+    GU.done=1; buzz([40,60,40]);
+    const best=gScore('guBest',{}); const t=GU.log.length;
+    if(!best[GU.lv]||t<best[GU.lv]){ best[GU.lv]=t; gSave('guBest',best);
+      try{ toast('رقم قياسى! '+t+' محاولات','ok'); }catch(e){} }
+  } else if(GU.left<=0){ GU.done=2; }
+  lsSet('guess',GU); apTRender();
+  setTimeout(()=>{const i=$$('#guIn');if(i)i.focus();},60);
+};
+AP_T_HTML.guess=apTGuHTML;
+
+
+/* ═════════════ ٦) ترتيب الأرقام (Sliding Puzzle) ═════════════
+   التوليد بيتأكد إن اللغز قابل للحل: بنعدّ الانقلابات، وقاعدة الحل
+   بتختلف لو عرض الشبكة فردى أو زوجى. */
+function slSolvable(a,n){
+  const v=a.filter(x=>x), inv=(function(){ let c=0;
+    for(let i=0;i<v.length;i++)for(let j=i+1;j<v.length;j++) if(v[i]>v[j]) c++;
+    return c; })();
+  if(n%2===1) return inv%2===0;
+  const row=Math.floor(a.indexOf(0)/n);          /* من فوق، صفر-أساس */
+  const fromBottom=n-row;
+  return (fromBottom%2===0)?(inv%2===1):(inv%2===0);
+}
+function slNew(n){
+  let a;
+  do{ a=sdShuffle(Array.from({length:n*n},(_,i)=>i)); }
+  while(!slSolvable(a,n)||a.every((v,i)=>v===(i+1)%(n*n)));
+  const st={n:n,a:a,m:0,t:0,done:false}; lsSet('slide',st); return st;
+}
+let SL=null, SL_T=null;
+function slTick(){ clearInterval(SL_T); SL_T=setInterval(function(){
+  if(!SL||SL.done) return; SL.t=n2(SL.t)+1;
+  const e=$$('#slT'); if(e) e.textContent=mmss(SL.t);
+  if(SL.t%10===0) lsSet('slide',SL); },1000); }
+function slWin(st){ return st.a.every((v,i)=>v===((i+1)%(st.n*st.n))); }
+function apTSlHTML(){
+  SL=lsGet('slide',null);
+  const best=gScore('slBest',{});
+  if(!SL||!SL.a) return '<div class="apTCard"><h4>اختار الحجم</h4><div class="apTBtns">'
+    +[3,4].map(n=>'<button class="btn aqua" onclick="apTSlNew('+n+')">'+n+'×'+n
+      +(best[n]?' · '+mmss(best[n].t)+' / '+best[n].m+' حركة':'')+'</button>').join('')+'</div>'
+    +'<p class="apTNote">اللغز بيتولّد عشوائى، والنظام بيتأكد إنه قابل للحل قبل ما يبدأ.</p></div>';
+  const b=best[SL.n];
+  return gBar('<span class="apTDay">⏱ <b id="slT">'+mmss(SL.t)+'</b> · حركات <b>'+fm(SL.m)+'</b>'
+      +(b?' · أفضل '+mmss(b.t)+'/'+b.m:'')+'</span>'
+    +'<button class="btn ghost sm" onclick="apTSlQuit()">🔄 جديدة</button>')
+  +'<div class="slG" style="grid-template-columns:repeat('+SL.n+',1fr)">'
+    +SL.a.map((v,i)=>v?('<button class="slC" onclick="apTSlMove('+i+')">'+v+'</button>')
+      :'<div class="slE"></div>').join('')+'</div>'
+  +(SL.done?'<p class="apTWin">🎉 رتّبتها فى '+mmss(SL.t)+' و'+fm(SL.m)+' حركة</p>':'');
+}
+window.apTSlNew=function(n){ SL=slNew(n); apTRender(); slTick(); };
+window.apTSlQuit=function(){ lsSet('slide',null); SL=null; clearInterval(SL_T); apTRender(); };
+window.apTSlMove=function(i){
+  if(!SL||SL.done) return;
+  const n=SL.n, e=SL.a.indexOf(0);
+  const ri=Math.floor(i/n), ci=i%n, re=Math.floor(e/n), ce=e%n;
+  if(Math.abs(ri-re)+Math.abs(ci-ce)!==1) return;
+  SL.a[e]=SL.a[i]; SL.a[i]=0; SL.m=n2(SL.m)+1; buzz(8);
+  if(slWin(SL)){
+    SL.done=true; clearInterval(SL_T);
+    const best=gScore('slBest',{}), cur=best[SL.n];
+    if(!cur||SL.t<cur.t){ best[SL.n]={t:SL.t,m:SL.m}; gSave('slBest',best);
+      try{ toast('رقم قياسى! '+mmss(SL.t),'ok'); }catch(e){} }
+    buzz([40,60,40]);
+  }
+  lsSet('slide',SL); apTRender();
+};
+AP_T_HTML.slide=apTSlHTML; AP_T_INIT.slide=function(){ if(SL&&!SL.done) slTick(); };
+
+/* ═════════════ ٧) الحساب السريع ═════════════ */
+function spQ(lv){
+  const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  if(lv==='e'){ const a=R(2,20),b=R(2,20),o=Math.random()<0.5?'+':'-';
+    return {q:a+' '+o+' '+b, a:o==='+'?a+b:a-b}; }
+  if(lv==='m'){ const t=Math.random();
+    if(t<0.4){ const a=R(2,12),b=R(2,12); return {q:a+' × '+b,a:a*b}; }
+    if(t<0.7){ const b=R(2,12),r=R(2,12); return {q:(b*r)+' ÷ '+b,a:r}; }
+    const a=R(20,120),b=R(10,90); return {q:a+' + '+b,a:a+b}; }
+  const t=Math.random();
+  if(t<0.3){ const a=R(11,29),b=R(11,29); return {q:a+' × '+b,a:a*b}; }
+  if(t<0.55){ const a=R(100,900),b=R(100,900); return {q:a+' + '+b,a:a+b}; }
+  if(t<0.8){ const b=R(3,19),r=R(5,30); return {q:(b*r)+' ÷ '+b,a:r}; }
+  const p=[5,10,15,20,25,50][Math.floor(Math.random()*6)], n=R(2,40)*10;
+  return {q:p+'٪ من '+n, a:Math.round(n*p/100)};
+}
+let SP=null, SP_T=null;
+function apTSpHTML(){
+  SP=null;
+  const best=gScore('spBest',{});
+  const nm={e:'سهل',m:'متوسط',h:'صعب'};
+  return '<div class="apTCard"><h4>تحدى ٦٠ ثانية</h4><div class="apTBtns">'
+    +Object.keys(nm).map(k=>'<button class="btn '+(k==='e'?'green':(k==='m'?'aqua':'red'))
+      +'" onclick="apTSpGo(\''+k+'\')">'+nm[k]+(best[k]?' · أفضل '+best[k]:'')+'</button>').join('')
+    +'</div><p class="apTNote">أكبر عدد إجابات صح فى ٦٠ ثانية. الغلط بيخصم واحدة.</p></div>'
+    +'<div id="spBox"></div>';
+}
+window.apTSpGo=function(lv){
+  SP={lv:lv,score:0,left:60,cur:spQ(lv),done:false};
+  apTSpDraw(); clearInterval(SP_T);
+  SP_T=setInterval(function(){
+    if(!SP||SP.done){ clearInterval(SP_T); return; }
+    SP.left--;
+    if(SP.left<=0){ SP.done=true; clearInterval(SP_T);
+      const b=gScore('spBest',{}); if(!b[SP.lv]||SP.score>b[SP.lv]){ b[SP.lv]=SP.score; gSave('spBest',b);
+        try{ toast('رقم قياسى! '+SP.score,'ok'); }catch(e){} }
+      buzz([40,60,40]); }
+    apTSpDraw();
+  },1000);
+};
+function apTSpDraw(){
+  const box=$$('#spBox'); if(!box||!SP) return;
+  if(SP.done){ box.innerHTML='<p class="apTWin">⏱ خلص الوقت — نتيجتك <b>'+fm(SP.score)+'</b></p>'; return; }
+  box.innerHTML='<div class="apTCard" style="text-align:center">'
+    +'<div class="spBar"><i style="width:'+(SP.left/60*100)+'%"></i></div>'
+    +'<div class="apTDay" style="margin:5px 0">⏱ '+SP.left+' ثانية · نتيجتك <b>'+fm(SP.score)+'</b></div>'
+    +'<div class="spQ" style="direction:ltr">'+esc2(SP.cur.q)+'</div>'
+    +'<div class="apTBtns"><input type="number" id="spIn" autocomplete="off" style="flex:2;text-align:center;font-size:19px" '
+    +'onkeydown="if(event.key===\'Enter\')apTSpAns()"><button class="btn aqua" onclick="apTSpAns()">تمام</button></div></div>';
+  const i=$$('#spIn'); if(i) i.focus();
+}
+window.apTSpAns=function(){
+  if(!SP||SP.done) return;
+  const el=$$('#spIn'); const v=n2(el&&el.value);
+  if(el&&el.value===''){ return; }
+  if(Math.round(v)===Math.round(SP.cur.a)){ SP.score++; buzz(8); }
+  else { SP.score=Math.max(0,SP.score-1); buzz([25,30,25]); }
+  SP.cur=spQ(SP.lv); apTSpDraw();
+};
+AP_T_HTML.speed=apTSpHTML;
+AP_T_INIT.speed=function(){ clearInterval(SP_T); };
+
+
+/* ═════════════ ٨) اختبار معلومات عامة ═════════════
+   بنك محلى قابل للتوسّع. كل جولة ٨ أسئلة عشوائية بلا تكرار داخل
+   الجولة، والاختيارات بتتخلط كل مرة. */
+const QZ_BANK={
+  sci:{n:'علوم', q:[
+    ['أكبر عضو في جسم الإنسان؟',['الجلد','الكبد','الرئة','المخ'],0],
+    ['الغاز الذي تمتصه النباتات في التمثيل الضوئي؟',['ثاني أكسيد الكربون','الأكسجين','النيتروجين','الهيدروجين'],0],
+    ['عدد عظام جسم الإنسان البالغ؟',['206','180','250','300'],0],
+    ['أسرع شيء في الكون؟',['الضوء','الصوت','الريح','الرصاصة'],0],
+    ['الكوكب الأقرب للشمس؟',['عطارد','الزهرة','الأرض','المريخ'],0],
+    ['ما العنصر الأكثر وفرة في القشرة الأرضية؟',['الأكسجين','الحديد','السيليكون','الألومنيوم'],0],
+    ['درجة غليان الماء عند مستوى سطح البحر؟',['100 °م','90 °م','120 °م','80 °م'],0],
+    ['أي فيتامين يُنتجه الجلد بفعل الشمس؟',['د','ج','أ','ب12'],0]
+  ]},
+  geo:{n:'جغرافيا', q:[
+    ['أطول نهر في العالم؟',['النيل','الأمازون','المسيسيبي','اليانجتسي'],0],
+    ['عاصمة أستراليا؟',['كانبرا','سيدني','ملبورن','بيرث'],0],
+    ['أكبر صحراء حارة في العالم؟',['الصحراء الكبرى','صحراء جوبي','كالاهاري','أتاكاما'],0],
+    ['في أي قارة تقع مصر؟',['أفريقيا','آسيا','أوروبا','أمريكا'],0],
+    ['أعلى قمة جبلية في العالم؟',['إفرست','كيليمنجارو','مونت بلان','K2'],0],
+    ['البحر الذي يفصل مصر عن السعودية؟',['البحر الأحمر','المتوسط','العرب','قزوين'],0],
+    ['أكبر دولة في العالم مساحةً؟',['روسيا','كندا','الصين','أمريكا'],0],
+    ['محافظة الإسماعيلية تطل على؟',['قناة السويس','البحر المتوسط','النيل مباشرة','خليج العقبة'],0]
+  ]},
+  his:{n:'تاريخ', q:[
+    ['في أي عام افتُتحت قناة السويس؟',['1869','1859','1882','1901'],0],
+    ['من بنى الهرم الأكبر؟',['خوفو','خفرع','منقرع','رمسيس'],0],
+    ['في أي عام كانت حرب أكتوبر؟',['1973','1967','1956','1948'],0],
+    ['عاصمة مصر في العصر الفاطمي؟',['القاهرة','الفسطاط','الإسكندرية','طيبة'],0],
+    ['من أول من وضع تقويمًا شمسيًا؟',['المصريون القدماء','الرومان','الإغريق','البابليون'],0],
+    ['في أي عام تم تأميم قناة السويس؟',['1956','1952','1967','1973'],0],
+    ['حجر رشيد اكتُشف سنة؟',['1799','1822','1750','1850'],0],
+    ['من فك رموز اللغة المصرية القديمة؟',['شامبليون','كارتر','ماسبيرو','هيرودوت'],0]
+  ]},
+  spo:{n:'رياضة', q:[
+    ['كم لاعبًا في فريق كرة القدم داخل الملعب؟',['11','10','12','9'],0],
+    ['كل كام سنة بيتقام كأس العالم؟',['4','2','3','5'],0],
+    ['النادي الأكثر تتويجًا بدوري أبطال أفريقيا؟',['الأهلي','الزمالك','الترجي','الوداد'],0],
+    ['عدد أشواط مباراة كرة السلة الرسمية؟',['4','2','3','5'],0],
+    ['أول دولة عربية استضافت كأس العالم؟',['قطر','السعودية','الإمارات','المغرب'],0],
+    ['كم شوطًا في مباراة التنس للرجال في البطولات الكبرى؟',['حتى 5 مجموعات','3 مجموعات','4 مجموعات','مجموعتان'],0],
+    ['المسافة الرسمية لسباق الماراثون؟',['42.195 كم','40 كم','45 كم','21 كم'],0]
+  ]},
+  gen:{n:'معلومات عامة', q:[
+    ['كم عدد ألوان قوس قزح؟',['7','6','5','8'],0],
+    ['العملة الرسمية لليابان؟',['الين','اليوان','الوون','الروبية'],0],
+    ['كم يومًا في السنة الكبيسة؟',['366','365','364','367'],0],
+    ['أكبر محيط في العالم؟',['الهادئ','الأطلنطي','الهندي','المتجمد'],0],
+    ['كم عدد حروف اللغة العربية؟',['28','26','30','29'],0],
+    ['ما الحيوان الذي يُلقب بسفينة الصحراء؟',['الجمل','الحصان','الفيل','الحمار'],0],
+    ['كم ضلعًا في الشكل السداسي؟',['6','5','7','8'],0],
+    ['أي معدن سائل في درجة حرارة الغرفة؟',['الزئبق','الحديد','النحاس','الرصاص'],0]
+  ]}
+};
+function qzNew(cat){
+  const pool=[];
+  Object.keys(QZ_BANK).forEach(k=>{
+    if(cat!=='all'&&cat!==k) return;
+    QZ_BANK[k].q.forEach((q,i)=>pool.push({k:k,i:i}));
+  });
+  const pick=sdShuffle(pool).slice(0,8);
+  const qs=pick.map(p=>{
+    const raw=QZ_BANK[p.k].q[p.i];
+    const opts=raw[1].map((t,i)=>({t:t,ok:i===raw[2]}));
+    return {cat:QZ_BANK[p.k].n, q:raw[0], o:sdShuffle(opts.slice())};
+  });
+  const st={cat:cat,qs:qs,i:0,score:0,pick:null,done:false};
+  lsSet('quiz',st); return st;
+}
+let QZ=null;
+function apTQzHTML(){
+  QZ=lsGet('quiz',null);
+  const best=gScore('qzBest',{});
+  if(!QZ||!QZ.qs){
+    const cats=Object.keys(QZ_BANK);
+    return '<div class="apTCard"><h4>اختار التصنيف</h4><div class="apTBtns">'
+      +'<button class="btn aqua" onclick="apTQzNew(\'all\')">الكل'+(best.all?' · أفضل '+best.all+'/8':'')+'</button>'
+      +cats.map(k=>'<button class="btn ghost" onclick="apTQzNew(\''+k+'\')">'+esc2(QZ_BANK[k].n)
+        +(best[k]?' · '+best[k]+'/8':'')+'</button>').join('')+'</div>'
+      +'<p class="apTNote">٨ أسئلة عشوائية كل جولة، من غير تكرار داخل الجولة.</p></div>';
+  }
+  if(QZ.done){
+    const pc=Math.round(QZ.score/QZ.qs.length*100);
+    return '<div class="apTCard" style="text-align:center">'
+      +'<p class="apTWin">'+(pc>=75?'🎉 ':'')+'نتيجتك <b>'+QZ.score+' من '+QZ.qs.length+'</b> ('+pc+'٪)</p>'
+      +'<div class="apTBtns"><button class="btn aqua" onclick="apTQzNew(\''+QZ.cat+'\')">🔄 جولة تانية</button>'
+      +'<button class="btn ghost" onclick="apTQzQuit()">التصنيفات</button></div></div>';
+  }
+  const q=QZ.qs[QZ.i];
+  return gBar('<span class="apTDay">سؤال <b>'+(QZ.i+1)+'</b> من '+QZ.qs.length
+      +' · '+esc2(q.cat)+' · صح <b>'+QZ.score+'</b></span>'
+    +'<button class="btn ghost sm" onclick="apTQzQuit()">🔄 جديدة</button>')
+  +'<div class="spBar" style="margin-bottom:9px"><i style="width:'+((QZ.i)/QZ.qs.length*100)+'%"></i></div>'
+  +'<div class="apTCard"><h4 style="font-size:15px;line-height:1.6">'+esc2(q.q)+'</h4>'
+  +q.o.map((o,k)=>{
+      let cls='';
+      if(QZ.pick!=null){ if(o.ok) cls=' ok'; else if(k===QZ.pick) cls=' no'; }
+      return '<button class="qzO'+cls+'" onclick="apTQzPick('+k+')">'+esc2(o.t)+'</button>';
+    }).join('')
+  +(QZ.pick!=null?'<div class="apTBtns"><button class="btn aqua" style="width:100%" onclick="apTQzNext()">'
+    +(QZ.i+1>=QZ.qs.length?'النتيجة':'السؤال اللى بعده ←')+'</button></div>':'')
+  +'</div>';
+}
+window.apTQzNew=function(c){ QZ=qzNew(c); apTRender(); };
+window.apTQzQuit=function(){ lsSet('quiz',null); QZ=null; apTRender(); };
+window.apTQzPick=function(k){
+  if(!QZ||QZ.pick!=null||QZ.done) return;
+  QZ.pick=k;
+  if(QZ.qs[QZ.i].o[k].ok){ QZ.score++; buzz(10); } else buzz([25,30,25]);
+  lsSet('quiz',QZ); apTRender();
+};
+window.apTQzNext=function(){
+  if(!QZ) return;
+  QZ.i++; QZ.pick=null;
+  if(QZ.i>=QZ.qs.length){
+    QZ.done=true;
+    const b=gScore('qzBest',{});
+    if(!b[QZ.cat]||QZ.score>b[QZ.cat]){ b[QZ.cat]=QZ.score; gSave('qzBest',b); }
+  }
+  lsSet('quiz',QZ); apTRender();
+};
+AP_T_HTML.quiz=apTQzHTML;
+
+/* نافذة فحص داخلية — للاختبار والتشخيص، مالهاش أى دور فى التشغيل */
+window.AP_TDBG={sdMake:sdMake,sdCount:sdCount,sdOk:sdOk,xoMinimax:xoMinimax,xoWin:xoWin,
+  slNew:slNew,slSolvable:slSolvable,g2Move:g2Move,g2New:g2New,qzNew:qzNew,spQ:spQ,
+  memNew:memNew,guNew:guNew,lsGet:lsGet,lsSet:lsSet,gScore:gScore,
+  get SD(){return SD;}, get MM(){return MM;}, get G2(){return G2;}, get SL(){return SL;},
+  get SP(){return SP;}, get QZ(){return QZ;}, get GU(){return GU;}, get XO(){return XO;}};
 
 window.AP_TOOLS_READY=true;
 try{ apTRender(); }catch(e){}
