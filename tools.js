@@ -1571,11 +1571,8 @@ function apTAthHTML(){
         +(need>1?'<span class="athP"><u style="width:'+pct.toFixed(0)+'%"></u></span>':'')+'</div>'
     +'</div>';
   }).join('');
-  return '<div class="athWarn">📖 <b>مصادر النصوص</b> — الآيات بالرسم العثمانى من '
-    +'موسوعة القرآن الكريم، والأحاديث مُخرَّجة برقمها من كتب السنة: البخارى ومسلم '
-    +'والسنن الأربعة ومسند أحمد والأدب المفرد. وما ثبت ضعفُه أو وضعُه حُذف. '
-    +'تبقى مراجعة متخصص هى الكلمة الأخيرة قبل الاعتماد.</div>'
-  +'<div class="athTabs">'+tabs+'</div>'
+  /* v61.93: البانر اتشال — مصدر كل ذِكر مكتوب تحته أصلًا */
+  return '<div class="athTabs" data-no-swipe="1">'+tabs+'</div>'
   +gBar('<span class="apTDay">'+ATH_DATA[cat].ic+' '+esc2(ATH_DATA[cat].n)
       +' — <b>'+fm(tot.done)+'</b> من '+fm(tot.all)+'</span>'
     +'<button class="btn ghost sm" onclick="apTAthReset()">🔄 تصفير القسم</button>')
