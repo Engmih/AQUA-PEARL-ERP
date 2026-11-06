@@ -25,19 +25,19 @@ function apTSound(){ return lsGet('fx',true)!==false; }
 function apTSoundSet(v){ lsSet('fx',!!v); apTRender(); }
 
 /* ───────── الهيكل: درج + صفحات ───────── */
+/* خريطة الصفحات: كل أداة بتسجّل نفسها هنا */
+const AP_T_HTML={}, AP_T_INIT={};
 const TOOLS=[
-  {id:'quote', ic:'🧮', name:'حاسبة عرض السعر', sub:'قسط شهرى وجدول مبدئى قدام العميل'},
   {id:'calc',  ic:'🔢', name:'الآلة الحاسبة',   sub:'بالنِسب والسجل'},
   {id:'tasbih',ic:'📿', name:'المسبحة',          sub:'عدّاد بيتحفظ لوحده'},
   {id:'fin',   ic:'🎨', name:'حاسبة التشطيب',    sub:'من باقاتك الحقيقية، بند بند'},
   {id:'sudoku',ic:'🔲', name:'سودوكو',           sub:'ألغاز حقيقية بحل وحيد', g:1},
   {id:'xo',    ic:'⭕', name:'إكس أو',            sub:'ضد الكمبيوتر أو اتنين', g:1},
   {id:'mem',   ic:'🧠', name:'الذاكرة',           sub:'بطاقات متطابقة', g:1},
-  {id:'g2048', ic:'🔢', name:'2048',              sub:'بالسحب، وفيها تراجع', g:1},
   {id:'guess', ic:'🎯', name:'خمّن الرقم',        sub:'أعلى / أقل', g:1},
   {id:'slide', ic:'🧩', name:'ترتيب الأرقام',     sub:'ألغاز قابلة للحل دايمًا', g:1},
-  {id:'speed', ic:'⚡', name:'الحساب السريع',      sub:'تحدى ٦٠ ثانية', g:1},
-  {id:'quiz',  ic:'❓', name:'معلومات عامة',       sub:'٥ تصنيفات', g:1}
+  {id:'quiz',  ic:'❓', name:'معلومات عامة',       sub:'٥ تصنيفات', g:1},
+  {id:'cw',    ic:'📝', name:'كلمات متقاطعة',     sub:'شبكة جديدة كل مرة', g:1}
 ];
 let apTOpen=false, apTPage='';
 
@@ -89,160 +89,6 @@ function apTRender(){
 window.apTRender=apTRender;
 window.apTSoundSet=apTSoundSet;
 window.apToolsBack=function(){ apTPage=''; apTRender(); };
-
-/* =====================================================================
-   ١) حاسبة عرض السعر — الأداة اللى هتتفتح قدام عميل
-   بتبدأ من نِسب النظام الحقيقية (وديعة الاستلام ودفعة الحجز) وبتولّد
-   جدول مبدئى بنفس منطق جداول النظام، من غير ما تلمس أى بيانات.
-   ===================================================================== */
-function apTQuoteDefaults(){
-  const d=lsGet('quote',null);
-  if(d) return d;
-  let dep=7.5, res=5;
-  try{ const s=S(); dep=(s.depositPct!=null?s.depositPct:7.5); res=(s.reservePct!=null?s.reservePct:5); }catch(e){}
-  return {area:140,ppm:24000,price:0,downPct:25,months:48,every:1,depPct:dep,resPct:res,big:0,bigEvery:12};
-}
-function apTQuoteHTML(){
-  const q=apTQuoteDefaults();
-  const f=(lb,id,val,step,hint)=>'<div class="form-row"><label>'+lb+'</label>'
-    +'<input type="number" id="'+id+'" value="'+val+'" step="'+(step||1)+'" oninput="apTQuoteCalc()">'
-    +(hint?'<span class="gray-note">'+hint+'</span>':'')+'</div>';
-  return '<div class="apTCard">'
-    +'<div class="grid g2">'
-      +f('📐 المساحة (م²)','tqArea',q.area,1)
-      +f('🏷️ سعر المتر','tqPpm',q.ppm,100,'سيب السعر فاضى لو هتكتب الإجمالى بنفسك')
-    +'</div>'
-    +f('💵 إجمالى سعر الوحدة','tqPrice',q.price||Math.round(q.area*q.ppm),1000,'لو غيّرته هيتحسب منه على طول')
-    +'<div class="grid g2">'
-      +f('💰 المقدم ٪','tqDownPct',q.downPct,0.5)
-      +f('📅 عدد الشهور','tqMonths',q.months,1)
-    +'</div>'
-    +'<div class="grid g2">'
-      +'<div class="form-row"><label>🔁 القسط كل</label>'
-      +'<select id="tqEvery" onchange="apTQuoteCalc()">'
-        +[1,2,3,6,12].map(v=>'<option value="'+v+'"'+(q.every==v?' selected':'')+'>'
-          +(v===1?'شهر':v===12?'سنة':v+' شهور')+'</option>').join('')
-      +'</select></div>'
-      +f('🏦 وديعة الاستلام ٪','tqDepPct',q.depPct,0.5)
-    +'</div>'
-    +'<div class="grid g2">'
-      +f('🎯 دفعة سنوية (اختيارى)','tqBig',q.big,1000,'مبلغ إضافى كل سنة — صفر = مفيش')
-      +f('🧾 دفعة الحجز ٪','tqResPct',q.resPct,0.5)
-    +'</div>'
-  +'</div>'
-  +'<div id="tqOut"></div>'
-  +'<div class="apTBtns">'
-    +'<button class="btn aqua" onclick="apTQuoteSave()">💾 احفظ الأرقام دى</button>'
-    +'<button class="btn ghost" onclick="apTQuoteCopy()">📋 نسخ الملخص</button>'
-    +'<button class="btn green" onclick="apTQuotePrint()">🖨️ طباعة / PDF</button>'
-  +'</div>'
-  +'<p class="apTNote">أرقام استرشادية للتفاوض — مش عرض سعر ولا تعاقد مُلزم، '
-  +'ومابتتسجّلش فى النظام ولا بتأثر على أى وحدة أو عميل.</p>';
-}
-const AP_T_HTML={}, AP_T_INIT={};
-let apTQ=null;
-function apTQuoteRead(){
-  const g=id=>n2(($$('#'+id)||{}).value);
-  const area=g('tqArea'), ppm=g('tqPpm');
-  let price=g('tqPrice');
-  if(!price&&area&&ppm) price=area*ppm;
-  const months=Math.max(0,Math.round(g('tqMonths')));
-  const every=Math.max(1,Math.round(n2(($$('#tqEvery')||{}).value)||1));
-  const downPct=g('tqDownPct'), depPct=g('tqDepPct'), resPct=g('tqResPct'), big=g('tqBig');
-  const down=Math.round(price*downPct/100);
-  const dep =Math.round(price*depPct/100);
-  const res =Math.round(price*resPct/100);
-  const count=months>0?Math.floor(months/every):0;
-  const years=months>0?Math.floor(months/12):0;
-  const bigTot=big>0?big*years:0;
-  const rest=Math.max(0,price-down-bigTot);
-  const inst=count>0?Math.round(rest/count):0;
-  return {area,ppm,price,downPct,down,depPct,dep,resPct,res,months,every,count,inst,
-          big,years,bigTot,rest,total:down+inst*count+bigTot};
-}
-window.apTQuoteCalc=function(){
-  const q=apTQuoteRead(); apTQ=q;
-  const o=$$('#tqOut'); if(!o) return;
-  if(!q.price){ o.innerHTML='<p class="apTNote">اكتب سعر الوحدة أو المساحة وسعر المتر.</p>'; return; }
-  const tile=(ic,lb,v,c)=>'<div class="apTTile"><span>'+ic+'</span><div><i>'+lb+'</i><b'
-    +(c?' style="color:'+c+'"':'')+'>'+v+'</b></div></div>';
-  let rows='';
-  if(q.count>0){
-    const lbl=q.every===1?'شهرى':q.every===12?'سنوى':'كل '+q.every+' شهور';
-    rows='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>البند</th><th>العدد</th><th>القيمة</th><th>الإجمالى</th></tr></thead><tbody>'
-      +'<tr><td>المقدم</td><td>1</td><td>'+fmm(q.down)+'</td><td>'+fmm(q.down)+'</td></tr>'
-      +'<tr><td>قسط '+lbl+'</td><td>'+fm(q.count)+'</td><td><b>'+fmm(q.inst)+'</b></td><td>'+fmm(q.inst*q.count)+'</td></tr>'
-      +(q.bigTot?'<tr><td>دفعة سنوية</td><td>'+fm(q.years)+'</td><td>'+fmm(q.big)+'</td><td>'+fmm(q.bigTot)+'</td></tr>':'')
-      +'</tbody><tfoot><tr><th colspan="3">إجمالى المحصَّل</th><th>'+fmm(q.total)+'</th></tr></tfoot></table></div>';
-  }
-  const diff=Math.round(q.total-q.price);
-  o.innerHTML='<div class="apTTiles">'
-    +tile('💵','سعر الوحدة',fmm(q.price))
-    +tile('💰','المقدم ('+q.downPct+'٪)',fmm(q.down))
-    +tile('📅','القسط',q.count?fmm(q.inst):'—','var(--aqua)')
-    +tile('🏦','وديعة الاستلام ('+q.depPct+'٪)',fmm(q.dep))
-    +tile('🧾','دفعة الحجز ('+q.resPct+'٪)',fmm(q.res))
-    +tile(Math.abs(diff)>2?'⚠️':'✔️','فرق التقريب',fmm(diff),Math.abs(diff)>2?'var(--amber)':'var(--green)')
-    +'</div>'+rows
-    +'<p class="gray-note" style="margin-top:6px">وديعة الاستلام ودفعة الحجز <b>خارج</b> ثمن الوحدة — زى ما النظام بيحسبها بالظبط.</p>';
-};
-function apTQuoteAfter(){ apTQuoteCalc(); }
-window.apTQuoteSave=function(){
-  const g=id=>n2(($$('#'+id)||{}).value);
-  lsSet('quote',{area:g('tqArea'),ppm:g('tqPpm'),price:g('tqPrice'),downPct:g('tqDownPct'),
-    months:g('tqMonths'),every:n2(($$('#tqEvery')||{}).value)||1,depPct:g('tqDepPct'),
-    resPct:g('tqResPct'),big:g('tqBig'),bigEvery:12});
-  try{ toast('الأرقام اتحفظت على الجهاز ده ✔','ok'); }catch(e){}
-};
-function apTQuoteText(){
-  const q=apTQ||apTQuoteRead(); if(!q.price) return '';
-  const lbl=q.every===1?'شهرى':q.every===12?'سنوى':'كل '+q.every+' شهور';
-  const L=['عرض استرشادى — Aqua Pearl City'];
-  if(q.area) L.push('المساحة: '+fm(q.area)+' م²'+(q.ppm?' · سعر المتر '+fmm(q.ppm):''));
-  L.push('سعر الوحدة: '+fmm(q.price));
-  L.push('المقدم ('+q.downPct+'٪): '+fmm(q.down));
-  if(q.count) L.push('قسط '+lbl+': '+fmm(q.inst)+' × '+fm(q.count));
-  if(q.bigTot) L.push('دفعة سنوية: '+fmm(q.big)+' × '+fm(q.years));
-  L.push('وديعة الاستلام ('+q.depPct+'٪): '+fmm(q.dep));
-  L.push('دفعة الحجز ('+q.resPct+'٪): '+fmm(q.res));
-  L.push('— أرقام استرشادية للتفاوض، ليست عرض سعر ولا تعاقدًا ملزمًا.');
-  return L.join('\n');
-}
-window.apTQuoteCopy=function(){
-  const t=apTQuoteText(); if(!t) return;
-  try{ navigator.clipboard.writeText(t).then(function(){ toast('اتنسخ ✔','ok'); }); }
-  catch(e){ try{ toast('مش قادر ينسخ','err'); }catch(_){} }
-};
-window.apTQuotePrint=function(){
-  const q=apTQ||apTQuoteRead(); if(!q.price) return;
-  const w=window.open('','_blank'); if(!w){ try{ toast('المتصفح منع النافذة','err'); }catch(e){} return; }
-  const lbl=q.every===1?'شهرى':q.every===12?'سنوى':'كل '+q.every+' شهور';
-  const r=(a,b)=>'<tr><td>'+a+'</td><td style="text-align:left;font-weight:700">'+b+'</td></tr>';
-  w.document.write('<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
-    +'<title>عرض استرشادى — Aqua Pearl City</title><style>'
-    +'body{font-family:Tahoma,Arial,sans-serif;direction:rtl;padding:26px;color:#15293b}'
-    +'h1{color:#0b2a4a;font-size:20px;margin:0 0 2px}h2{color:#1195b2;font-size:14px;margin:0 0 18px;font-weight:600}'
-    +'table{width:100%;border-collapse:collapse;margin-bottom:14px}'
-    +'td,th{border:1px solid #dbe6ee;padding:7px 9px;font-size:13px}'
-    +'thead th{background:#0b2a4a;color:#fff}'
-    +'.nt{font-size:11.5px;color:#5b7186;border-top:1px dashed #dbe6ee;padding-top:9px;margin-top:6px}'
-    +'</style></head><body>'
-    +'<h1>Aqua Pearl City</h1><h2>عرض استرشادى — '+(new Date()).toLocaleDateString('ar-EG')+'</h2>'
-    +'<table>'
-    +(q.area?r('المساحة',fm(q.area)+' م²'):'')
-    +(q.ppm?r('سعر المتر',fmm(q.ppm)):'')
-    +r('سعر الوحدة',fmm(q.price))
-    +r('المقدم ('+q.downPct+'٪)',fmm(q.down))
-    +(q.count?r('قسط '+lbl,fmm(q.inst)+' × '+fm(q.count)):'')
-    +(q.bigTot?r('دفعة سنوية',fmm(q.big)+' × '+fm(q.years)):'')
-    +r('وديعة الاستلام ('+q.depPct+'٪)',fmm(q.dep))
-    +r('دفعة الحجز ('+q.resPct+'٪)',fmm(q.res))
-    +'</table>'
-    +'<p class="nt">هذه أرقام استرشادية لغرض التفاوض فقط، ولا تُعد عرض سعر ولا إيجابًا ولا تعاقدًا مُلزمًا '
-    +'للشركة، وتخضع للمراجعة والاعتماد قبل التعاقد.</p>'
-    +'</body></html>');
-  w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },350);
-};
 
 /* =====================================================================
    ٢) الآلة الحاسبة — بالنِسب وسجل آخر ٢٠ عملية
@@ -507,10 +353,7 @@ function apTFinHTML(){
     +'<button class="btn aqua" onclick="apTFinSave()">💾 حفظ</button>'
     +'<button class="btn green" onclick="apTFinPrint()">🖨️ طباعة / PDF</button>'
   +'</div>'
-  +'<p class="apTNote">النتائج تقديرية ولا تمثل عرض سعر أو تعاقدًا مُلزمًا. '
-  +'سعر متر الباقة مأخوذ من بيانات النظام، وتوزيعه على البنود اجتهاد قابل للتعديل — '
-  +'عدّل أى كمية أو سعر وحدة والإجمالى هيتحرّك معاك. والكميات مفصولة عن مساحة الوحدة: '
-  +'الدهانات ٣ أمثال المساحة والأرضيات ١٫١٥ مثلها بشكل مبدئى.</p>';
+  +'<p class="apTNote">النتائج تقديرية ولا تمثل عرض سعر أو تعاقدًا مُلزمًا.</p>';
 }
 window.apTFinPkg=function(k){
   const st=finState(); st.pkg=k; st.q={}; st.p={}; st.pkgOf=k; lsSet('fin',st);
@@ -613,7 +456,6 @@ window.apTFinPrint=function(){
   w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },350);
 };
 
-AP_T_HTML.quote=apTQuoteHTML; AP_T_INIT.quote=apTQuoteAfter;
 AP_T_HTML.calc =apTCalcHTML;  AP_T_INIT.calc =apTCalcAfter;
 AP_T_HTML.tasbih=apTTasbihHTML;AP_T_INIT.tasbih=apTTasbihAfter;
 AP_T_HTML.fin  =apTFinHTML;   AP_T_INIT.fin  =apTFinAfter;
@@ -966,98 +808,6 @@ window.apTMemFlip=function(i){
 AP_T_HTML.mem=apTMemHTML; AP_T_INIT.mem=function(){ if(MM&&!MM.done) memTick(); };
 
 
-/* ═════════════ ٤) 2048 ═════════════ */
-function g2New(){
-  const st={b:new Array(16).fill(0),s:0,prev:null,over:false,won:false};
-  g2Add(st); g2Add(st); lsSet('g2048',st); return st;
-}
-function g2Add(st){
-  const free=[]; st.b.forEach((v,i)=>{ if(!v) free.push(i); });
-  if(!free.length) return false;
-  st.b[free[Math.floor(Math.random()*free.length)]]=Math.random()<0.9?2:4;
-  return true;
-}
-function g2Line(a){
-  const f=a.filter(v=>v); let gained=0; const out=[];
-  for(let i=0;i<f.length;i++){
-    if(f[i]===f[i+1]){ out.push(f[i]*2); gained+=f[i]*2; i++; }
-    else out.push(f[i]);
-  }
-  while(out.length<4) out.push(0);
-  return {a:out,g:gained};
-}
-function g2Move(st,dir){
-  const b=st.b.slice(); let gained=0, moved=false;
-  for(let i=0;i<4;i++){
-    let line=[];
-    for(let j=0;j<4;j++){
-      line.push(dir==='L'?b[i*4+j]:dir==='R'?b[i*4+3-j]:dir==='U'?b[j*4+i]:b[(3-j)*4+i]);
-    }
-    const r=g2Line(line); gained+=r.g;
-    for(let j=0;j<4;j++){
-      const v=r.a[j];
-      const k=dir==='L'?i*4+j:dir==='R'?i*4+3-j:dir==='U'?j*4+i:(3-j)*4+i;
-      if(b[k]!==v) moved=true;
-      b[k]=v;
-    }
-  }
-  if(!moved) return false;
-  st.prev={b:st.b.slice(),s:st.s};
-  st.b=b; st.s=n2(st.s)+gained;
-  g2Add(st);
-  if(st.b.indexOf(2048)>=0) st.won=true;
-  st.over=g2Dead(st);
-  return true;
-}
-function g2Dead(st){
-  if(st.b.indexOf(0)>=0) return false;
-  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
-    const v=st.b[i*4+j];
-    if(j<3&&st.b[i*4+j+1]===v) return false;
-    if(i<3&&st.b[(i+1)*4+j]===v) return false;
-  }
-  return true;
-}
-let G2=null;
-function apTG2HTML(){
-  G2=lsGet('g2048',null); if(!G2||!G2.b||G2.b.length!==16) G2=g2New();
-  const best=gScore('g2Best',0);
-  return gBar('<span class="apTDay">النقاط <b>'+fm(G2.s)+'</b> · الأعلى <b>'+fm(best)+'</b></span>'
-    +'<button class="btn ghost sm" onclick="apTG2Undo()"'+(G2.prev?'':' disabled')+'>↶ تراجع</button>'
-    +'<button class="btn ghost sm" onclick="apTG2New()">🔄 جديدة</button>')
-  +'<div class="g2G" id="g2G">'+G2.b.map(v=>'<div class="g2C v'+(v>2048?4096:v)+'">'+(v||'')+'</div>').join('')+'</div>'
-  +'<div class="g2Pad">'
-    +'<button class="apTK" onclick="apTG2Go(\'U\')">↑</button>'
-    +'<div><button class="apTK" onclick="apTG2Go(\'R\')">→</button>'
-    +'<button class="apTK" onclick="apTG2Go(\'D\')">↓</button>'
-    +'<button class="apTK" onclick="apTG2Go(\'L\')">←</button></div></div>'
-  +(G2.over?'<p class="apTWin">خلاص — مفيش حركة. نقاطك '+fm(G2.s)+'</p>'
-    :(G2.won?'<p class="apTWin">🎉 وصلت 2048</p>':''))
-  +'<p class="apTNote">اسحب على اللوحة أو استخدم الأسهم.</p>';
-}
-window.apTG2New=function(){ G2=g2New(); apTRender(); };
-window.apTG2Undo=function(){ if(!G2||!G2.prev) return; G2.b=G2.prev.b; G2.s=G2.prev.s; G2.prev=null; G2.over=false; lsSet('g2048',G2); apTRender(); };
-window.apTG2Go=function(d){
-  if(!G2||G2.over) return;
-  if(g2Move(G2,d)){
-    buzz(10);
-    const best=gScore('g2Best',0); if(G2.s>best) gSave('g2Best',G2.s);
-    lsSet('g2048',G2); apTRender();
-  }
-};
-AP_T_INIT.g2048=function(){
-  const g=$$('#g2G'); if(!g) return;
-  let x0=0,y0=0;
-  g.addEventListener('touchstart',e=>{ const t=e.touches[0]; x0=t.clientX; y0=t.clientY; },{passive:true});
-  g.addEventListener('touchend',e=>{
-    const t=e.changedTouches[0], dx=t.clientX-x0, dy=t.clientY-y0;
-    if(Math.abs(dx)<24&&Math.abs(dy)<24) return;
-    e.stopPropagation();
-    apTG2Go(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'));
-  },{passive:true});
-};
-AP_T_HTML.g2048=apTG2HTML;
-
 /* ═════════════ ٥) خمّن الرقم ═════════════ */
 function guNew(lv){
   const max={e:50,m:200,h:1000}[lv]||200;
@@ -1164,69 +914,6 @@ window.apTSlMove=function(i){
   lsSet('slide',SL); apTRender();
 };
 AP_T_HTML.slide=apTSlHTML; AP_T_INIT.slide=function(){ if(SL&&!SL.done) slTick(); };
-
-/* ═════════════ ٧) الحساب السريع ═════════════ */
-function spQ(lv){
-  const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
-  if(lv==='e'){ const a=R(2,20),b=R(2,20),o=Math.random()<0.5?'+':'-';
-    return {q:a+' '+o+' '+b, a:o==='+'?a+b:a-b}; }
-  if(lv==='m'){ const t=Math.random();
-    if(t<0.4){ const a=R(2,12),b=R(2,12); return {q:a+' × '+b,a:a*b}; }
-    if(t<0.7){ const b=R(2,12),r=R(2,12); return {q:(b*r)+' ÷ '+b,a:r}; }
-    const a=R(20,120),b=R(10,90); return {q:a+' + '+b,a:a+b}; }
-  const t=Math.random();
-  if(t<0.3){ const a=R(11,29),b=R(11,29); return {q:a+' × '+b,a:a*b}; }
-  if(t<0.55){ const a=R(100,900),b=R(100,900); return {q:a+' + '+b,a:a+b}; }
-  if(t<0.8){ const b=R(3,19),r=R(5,30); return {q:(b*r)+' ÷ '+b,a:r}; }
-  const p=[5,10,15,20,25,50][Math.floor(Math.random()*6)], n=R(2,40)*10;
-  return {q:p+'٪ من '+n, a:Math.round(n*p/100)};
-}
-let SP=null, SP_T=null;
-function apTSpHTML(){
-  SP=null;
-  const best=gScore('spBest',{});
-  const nm={e:'سهل',m:'متوسط',h:'صعب'};
-  return '<div class="apTCard"><h4>تحدى ٦٠ ثانية</h4><div class="apTBtns">'
-    +Object.keys(nm).map(k=>'<button class="btn '+(k==='e'?'green':(k==='m'?'aqua':'red'))
-      +'" onclick="apTSpGo(\''+k+'\')">'+nm[k]+(best[k]?' · أفضل '+best[k]:'')+'</button>').join('')
-    +'</div><p class="apTNote">أكبر عدد إجابات صح فى ٦٠ ثانية. الغلط بيخصم واحدة.</p></div>'
-    +'<div id="spBox"></div>';
-}
-window.apTSpGo=function(lv){
-  SP={lv:lv,score:0,left:60,cur:spQ(lv),done:false};
-  apTSpDraw(); clearInterval(SP_T);
-  SP_T=setInterval(function(){
-    if(!SP||SP.done){ clearInterval(SP_T); return; }
-    SP.left--;
-    if(SP.left<=0){ SP.done=true; clearInterval(SP_T);
-      const b=gScore('spBest',{}); if(!b[SP.lv]||SP.score>b[SP.lv]){ b[SP.lv]=SP.score; gSave('spBest',b);
-        try{ toast('رقم قياسى! '+SP.score,'ok'); }catch(e){} }
-      buzz([40,60,40]); }
-    apTSpDraw();
-  },1000);
-};
-function apTSpDraw(){
-  const box=$$('#spBox'); if(!box||!SP) return;
-  if(SP.done){ box.innerHTML='<p class="apTWin">⏱ خلص الوقت — نتيجتك <b>'+fm(SP.score)+'</b></p>'; return; }
-  box.innerHTML='<div class="apTCard" style="text-align:center">'
-    +'<div class="spBar"><i style="width:'+(SP.left/60*100)+'%"></i></div>'
-    +'<div class="apTDay" style="margin:5px 0">⏱ '+SP.left+' ثانية · نتيجتك <b>'+fm(SP.score)+'</b></div>'
-    +'<div class="spQ" style="direction:ltr">'+esc2(SP.cur.q)+'</div>'
-    +'<div class="apTBtns"><input type="number" id="spIn" autocomplete="off" style="flex:2;text-align:center;font-size:19px" '
-    +'onkeydown="if(event.key===\'Enter\')apTSpAns()"><button class="btn aqua" onclick="apTSpAns()">تمام</button></div></div>';
-  const i=$$('#spIn'); if(i) i.focus();
-}
-window.apTSpAns=function(){
-  if(!SP||SP.done) return;
-  const el=$$('#spIn'); const v=n2(el&&el.value);
-  if(el&&el.value===''){ return; }
-  if(Math.round(v)===Math.round(SP.cur.a)){ SP.score++; buzz(8); }
-  else { SP.score=Math.max(0,SP.score-1); buzz([25,30,25]); }
-  SP.cur=spQ(SP.lv); apTSpDraw();
-};
-AP_T_HTML.speed=apTSpHTML;
-AP_T_INIT.speed=function(){ clearInterval(SP_T); };
-
 
 /* ═════════════ ٨) اختبار معلومات عامة ═════════════
    بنك محلى قابل للتوسّع. كل جولة ٨ أسئلة عشوائية بلا تكرار داخل
@@ -1352,11 +1039,381 @@ window.apTQzNext=function(){
 AP_T_HTML.quiz=apTQzHTML;
 
 /* نافذة فحص داخلية — للاختبار والتشخيص، مالهاش أى دور فى التشغيل */
+
+/* ═════════════ ٦) كلمات متقاطعة ═════════════
+   التوليد تلقائى: بنبدأ بأطول كلمة فى النص، وبعدين كل كلمة جديدة
+   بندوّر لها على حرف مشترك مع كلمة متحطة قبلها ونحطها عمودى على
+   اتجاهها. وبنرفض أى وضع بيخلّى حرفين جنب بعض من غير ما يكوّنوا
+   كلمة حقيقية — فمفيش تقاطعات عشوائية ولا حروف سايبة.
+   ===================================================================== */
+const CW_BANK=[
+  ["وحدة","الشقة فى لغة التعاقد"],
+  ["قسط","جزء من الثمن يُسدَّد فى موعده"],
+  ["عقد","ورقة تربط طرفين باتفاق"],
+  ["مقدم","أول ما يدفعه المشترى"],
+  ["تشطيب","آخر مراحل البناء قبل التسليم"],
+  ["بورسلين","بلاط فاخر للأرضيات"],
+  ["دهان","يُكسى به الحائط لونا"],
+  ["مصعد","يصعد بك ولا يتعب"],
+  ["عمارة","مبنى من عدة أدوار"],
+  ["سلم","درجات توصلك لفوق"],
+  ["حديقة","قطعة أرض فيها زرع وورد"],
+  ["بوابة","منها تدخل الكمبوند"],
+  ["ايصال","ورقة تثبت أنك دفعت"],
+  ["فاتورة","بيان بالمستحق"],
+  ["خصم","تنزيل فى السعر يفرح المشترى"],
+  ["غرامة","جزاء مالى على التأخير"],
+  ["سمسار","وسيط بين البائع والمشترى"],
+  ["شريك","يقاسمك الربح والخسارة"],
+  ["ضمان","تعهد بالإصلاح بعد البيع"],
+  ["تسليم","تسلم المفتاح لصاحبه"],
+  ["رخصة","إذن رسمى بالبناء"],
+  ["مخطط","رسم هندسى للوحدة"],
+  ["مساحة","تقاس بالمتر المربع"],
+  ["سعر","ما تدفعه مقابل السلعة"],
+  ["قناة","السويس أشهرها فى مصر"],
+  ["اسماعيلية","محافظة على ضفاف القناة"],
+  ["تمساح","بحيرة شهيرة بالإسماعيلية"],
+  ["نخيل","شجر الإسماعيلية والواحات"],
+  ["شاطئ","حيث يلتقى البر بالماء"],
+  ["مرسى","ترسو فيه السفن"],
+  ["كتاب","خير جليس فى الزمان"],
+  ["قلم","به تكتب ولا يتكلم"],
+  ["بحر","واسع مالح لا ينضب"],
+  ["نهر","يجرى عذبا بين الضفاف"],
+  ["جبل","شامخ لا تهزه الريح"],
+  ["شمس","تشرق فتبدد الظلام"],
+  ["قمر","يضىء الليل بنور مستعار"],
+  ["نجم","يلمع فى السماء ليلا"],
+  ["سحاب","يحمل المطر فى السماء"],
+  ["مطر","غيث ينزل من السماء"],
+  ["ريح","تهب ولا ترى"],
+  ["ثلج","ماء تجمد وتساقط أبيض"],
+  ["نار","تحرق وتدفئ"],
+  ["تراب","منه خلقنا وإليه نعود"],
+  ["ذهب","أصفر نفيس يزين"],
+  ["فضة","أبيض نفيس أقل من الذهب"],
+  ["حديد","معدن صلب للبناء"],
+  ["نحاس","معدن أحمر للأسلاك"],
+  ["زجاج","شفاف يكسر بسهولة"],
+  ["خشب","من الشجر وللأثاث"],
+  ["باب","منه تدخل وتخرج"],
+  ["نافذة","منها يدخل الهواء"],
+  ["سقف","أعلى الغرفة"],
+  ["جدار","حائط يفصل الغرف"],
+  ["مفتاح","يفتح القفل"],
+  ["قفل","يحفظ ما وراءه"],
+  ["كرسى","تجلس عليه"],
+  ["مكتب","عليه تكتب وتعمل"],
+  ["ساعة","تدلك على الوقت"],
+  ["مرآة","ترى فيها نفسك"],
+  ["طبيب","يداوى المرضى"],
+  ["مهندس","يصمم ويبنى"],
+  ["معلم","يعلم الناس الخير"],
+  ["تاجر","يبيع ويشترى"],
+  ["فلاح","يزرع الأرض"],
+  ["نجار","يصنع من الخشب"],
+  ["حداد","يطرق الحديد"],
+  ["خباز","يصنع الخبز"],
+  ["اسد","ملك الغابة"],
+  ["نمر","مفترس مخطط"],
+  ["فيل","أضخم حيوان برى"],
+  ["جمل","سفينة الصحراء"],
+  ["حصان","يركب ويسابق"],
+  ["غزال","رشيق سريع العدو"],
+  ["صقر","جارح حاد البصر"],
+  ["حمام","طائر السلام"],
+  ["نحل","يصنع العسل"],
+  ["نمل","مثل فى الجد والنظام"],
+  ["سمك","يعيش فى الماء"],
+  ["دلفين","ذكى ودود فى البحر"],
+  ["تفاح","فاكهة حمراء أو خضراء"],
+  ["عنب","عناقيد حلوة"],
+  ["موز","أصفر طويل"],
+  ["بطيخ","أحمر من الداخل فى الصيف"],
+  ["تمر","ثمر النخيل"],
+  ["زيتون","منه الزيت المبارك"],
+  ["قمح","منه الخبز"],
+  ["ارز","حبوب بيضاء تطهى"],
+  ["عسل","فيه شفاء للناس"],
+  ["لبن","أبيض من الأبقار"],
+  ["خبز","أساس المائدة"],
+  ["ملح","يعطى الطعام طعما"],
+  ["شاى","مشروب ساخن شهير"],
+  ["قهوة","مشروب الصباح المر"],
+  ["عصير","شراب من الفاكهة"],
+  ["ماء","لا حياة بدونه"],
+  ["مصر","أم الدنيا"],
+  ["نيل","أطول أنهار العالم"],
+  ["قاهرة","عاصمة مصر"],
+  ["اسكندرية","عروس البحر المتوسط"],
+  ["اقصر","مدينة المعابد والآثار"],
+  ["اسوان","أقصى جنوب مصر"],
+  ["هرم","بناء فرعونى عظيم"],
+  ["مسلة","عمود حجرى فرعونى"],
+  ["معبد","بيت للعبادة قديما"],
+  ["متحف","تحفظ فيه الآثار"],
+  ["طريق","تسير فيه السيارات"],
+  ["جسر","يعبر فوق النهر"],
+  ["نفق","طريق تحت الأرض"],
+  ["ميناء","ترسو فيه البواخر"],
+  ["مطار","منه تقلع الطائرات"],
+  ["قطار","يسير على قضبان"],
+  ["سيارة","وسيلة نقل بأربع عجلات"],
+  ["دراجة","بعجلتين وبدواسة"],
+  ["سفينة","تمخر عباب البحر"],
+  ["طائرة","تحلق فى السماء"],
+  ["مدرسة","بيت العلم الأول"],
+  ["جامعة","أعلى مراحل التعليم"],
+  ["مكتبة","فيها الكتب تصف"],
+  ["قاموس","يشرح معانى الكلمات"],
+  ["لغة","بها نتفاهم"],
+  ["حرف","أصغر وحدة فى الكتابة"],
+  ["شعر","كلام موزون مقفى"],
+  ["قصة","حكاية لها أحداث"],
+  ["لوحة","رسم فى إطار"],
+  ["نغم","صوت موسيقى عذب"],
+  ["عدل","أساس الملك"],
+  ["صدق","ينجى وهو ضد الكذب"],
+  ["صبر","مفتاح الفرج"],
+  ["كرم","خلق العرب الأصيل"],
+  ["امانة","ضد الخيانة"],
+  ["وفاء","حفظ العهد"],
+  ["شكر","رد الجميل بالكلمة"],
+  ["رحمة","لين القلب على الضعيف"],
+  ["سلام","ضد الحرب"],
+  ["فرح","ضد الحزن"],
+  ["نور","يبدد الظلمة"],
+  ["طفل","صغير يلهو ويلعب"],
+  ["شباب","أقوى مراحل العمر"],
+  ["جار","أقرب الناس بابا"],
+  ["صديق","يسندك وقت الضيق"],
+  ["عائلة","أصغر وحدة فى المجتمع"],
+  ["بيت","مأوى الأسرة"],
+  ["سوق","يباع فيه ويشترى"],
+  ["بنك","يحفظ الأموال"],
+  ["نقود","بها تشترى"],
+  ["ربح","زيادة على رأس المال"],
+  ["ميزان","يزن ويعدل"],
+  ["مسطرة","بها تقيس وترسم المستقيم"],
+  ["رمل","حبيبات الشاطئ"],
+  ["صخر","حجر ضخم صلب"],
+  ["كهف","تجويف فى الجبل"],
+  ["واحة","خضرة وسط الصحراء"],
+  ["صحراء","أرض واسعة بلا ماء"],
+  ["غابة","أشجار كثيفة متشابكة"],
+  ["وردة","أجمل الزهور"],
+  ["ياسمين","زهر أبيض عطر"],
+  ["ورق","عليه تكتب"],
+  ["حبر","به يكتب القلم"]
+];
+
+function cwFits(G,N,w,r,c,dir){
+  const dr=dir?1:0, dc=dir?0:1;
+  const er=r+dr*(w.length-1), ec=c+dc*(w.length-1);
+  if(r<0||c<0||er>=N||ec>=N) return -1;
+  /* الخانة اللى قبل الكلمة واللى بعدها لازم تكون فاضية */
+  const br=r-dr, bc=c-dc, ar=er+dr, ac=ec+dc;
+  if(br>=0&&bc>=0&&G[br*N+bc]) return -1;
+  if(ar<N&&ac<N&&G[ar*N+ac]) return -1;
+  let cross=0;
+  for(let i=0;i<w.length;i++){
+    const rr=r+dr*i, cc=c+dc*i, cur=G[rr*N+cc];
+    if(cur){ if(cur!==w[i]) return -1; cross++; continue; }
+    /* خانة فاضية: الجارين العموديين لازم يكونوا فاضيين كمان */
+    const p1r=rr+dc, p1c=cc+dr, p2r=rr-dc, p2c=cc-dr;
+    if(p1r>=0&&p1r<N&&p1c>=0&&p1c<N&&G[p1r*N+p1c]) return -1;
+    if(p2r>=0&&p2r<N&&p2c>=0&&p2c<N&&G[p2r*N+p2c]) return -1;
+  }
+  return cross;
+}
+function cwBuild(N,want){
+  const pool=sdShuffle(CW_BANK.slice()).filter(x=>x[0].length<=N);
+  const G=new Array(N*N).fill('');
+  const put=[];
+  const first=pool.find(x=>x[0].length>=Math.min(6,N-2))||pool[0];
+  if(!first) return null;
+  const fr=Math.floor(N/2), fc=Math.max(0,Math.floor((N-first[0].length)/2));
+  for(let i=0;i<first[0].length;i++) G[fr*N+fc+i]=first[0][i];
+  put.push({w:first[0],cl:first[1],r:fr,c:fc,d:0});
+  const used={}; used[first[0]]=1;
+  for(let pass=0;pass<3&&put.length<want;pass++){
+    for(let k=0;k<pool.length&&put.length<want;k++){
+      const [w,cl]=pool[k];
+      if(used[w]) continue;
+      let best=null;
+      for(let pi=0;pi<put.length;pi++){
+        const P=put[pi], nd=P.d?0:1;
+        for(let a=0;a<P.w.length;a++){
+          for(let b=0;b<w.length;b++){
+            if(P.w[a]!==w[b]) continue;
+            const hr=P.r+(P.d?a:0), hc=P.c+(P.d?0:a);
+            const r=nd?hr-b:hr, c=nd?hc:hc-b;
+            const cr=cwFits(G,N,w,r,c,nd);
+            if(cr>0&&(!best||cr>best.cr)) best={r:r,c:c,d:nd,cr:cr};
+          }
+        }
+      }
+      if(best){
+        const dr=best.d?1:0, dc=best.d?0:1;
+        for(let i=0;i<w.length;i++) G[(best.r+dr*i)*N+best.c+dc*i]=w[i];
+        put.push({w:w,cl:cl,r:best.r,c:best.c,d:best.d});
+        used[w]=1;
+      }
+    }
+  }
+  return put.length>=5?{G:G,put:put,N:N}:null;
+}
+function cwNumber(st){
+  const N=st.N, G=st.G, num=new Array(N*N).fill(0);
+  let n=0;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const i=r*N+c; if(!G[i]) continue;
+    const startA=(c===0||!G[i-1])&&(c+1<N&&G[i+1]);
+    const startD=(r===0||!G[i-N])&&(r+1<N&&G[i+N]);
+    if(startA||startD) num[i]=++n;
+  }
+  st.num=num;
+  st.put.forEach(p=>{ p.n=num[p.r*N+p.c]||0; });
+  st.put.sort((a,b)=>a.n-b.n);
+}
+function cwNew(level){
+  const N={e:9,m:11,h:13}[level]||11;
+  const want={e:7,m:11,h:15}[level]||11;
+  let st=null;
+  for(let t=0;t<14&&!st;t++) st=cwBuild(N,want);
+  if(!st) return null;
+  cwNumber(st);
+  st.level=level; st.cur=st.G.map(ch=>ch?'':''); st.sel=-1; st.dir=0;
+  st.t=0; st.hints=0; st.done=false;
+  lsSet('cw',st); return st;
+}
+let CW=null, CW_T=null;
+function cwTick(){ clearInterval(CW_T); CW_T=setInterval(function(){
+  if(!CW||CW.done) return; CW.t=n2(CW.t)+1;
+  const e=$$('#cwT'); if(e) e.textContent=mmss(CW.t);
+  if(CW.t%10===0) lsSet('cw',CW); },1000); }
+const CW_LTR='ابتثجحخدذرزسشصضطظعغفقكلمنهوي'.split('');
+function cwWordAt(i,dir){
+  if(!CW) return null;
+  return CW.put.find(p=>{
+    if(p.d!==dir) return false;
+    const dr=p.d?1:0, dc=p.d?0:1;
+    for(let k=0;k<p.w.length;k++) if((p.r+dr*k)*CW.N+p.c+dc*k===i) return true;
+    return false;
+  })||null;
+}
+function apTCwHTML(){
+  CW=lsGet('cw',null);
+  const best=gScore('cwBest',{});
+  const nm={e:'سهل',m:'متوسط',h:'صعب'};
+  if(!CW||!CW.G) return '<div class="apTCard"><h4>اختار المستوى</h4><div class="apTBtns">'
+    +Object.keys(nm).map(k=>'<button class="btn '+(k==='e'?'green':(k==='m'?'aqua':'red'))
+      +'" onclick="apTCwNew(\'' +k+ '\')">'+nm[k]+(best[k]?' · '+mmss(best[k]):'')+'</button>').join('')
+    +'</div><p class="apTNote">كل شبكة بتتركّب من الأول من بنك كلمات عربى — فيه كلمات عامة '
+    +'وكلمات من شغلنا: وحدة وقسط وتشطيب وقناة والإسماعيلية.</p></div>';
+  const N=CW.N, sel=CW.sel;
+  const selW=sel>=0?cwWordAt(sel,CW.dir):null;
+  let cells='';
+  for(let i=0;i<N*N;i++){
+    if(!CW.G[i]){ cells+='<div class="cwB"></div>'; continue; }
+    const inW=selW&&(function(){ const dr=selW.d?1:0,dc=selW.d?0:1;
+      for(let k=0;k<selW.w.length;k++) if((selW.r+dr*k)*N+selW.c+dc*k===i) return true; return false; })();
+    const v=CW.cur[i]||'';
+    const bad=v&&v!==CW.G[i];
+    cells+='<div class="cwC'+(i===sel?' sel':'')+(inW&&i!==sel?' hi':'')+(bad?' bad':'')
+      +'" onclick="apTCwSel('+i+')">'+(CW.num[i]?'<u>'+CW.num[i]+'</u>':'')+(v||'')+'</div>';
+  }
+  const list=d=>CW.put.filter(p=>p.d===d).map(p=>{
+    const dr=p.d?1:0, dc=p.d?0:1;
+    let ok=true;
+    for(let k=0;k<p.w.length;k++){ const ii=(p.r+dr*k)*N+p.c+dc*k; if(CW.cur[ii]!==CW.G[ii]) ok=false; }
+    const on=selW&&selW.n===p.n&&selW.d===p.d;
+    return '<div class="cwQ'+(ok?' ok':'')+(on?' on':'')+'" onclick="apTCwGo('+p.n+','+p.d+')">'
+      +'<b>'+p.n+'</b> '+esc2(p.cl)+' <i>('+p.w.length+')</i></div>';
+  }).join('')||'<p class="apTNote">—</p>';
+  const left=CW.G.reduce((a,ch,i)=>a+((ch&&CW.cur[i]!==ch)?1:0),0);
+  return gBar('<span class="apTDay">⏱ <b id="cwT">'+mmss(CW.t)+'</b> · '+nm[CW.level]
+      +' · '+CW.put.length+' كلمة · فاضل '+left+'</span>'
+    +'<button class="btn ghost sm" onclick="apTCwQuit()">🔄 جديدة</button>')
+  +'<div class="cwG" style="grid-template-columns:repeat('+N+',1fr)">'+cells+'</div>'
+  +'<div class="cwKeys">'+CW_LTR.map(ch=>'<button class="cwK" onclick="apTCwPut(\''+ch+'\')">'+ch+'</button>').join('')
+    +'<button class="cwK fn" onclick="apTCwPut(\'\')">⌫</button></div>'
+  +gBar('<button class="btn ghost sm" onclick="apTCwFlip()">🔁 '+(CW.dir?'رأسى':'أفقى')+'</button>'
+    +'<button class="btn ghost sm" onclick="apTCwHint()">💡 حرف ('+(5-n2(CW.hints))+')</button>'
+    +'<button class="btn green sm" onclick="apTCwCheck()">✔️ تحقّق</button>')
+  +'<div class="apTCard"><h4>↔️ أفقى</h4>'+list(0)+'</div>'
+  +'<div class="apTCard"><h4>↕️ رأسى</h4>'+list(1)+'</div>'
+  +(CW.done?'<p class="apTWin">🎉 حللتها فى '+mmss(CW.t)+'</p>':'');
+}
+window.apTCwNew=function(l){
+  const st=cwNew(l);
+  if(!st){ try{ toast('مش قادر يركّب شبكة — جرّب تانى','err'); }catch(e){} return; }
+  CW=st; apTRender(); cwTick();
+};
+window.apTCwQuit=function(){
+  const go=function(){ lsSet('cw',null); CW=null; clearInterval(CW_T); apTRender(); };
+  try{ confirmBox('🔄 شبكة جديدة','<p>هتسيب الشبكة الحالية.</p>','ابدأ من الأول',go); }catch(e){ go(); }
+};
+window.apTCwSel=function(i){
+  if(!CW||CW.done||!CW.G[i]) return;
+  if(CW.sel===i){ const o=cwWordAt(i,CW.dir?0:1); if(o) CW.dir=CW.dir?0:1; }
+  else { CW.sel=i; if(!cwWordAt(i,CW.dir)) CW.dir=CW.dir?0:1; }
+  lsSet('cw',CW); apTRender();
+};
+window.apTCwFlip=function(){ if(!CW) return; CW.dir=CW.dir?0:1; lsSet('cw',CW); apTRender(); };
+window.apTCwGo=function(n,d){
+  if(!CW) return;
+  const p=CW.put.find(x=>x.n===n&&x.d===d); if(!p) return;
+  CW.dir=d; CW.sel=p.r*CW.N+p.c; lsSet('cw',CW); apTRender();
+};
+function cwAdvance(){
+  const w=cwWordAt(CW.sel,CW.dir); if(!w) return;
+  const dr=w.d?1:0, dc=w.d?0:1;
+  const idx=[]; for(let k=0;k<w.w.length;k++) idx.push((w.r+dr*k)*CW.N+w.c+dc*k);
+  const at=idx.indexOf(CW.sel);
+  for(let k=at+1;k<idx.length;k++) if(!CW.cur[idx[k]]){ CW.sel=idx[k]; return; }
+  if(at+1<idx.length) CW.sel=idx[at+1];
+}
+window.apTCwPut=function(ch){
+  if(!CW||CW.done||CW.sel<0) return;
+  if(ch===''){ CW.cur[CW.sel]=''; }
+  else { CW.cur[CW.sel]=ch; cwAdvance(); }
+  buzz(8); cwDone(); lsSet('cw',CW); apTRender();
+};
+function cwDone(){
+  if(CW.G.some((ch,i)=>ch&&CW.cur[i]!==ch)) return;
+  CW.done=true; clearInterval(CW_T);
+  const b=gScore('cwBest',{});
+  if(!b[CW.level]||CW.t<b[CW.level]){ b[CW.level]=CW.t; gSave('cwBest',b);
+    try{ toast('رقم قياسى! '+mmss(CW.t),'ok'); }catch(e){} }
+  else { try{ toast('برافو — حللتها فى '+mmss(CW.t),'ok'); }catch(e){} }
+  buzz([40,60,40]);
+}
+window.apTCwHint=function(){
+  if(!CW||CW.done) return;
+  if(n2(CW.hints)>=5){ try{ toast('خلصت التلميحات','err'); }catch(e){} return; }
+  let pick=-1;
+  if(CW.sel>=0&&CW.cur[CW.sel]!==CW.G[CW.sel]) pick=CW.sel;
+  else { const left=[]; CW.G.forEach((ch,i)=>{ if(ch&&CW.cur[i]!==ch) left.push(i); });
+    if(!left.length) return; pick=left[Math.floor(Math.random()*left.length)]; }
+  CW.cur[pick]=CW.G[pick]; CW.hints=n2(CW.hints)+1; CW.sel=pick;
+  cwDone(); lsSet('cw',CW); apTRender();
+};
+window.apTCwCheck=function(){
+  if(!CW) return;
+  let wrong=0,left=0;
+  CW.G.forEach((ch,i)=>{ if(!ch) return;
+    if(!CW.cur[i]) left++; else if(CW.cur[i]!==ch) wrong++; });
+  try{ toast(wrong?(wrong+' حرف غلط'):(left?('كله سليم — فاضل '+left+' حرف'):'تمام ✔'), wrong?'err':'ok'); }catch(e){}
+};
+AP_T_HTML.cw=apTCwHTML; AP_T_INIT.cw=function(){ if(CW&&!CW.done) cwTick(); };
+
 window.AP_TDBG={sdMake:sdMake,sdCount:sdCount,sdOk:sdOk,xoMinimax:xoMinimax,xoWin:xoWin,
-  slNew:slNew,slSolvable:slSolvable,g2Move:g2Move,g2New:g2New,qzNew:qzNew,spQ:spQ,
+  slNew:slNew,slSolvable:slSolvable,qzNew:qzNew,cwNew:cwNew,cwBuild:cwBuild,cwFits:cwFits,CW_BANK:CW_BANK,
   memNew:memNew,guNew:guNew,lsGet:lsGet,lsSet:lsSet,gScore:gScore,
-  get SD(){return SD;}, get MM(){return MM;}, get G2(){return G2;}, get SL(){return SL;},
-  get SP(){return SP;}, get QZ(){return QZ;}, get GU(){return GU;}, get XO(){return XO;}};
+  get SD(){return SD;}, get MM(){return MM;}, get SL(){return SL;},
+  get QZ(){return QZ;}, get CW(){return CW;}, get GU(){return GU;}, get XO(){return XO;}};
 
 window.AP_TOOLS_READY=true;
 try{ apTRender(); }catch(e){}
