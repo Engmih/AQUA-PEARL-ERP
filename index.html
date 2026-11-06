@@ -15,6 +15,113 @@
   --gold:#c8a24b; --green:#1e9e6a; --green2:#0f8f57; --red:#d64545; --amber:#c98a1b;
   --r:14px; --shadow:0 2px 10px rgba(11,42,74,.08);
 }
+/* ===== v61.82: الأدوات التجريبية — درج جانبى مستقل ===== */
+.apTTab{position:fixed;top:50%;transform:translateY(-50%);right:0;z-index:70;display:none;
+  width:19px;height:66px;padding:0;border:0;cursor:pointer;
+  border-radius:9px 0 0 9px;background:linear-gradient(180deg,var(--navy2),var(--aqua));
+  box-shadow:-2px 0 8px rgba(11,42,74,.22);color:#fff;font-size:13px;line-height:66px;
+  opacity:.55;transition:opacity .18s,width .18s}
+.apTTab.on{display:block}
+.apTTab:hover,.apTTab:active{opacity:1;width:23px}
+.apTTab span{display:block;transform:translateX(-1px)}
+.apTBack{position:fixed;inset:0;z-index:78;background:rgba(11,42,74,.34);
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.apTBack.open{opacity:1;pointer-events:auto}
+.apTDrawer{position:fixed;top:0;right:0;z-index:79;height:100%;width:min(94vw,420px);
+  background:var(--bg);box-shadow:-8px 0 26px rgba(11,42,74,.2);
+  transform:translateX(102%);transition:transform .24s cubic-bezier(.3,.8,.4,1);
+  display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.apTDrawer.open{transform:translateX(0)}
+.apTDrawer>header{display:flex;align-items:center;gap:7px;padding:11px 12px;
+  background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;flex:0 0 auto}
+.apTDrawer>header h3{margin:0;font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.apTBeta{background:var(--gold);color:#2a1f05;font-size:10.5px;font-weight:800;
+  padding:2px 7px;border-radius:999px;white-space:nowrap}
+.apTX{background:rgba(255,255,255,.14);border:0;color:#fff;width:28px;height:28px;
+  border-radius:8px;font-size:15px;cursor:pointer;flex:0 0 auto}
+.apTX:hover{background:rgba(255,255,255,.26)}
+#apTBody{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px;-webkit-overflow-scrolling:touch}
+.apTList{display:flex;flex-direction:column;gap:8px}
+.apTItem{display:flex;align-items:center;gap:10px;width:100%;text-align:start;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:11px 12px;
+  box-shadow:var(--shadow);transition:border-color .15s,transform .1s}
+.apTItem:active{transform:scale(.985)}
+.apTItem:hover{border-color:var(--aqua)}
+.apTIc{font-size:21px;flex:0 0 auto}
+.apTTx{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}
+.apTTx b{font-size:14.5px;color:var(--navy2)}
+.apTTx i{font-style:normal;font-size:11.5px;color:var(--muted)}
+.apTAr{color:var(--aqua);font-size:17px;flex:0 0 auto}
+.apTFx{display:flex;align-items:center;gap:7px;margin:12px 2px 0;font-size:13px;color:var(--muted)}
+.apTFx input{width:auto}
+.apTNote{font-size:11.5px;color:var(--muted);line-height:1.6;margin:11px 2px 0}
+.apTCard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:11px;margin-bottom:10px;box-shadow:var(--shadow)}
+.apTCard h4{margin:0 0 8px;font-size:13.5px;color:var(--navy2)}
+.apTBtns{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:9px}
+.apTBtns .btn{flex:1 1 auto}
+.apTTiles{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.apTTile{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:11px;padding:8px 9px}
+.apTTile>span{font-size:16px}
+.apTTile i{display:block;font-style:normal;font-size:10.5px;color:var(--muted)}
+.apTTile b{display:block;font-size:14px;color:var(--navy2)}
+/* الآلة الحاسبة */
+.apTDisp{background:var(--navy);color:#fff;border-radius:13px;padding:12px 13px;margin-bottom:9px;
+  text-align:left;direction:ltr;overflow:hidden}
+.apTDisp i{display:block;font-style:normal;font-size:12px;opacity:.6;min-height:15px}
+.apTDisp b{display:block;font-size:30px;font-weight:700;overflow-wrap:anywhere}
+.apTPad{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;direction:ltr}
+.apTK{height:54px;border:0;border-radius:13px;background:var(--card);color:var(--ink);
+  font-size:20px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);transition:transform .07s}
+.apTK:active{transform:scale(.94)}
+.apTK.op{background:var(--aqua-soft);color:var(--aqua)}
+.apTK.fn{background:#eef3f8;color:var(--navy2);font-size:17px}
+.apTK.eq{background:linear-gradient(135deg,var(--aqua),var(--aqua2));color:#fff}
+.apTHRow{display:flex;justify-content:space-between;gap:9px;padding:6px 3px;cursor:pointer;
+  border-bottom:1px dashed var(--line);font-size:12.5px;direction:ltr;text-align:left}
+.apTHRow:last-child{border-bottom:0}
+.apTHRow:hover{background:var(--aqua-soft)}
+.apTHRow span{color:var(--muted)}
+/* المسبحة */
+.apTTb{display:flex;flex-direction:column;align-items:center;gap:11px;padding-top:4px}
+.apTTb select{max-width:300px}
+.apTRing{position:relative;width:174px;height:174px}
+.apTRing svg{width:100%;height:100%;transform:rotate(-90deg)}
+.apTRing circle{fill:none;stroke-width:9;stroke-linecap:round}
+.apTRing .bgc{stroke:var(--line)}
+.apTRing .fgc{stroke:var(--aqua);transition:stroke-dashoffset .25s}
+.apTNum{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.apTNum b{font-size:43px;color:var(--navy2);line-height:1}
+.apTNum i{font-style:normal;font-size:11.5px;color:var(--muted);margin-top:3px}
+.apTZk{font-size:18px;font-weight:800;color:var(--aqua);text-align:center}
+.apTTap{width:150px;height:150px;border-radius:50%;border:0;cursor:pointer;color:#fff;
+  font-size:21px;font-weight:800;background:linear-gradient(145deg,var(--aqua2),var(--navy2));
+  box-shadow:0 8px 20px rgba(17,149,178,.33);transition:transform .08s;-webkit-tap-highlight-color:transparent}
+.apTTap:active{transform:scale(.93)}
+.apTGoals{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.apTG{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;
+  padding:5px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
+.apTG.on{background:var(--aqua);border-color:var(--aqua);color:#fff}
+.apTDay{font-size:12.5px;color:var(--muted)}
+@media (max-width:420px){
+  .apTTiles{grid-template-columns:1fr}
+  .apTK{height:49px;font-size:18px}
+  .apTTap{width:132px;height:132px;font-size:19px}
+  .apTRing{width:155px;height:155px}
+}
+/* الدرج مفتوح = زر المشاركة العائم يختفى عشان مايركبش عليه */
+body.apTOn #shareFab{display:none!important}
+/* الحقول الرقمية الصغيرة جوّه الدرج عمودين، عشان الفورم مايطولش */
+#apTBody .grid.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#apTBody .grid.g2>*{min-width:0}
+#apTBody .form-row{margin-bottom:8px}
+#apTBody .form-row label{font-size:12px}
+#apTBody .form-row .gray-note{font-size:10.5px;line-height:1.45;margin-top:2px}
+#apTBody input,#apTBody select{width:100%}
+@media (max-width:340px){#apTBody .grid.g2{grid-template-columns:1fr}}
+@media print{.apTTab,.apTDrawer,.apTBack{display:none!important}}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{font-family:'Segoe UI',Tahoma,'Noto Kufi Arabic',Arial,sans-serif;background:var(--bg);color:var(--ink);direction:rtl;font-size:14.5px}
@@ -1958,6 +2065,26 @@ if (!AP_NOSW && 'serviceWorker' in navigator && location.protocol.startsWith('ht
     </div>
   </div>
 </div>
+
+<!-- =====================================================================
+     v61.82: الأدوات التجريبية — تبويب صغير على يمين الشاشة للمدير وحده.
+     مالوش علاقة بالتبويبات ولا بزر الثلاث نقاط ولا بشاشة المستخدمين،
+     ومابيترسمش أصلًا فى جلسة عميل أو موظف أو شريك. وكود الأدوات نفسه
+     فى ملف منفصل (tools.js) مابينزلش غير لما المدير يفتح الدرج.
+     ===================================================================== -->
+<button id="apTTab" class="apTTab" onclick="apToolsOpen()" title="أدوات Aqua Pearl" aria-label="أدوات">
+  <span>‹</span>
+</button>
+<div class="apTBack" id="apTBack2" onclick="apToolsClose()"></div>
+<aside class="apTDrawer" id="apTDrawer" role="dialog" aria-label="Aqua Pearl Smart Tools">
+  <header>
+    <button class="apTX" onclick="apToolsBack()" id="apTBack" style="display:none" title="رجوع">›</button>
+    <h3 id="apTHead">Aqua Pearl Smart Tools</h3>
+    <span class="apTBeta">نسخة تجريبية</span>
+    <button class="apTX" onclick="apToolsClose()" title="إغلاق">✕</button>
+  </header>
+  <div id="apTBody"><p class="apTNote">جارى التحميل…</p></div>
+</aside>
 
 <!-- v61.31: دليل البرنامج -->
 <div class="modal-back" id="apGdModal">
@@ -4893,7 +5020,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.81';
+const APP_VER  = 'v61.82';
 const APP_BUILD= '2026-11-05';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5132,7 +5259,7 @@ const S=()=>DB.settings;
 const unitById=id=>DB.units.find(u=>u.id===id);
 const saleById=id=>DB.sales.find(s=>s.id===id);
 const paymentsOf=saleId=>DB.payments.filter(p=>p.saleId===saleId);
-/* v61.81: دفعة «غرامة تأخير» إيراد مستقل — مابتتخصمش من ثمن الوحدة
+/* v61.82: دفعة «غرامة تأخير» إيراد مستقل — مابتتخصمش من ثمن الوحدة
    ولا بتتوزّع على الأقساط. */
 const isFineKind=k=>k==='fine';
 const instPaymentsOf=saleId=>DB.payments.filter(p=>p.saleId===saleId&&p.kind!=='delivery'&&!isFineKind(p.kind));
@@ -5261,6 +5388,7 @@ function buildTabs(){
   /* v61.76: عدّاد الأذان كان بيشتغل لما الكارت اليومى يترسم بس، يعنى لو
      فتحت شاشة تانية على طول ما كانش بيشتغل خالص. دلوقتى بيشتغل من ساعة
      تسجيل الدخول مهما كانت الشاشة. */
+  try{ apToolsTabSync(); }catch(e){}     /* v61.82: تبويب الأدوات يظهر/يختفى مع الجلسة */
   try{ apAzBoot(); }catch(e){}
   try{ apDailyPull(); }catch(e){}
   const tabs=$('nav.tabs');
@@ -6169,6 +6297,7 @@ async function doLoginEmail(){
   toast('أهلًا '+u.name+' — تم تحميل أحدث نسخة من السحابة ✔','ok');
 }
 function logout(){
+  try{ apToolsClose(); const _t=document.getElementById('apTTab'); if(_t) _t.classList.remove('on'); }catch(e){}
   try{ if(typeof window.apCloudLogout==='function') window.apCloudLogout(); }catch(e){}
   /* v61.16: الخروج من جلسة عميل يُعيد تحميل الصفحة حتى تعود بيانات النظام
      الأصلية للجهاز كما هى — نسخة العميل كانت فى الذاكرة ومفتاح مستقل */
@@ -6689,6 +6818,27 @@ function renderSettings(){
        بجوار النظام على GitHub، فلم يعودا بحاجة لإعداد. -->
   <input type="hidden" id="stFF" value="${esc(s.ffPdfPath)}">
   <input type="hidden" id="stSF" value="${esc(s.sfPdfPath)}">
+  <div class="card"><h3>🧰 إدارة الأدوات التجريبية <span class="apTBeta">نسخة تجريبية</span></h3>
+    <p class="gray-note" style="margin:0 0 9px">أدوات بتفتح من التبويب الصغير على يمين الشاشة.
+      منفصلة تمامًا عن حسابات النظام — مابتكتبش ولا بتقرا من بيانات العملاء.
+      وكودها فى ملف مستقل مابينزلش على جهاز المستخدم إلا لو مسموح له، فاللى الأداة مقفولة عنه
+      عمره ما يحمّلها أصلًا. <b>ولا أداة بتروح لـ«كل المستخدمين» لوحدها — إنت اللى بتنقلها.</b></p>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>الأداة</th><th>مين يشوفها</th><th>الحالة</th>
+    </tr></thead><tbody>
+    ${AP_TOOL_DEFS.map(d=>{const st=apToolState(d.id);return `<tr>
+      <td><b>${d.ic} ${esc(d.name)}</b></td>
+      <td><select onchange="apToolStateSet('${d.id}',this.value)" style="min-width:150px">
+        <option value="admin" ${st==='admin'?'selected':''}>المدير فقط</option>
+        <option value="all" ${st==='all'?'selected':''}>كل المستخدمين</option>
+        <option value="off" ${st==='off'?'selected':''}>مقفولة تمامًا</option>
+      </select></td>
+      <td><span class="badge ${st==='off'?'ret':(st==='all'?'sold':'res')}">${
+        st==='off'?'مقفولة':(st==='all'?'منشورة':'تجريبية')}</span></td>
+    </tr>`;}).join('')}
+    </tbody></table></div>
+    <div class="gray-note" style="margin-top:7px">التغيير بيتحفظ على طول وبيتزامن مع باقى أجهزتك.</div>
+  </div>
   <div class="card"><h3>🔄 مزامنة Google Sheets (اختياري)</h3>
     <div class="grid g2">
       <div class="form-row"><label>🔗 رابط Apps Script Web App</label><input id="stGs" value="${esc(s.gsUrl)}" placeholder="https://script.google.com/..."></div>
@@ -9035,7 +9185,7 @@ function scheduleWithStatus(sale){
   return (sale.schedule||[]).map(inst=>{
     const amt=Number(inst.amount||0);
     let need=amt, paid=0, lastDate=null, lastPayId=null;
-    const parts=[];                       /* v61.81: كل جزء بتاريخه */
+    const parts=[];                       /* v61.82: كل جزء بتاريخه */
     while(need>0.4&&pi<pays.length){
       if(avail<=0.4){pi++;avail=pi<pays.length?Number(pays[pi].amount||0):0;continue;}
       const take=Math.min(avail,need);
@@ -9119,7 +9269,7 @@ function scheduleWithStatusAsOf(sale,asOf,upto){
   return (sale.schedule||[]).map(inst=>{
     const amt=Number(inst.amount||0);
     let need=amt, paid=0, lastDate=null, lastPayId=null;
-    const parts=[];                       /* v61.81: كل جزء بتاريخه */
+    const parts=[];                       /* v61.82: كل جزء بتاريخه */
     while(need>0.4&&pi<pays.length){
       if(avail<=0.4){pi++;avail=pi<pays.length?Number(pays[pi].amount||0):0;continue;}
       const take=Math.min(avail,need);
@@ -9160,7 +9310,7 @@ function buildReceiptSnapshot(p){
   const dueA=dueToDate(s,asOf);
   const colA=DB.payments.filter(x=>x.saleId===s.id&&x.kind!=='delivery'&&x.kind!=='fine'&&upto(x))
                         .reduce((a,x)=>a+Number(x.amount),0);
-  /* v61.81: غرامات التأخير حتى تاريخ الإيصال، وحالة العميل بنفس قاعدة
+  /* v61.82: غرامات التأخير حتى تاريخ الإيصال، وحالة العميل بنفس قاعدة
      الملف: تشمل الغرامة لو مفتاح الاحتساب مفعّل لهذا العميل. */
   let pen=0, bon=0;
   try{ pen=Math.round(latePenaltyAsOf(s,asOf,upto)); }catch(e){}
@@ -9184,7 +9334,7 @@ function buildReceiptSnapshot(p){
   };
 }
 /* =====================================================================
-   v61.81 — الإيصال يتجمّد، ويتعاد تجميده لوحده لو اتغيّر تحته حاجة.
+   v61.82 — الإيصال يتجمّد، ويتعاد تجميده لوحده لو اتغيّر تحته حاجة.
    البصمة بتلمّ كل اللى الأرقام متعلّقة بيه: دفعات العميل لحد تاريخ
    الإيصال، وجدول أقساطه، ومفتاح احتساب الغرامة، والأقساط المستبعَدة.
    فلو مسحت دفعة أو أضفت واحدة بتاريخ قديم، الإيصال يصحّح نفسه أول ما
@@ -9237,7 +9387,7 @@ function monthsElapsed(dueISO,todayISO_){
   return Math.max(0,m);
 }
 /* =====================================================================
-   v61.81 — قاعدة الاحتساب: «١.٥٪ شهريًا من المبلغ محل التأخير»
+   v61.82 — قاعدة الاحتساب: «١.٥٪ شهريًا من المبلغ محل التأخير»
    كل جزء من القسط بياخد شهوره هو لوحده، مش القسط كله بتاريخ آخر جنيه.
    مثال: قسط ٢٥,٢٠٠ اتدفع منه ٢٥,٠٠٠ فى ميعاده و٢٠٠ بعدها بشهر
      ← الغرامة ٢٠٠ × ١.٥٪ = ٣ جنيه، مش ٢٥,٢٠٠ × ١.٥٪ = ٣٧٨.
@@ -9309,7 +9459,7 @@ function lateOpenRows(sale){
 function lateTotals(sale){
   const rows=lateRows(sale);
   const penalty=rows.reduce((a,r)=>a+r.penalty,0);
-  /* v61.81: الغرامة اللى اتحصّلت فعلًا بإيصال مابتبقاش مستحقة على العميل */
+  /* v61.82: الغرامة اللى اتحصّلت فعلًا بإيصال مابتبقاش مستحقة على العميل */
   let collected=0;
   try{ collected=Math.round(fineCollectedOf(sale.id)); }catch(e){}
   return {
@@ -9377,7 +9527,7 @@ function lateSettlement(sale){
   const inst=collectedOf(sale.id);
   const dep =depositPaidOf(sale.id);
   const paid=down+inst+dep;
-  const pen =Math.round(lateTotals(sale).due);   /* v61.81: بعد خصم المحصَّل */
+  const pen =Math.round(lateTotals(sale).due);   /* v61.82: بعد خصم المحصَّل */
   return {down:down,inst:inst,dep:dep,paid:paid,pen:pen,net:Math.round(paid-pen)};
 }
 
@@ -9389,7 +9539,7 @@ function lateMsgText(sale,kind,opt){
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
   const owed=Math.max(0,due-col);
-  const grand=owed+L.due;                        /* v61.81: الغرامة المستحقة فقط */
+  const grand=owed+L.due;                        /* v61.82: الغرامة المستحقة فقط */
   const st=S();
   const sign=['','مع تحية إدارة الائتمان،',
               (st.companyName||'Trust Group')+' — '+(st.projectName||'Aqua Pearl City')];
@@ -9482,7 +9632,7 @@ function openLateNotice(saleId){
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
   const owed=Math.max(0,due-col);
-  const grand=owed+L.due;          /* v61.81: بعد خصم أعباء التأخير المحصَّلة */
+  const grand=owed+L.due;          /* v61.82: بعد خصم أعباء التأخير المحصَّلة */
   const rows=L.rows.map((r,n)=>`<tr>
     <td>${n+1}</td><td>${fmtD(r.due)}</td><td>${fmtM(r.amount)}</td>
     <td>${r.paid>0?fmtM(r.paid):'—'}</td><td>${fmtM(r.rest)}</td>
@@ -9559,7 +9709,7 @@ function lateNoticeHTML(sale){
   const u=unitById(sale.unitId)||{building:'—',unitNo:'—'};
   const L=lateTotals(sale);
   const due=dueToDate(sale), col=collectedOf(sale.id);
-  const owed=Math.max(0,due-col), grand=owed+L.due;   /* v61.81: بعد خصم المحصَّل */
+  const owed=Math.max(0,due-col), grand=owed+L.due;   /* v61.82: بعد خصم المحصَّل */
   /* v61.68: المستند بيتغيّر مع نوع الإخطار المختار — نفس أرقام الرسالة */
   const KND=LATE_KINDS[lateKind]?lateKind:'fine';
   const SET=lateSettlement(sale);
@@ -9708,7 +9858,7 @@ function deletePaymentGuarded(payId){
       return b?'<br>وسيُخصم <b>'+fmtM(Math.round(b))+'</b> من رصيد البنك — وهو قيد هذه الدفعة.':'';}catch(e){return '';}})()}`,
    '🗑️ حذف الدفعة',()=>{
     let back=0;
-    try{ back=bankRemoveForPayment(p); }catch(e){}     /* v61.81: يرجّع القيد من البنك */
+    try{ back=bankRemoveForPayment(p); }catch(e){}     /* v61.82: يرجّع القيد من البنك */
     DB.payments=DB.payments.filter(x=>x.id!==payId);save();
     toast('تم حذف الدفعة — إيصال '+p.receiptNo+(back?' · واترجع '+fmtM(Math.round(back))+' من رصيد البنك':''),'ok');
     if(currentScreen==='customerFile')renderCustomerFile(cfSaleId);
@@ -10163,7 +10313,7 @@ function bpToggle(saleId,kind,no,on){
 }
 /* المفتاح العام لهذا العميل: هل يدخل الصافى فى المتبقى وحالة العميل؟ */
 /* =====================================================================
-   v61.81 — غرامات التأخير: المحسوبة − المحصَّل = المستحق.
+   v61.82 — غرامات التأخير: المحسوبة − المحصَّل = المستحق.
    التحصيل بيتسجّل دفعة kind:'fine' بإيصال عادى، ومابتتخصمش من ثمن
    الوحدة ولا بتتوزّع على الأقساط ولا تدخل توزيع أرباح الشركاء.
    ===================================================================== */
@@ -10274,7 +10424,7 @@ function bonusPenaltyCard(sale){
   const rowsE=B.early.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.date)}</td><td>${fmtD(r.due)}</td>
       <td>${fmtM(Math.round(r.amount))}</td><td>${r.countedDays} يوم</td>
       <td style="color:var(--green);font-weight:800">${fmtM(Math.round(r.bonus))}</td></tr>`).join('');
-  const on=!!sale.bpApply;   /* v61.81: مربع «إظهاره فى الإيصال» اتشال — الإيصال بيوريها دايمًا */
+  const on=!!sale.bpApply;   /* v61.82: مربع «إظهاره فى الإيصال» اتشال — الإيصال بيوريها دايمًا */
   /* v61.18: الكروت نفسها تُضغط فتفتح تفاصيلها */
   const tile=(ic,lb,val,color,target,n)=>
     `<div class="field bpTile" ${n?`onclick="bpOpen('${target}')" title="اضغط لعرض التفاصيل"`:''}>
@@ -10572,7 +10722,7 @@ function apClientBpCard(sale){
   const pen=Math.round(B.late.penalty), bon=Math.round(B.early.bonus), net=Math.round(B.net);
   const good=net>=0;
   const col=good?'var(--green)':'var(--red)';
-  /* v61.81: العميل يشوف إن القسط اتسدَّد متأخر وغرامته اتجمّدت، وكمان
+  /* v61.82: العميل يشوف إن القسط اتسدَّد متأخر وغرامته اتجمّدت، وكمان
      المحصَّل من الغرامات والمتبقى منها — فمفيش رقم يفاجئه. */
   const rowsL=B.late.rows.map(r=>`<tr><td>${r.no==null?'—':r.no}</td><td>${fmtD(r.due)}</td>
       <td>${fmtM(Math.round(r.amount))}</td><td>${arMonthsPhrase(r.months)}</td>
@@ -12580,7 +12730,11 @@ const AP_GUIDE={
   ['📢 الأخبار عند الموظفين','الموظفين بقوا بيشوفوا الأخبار والعروض على رئيسيتهم زيّك بالظبط — المنشور بس. الخبر الموقوف أو اللى تاريخه مجاش مابيبانش عند حد. والشركاء مابيشوفوش الفيد: رئيسيتهم فيها الكارت اليومى زى ما هى.'],
   ['📎 مرفقات ملف الشريك باللصق','فى «💸 دفعات الأرباح المصروفة» و«📎 مرفقات الشريك» بقى فيه نفس مربع المرفقات اللى فى ملف العميل: تضغط جوّه المربع وتعمل Ctrl+V فالسكرين شوت بيترفع على طول من غير ما تحفظه كملف، أو تسحب الملف وتفلته، أو تضغط وتختار ملفات. وبتشوف معاينة مصغّرة لكل مرفق قبل ما تحفظ وتقدر تشيل أى واحد. الصور بتتضغط تلقائيًا والمرفقات بتتخزّن فى IndexedDB زى باقى النظام، وبعد الحفظ المربع بيفضى لوحده.'],
   ['🖨️ اسم ملف الـPDF','أى طباعة من البرنامج بقى ليها اسم ملف معبّر لما تختار «Save as PDF» — مش «Aqua Pearl ERP» العام. الإيصال بيطلع باسم: نوع الإيصال + رقم الوحدة + تاريخ الدفعة + رقم الإيصال (مثلاً «إيصال تحصيل B08-102 — 01-07-2025 — TRM-000001»)، فكل إيصال اسمه فريد حتى لو العميل دفع مرتين فى نفس اليوم. وكشف الشريك: «كشف حساب — اسم الشريك — تاريخ اليوم». وملف العميل: «ملف العميل — اسم العميل — التاريخ». وعرض الوحدة: «عرض وحدة <كود الوحدة> — التاريخ». وإنذار المتأخرات: نوع الإخطار + اسم العميل + الوحدة + التاريخ. وأى شاشة تانية بتاخد اسمها من عنوانها + التاريخ تلقائيًا، وفى بوابة العميل بيتضاف رقم وحدته وفى بوابة الشريك اسمه. الحروف الممنوعة فى أسماء الملفات بتتشال لوحدها، والعنوان بيرجع لأصله بعد الطباعة على طول.'],
-  ['⚖️ قاعدة حساب الغرامة — المبلغ محل التأخير','اتغيّرت القاعدة فى v61.81 وبقت أدق وأعدل، وهى الأقرب لنص عقدك: «١.٥٪ شهريًا من «المبلغ محل التأخير»». يعنى كل جزء من القسط بياخد شهوره هو لوحده، مش القسط كله بتاريخ آخر جنيه اتدفع. مثال حقيقى: عميل قسطه ٢٥,٢٠٠ ودفع ٢٥,٠٠٠ فى ميعاده و٢٠٠ جنيه بعدها بشهر — النظام القديم كان بيحسبها ٢٥,٢٠٠ × ١.٥٪ = ٣٧٨ جنيه، والجديد بيحسب ٢٠٠ × ١.٥٪ = ٣ جنيه. وده كان بيضرب: ٢٠٠ جنيه ناقصة سنة ٢٠٢٥ كانت بتولّد ٦,٤٠٠ جنيه غرامات وهمية على راجل دافع فى ميعاده، لأن الناقص بيتزحلق من قسط للى بعده. والباقى اللى لسه ماتدفعش بياخد شهوره لحد النهاردة وبيزيد مع الوقت. وفى كل الجداول بقى فيه عمود «المبلغ محل التأخير» يوريك الغرامة اتحسبت على كام بالظبط بدل عمود «النسبة».'],
+  ['🧰 الأدوات التجريبية','على يمين الشاشة فيه تبويب صغير جدًا بسهم. تدوس عليه يفتحلك درج «Aqua Pearl Smart Tools» وجواه أدوات تحت التجربة. التبويب ده مابيظهرش خالص لأى حد غيرك — لا موظف ولا شريك ولا عميل — ومش بس مخفى: كود الأدوات نفسه فى ملف منفصل مابينزلش على جهازهم أصلًا، فعمرهم ما يشوفوا منه سطر. الدرج بيتقفل بالضغط بره أو بالسحب لليمين أو بزر الإغلاق، ومش بيلمس زر الثلاث نقاط ولا التبويبات ولا أى حاجة فى النظام. والأدوات معزولة تمامًا عن الحسابات: مابتكتبش ولا بتقرا من بيانات أى عميل.'],
+  ['🧮 حاسبة عرض السعر','أول أداة، وهى اللى هتفتحها قدام عميل: تكتب المساحة وسعر المتر (أو الإجمالى على طول) والمقدم ٪ وعدد الشهور، تطلعلك القسط والجدول المبدئى وإجمالى المحصَّل. وبتبدأ من نِسبك الحقيقية من الإعدادات — وديعة الاستلام ودفعة الحجز — وبتفصلهم عن ثمن الوحدة زى ما النظام بيعمل بالظبط. وفيها «فرق التقريب» يقولك لو القسط × العدد مش مظبوط على الجنيه. وتقدر تنسخ الملخص أو تطبعه PDF، وفيه سطر مكتوب عليه إن دى أرقام استرشادية مش عرض سعر ولا تعاقد. ومابيتسجّلش أى حاجة منها فى النظام.'],
+  ['🔢 الآلة الحاسبة والمسبحة','الحاسبة فيها النِسب وسجل آخر ٢٠ عملية (تدوس على أى عملية ترجعلك نتيجتها)، وتحتيها مربع «٪ كام من كام» لأنك بتحسب نسب طول اليوم. والمسبحة عدّادها بيتحفظ على جهازك ومابيتصفّرش لما تقفل التطبيق، وفيها أهداف ٣٣ و٩٩ و١٠٠ ومفتوح، وإحصائية النهاردة، وتقدر تضيف ذِكر من عندك. الاهتزاز والمؤثرات بتتقفل من مربع صغير تحت قايمة الأدوات.'],
+  ['⚙️ إدارة الأدوات التجريبية','فى شاشة «الإعدادات» فيه كارت بكل أداة وحالتها: «المدير فقط» (الوضع الحالى لكلهم) أو «كل المستخدمين» أو «مقفولة تمامًا». التغيير بيتحفظ على طول وبيتزامن مع باقى أجهزتك. ولا أداة بتروح لـ«كل المستخدمين» لوحدها أبدًا — إنت اللى بتنقلها لما تكون جرّبتها وارتحتلها. ولو قفلت أداة، بتختفى من الدرج فورًا، ولو قفلتهم كلهم التبويب نفسه بيختفى.'],
+  ['⚖️ قاعدة حساب الغرامة — المبلغ محل التأخير','اتغيّرت القاعدة فى v61.82 وبقت أدق وأعدل، وهى الأقرب لنص عقدك: «١.٥٪ شهريًا من «المبلغ محل التأخير»». يعنى كل جزء من القسط بياخد شهوره هو لوحده، مش القسط كله بتاريخ آخر جنيه اتدفع. مثال حقيقى: عميل قسطه ٢٥,٢٠٠ ودفع ٢٥,٠٠٠ فى ميعاده و٢٠٠ جنيه بعدها بشهر — النظام القديم كان بيحسبها ٢٥,٢٠٠ × ١.٥٪ = ٣٧٨ جنيه، والجديد بيحسب ٢٠٠ × ١.٥٪ = ٣ جنيه. وده كان بيضرب: ٢٠٠ جنيه ناقصة سنة ٢٠٢٥ كانت بتولّد ٦,٤٠٠ جنيه غرامات وهمية على راجل دافع فى ميعاده، لأن الناقص بيتزحلق من قسط للى بعده. والباقى اللى لسه ماتدفعش بياخد شهوره لحد النهاردة وبيزيد مع الوقت. وفى كل الجداول بقى فيه عمود «المبلغ محل التأخير» يوريك الغرامة اتحسبت على كام بالظبط بدل عمود «النسبة».'],
   ['💸 تجميد الغرامات وتحصيلها','مشكلة قديمة اتحلّت: الغرامة كانت تختفى أول ما القسط يتسدَّد، فالعميل اللى اتأخر خمس شهور وجاب فلوسه كان بيخرج من غير غرامة. دلوقتى فى كارت «⚖️ البونص والغرامات» مربع «احتساب الصافى ضمن المتبقى وحالة العميل» بقى كمان مفتاح «تجميد الغرامة»: تعلّم عليه ← الغرامة بتتجمّد محسوبة حتى يوم سداد القسط وتفضل مقيّدة على العميل بعد الدفع، ويشتغل بأثر رجعى على كل أقساطه المدخلة. وتشيل العلامة ← يرجع السلوك القديم بالحرف. المفتاح لكل عميل على حدة، ومحدّش بيتغيّر عنده من غير ما تعلّم إنت بنفسك.'],
   ['💸 زرار «غرامات التأخير»','فى شريط ملف العميل زرار «💸 غرامات التأخير» وعليه عدّاد أحمر بالمستحق. بيفتح شاشة فيها تلات أرقام: الغرامات المحسوبة ناقص المحصَّل فعليًا يساوى المستحق الآن. وتحتيها جدول بكل قسط متأخر وشهور تأخيره ونسبته وغرامته، ومكتوب جنب كل واحد «مُجمَّدة — سُدِّد يوم كذا» ولا «لسه متأخر». وزرار «💵 تحصيل الغرامة وإصدار إيصال» بيفتح شاشة الدفع العادية بالمبلغ المستحق جاهز، والإيصال بيطلع باسم «إيصال تحصيل غرامة تأخير». ولو حصّلت على مرات، الشاشة بتخصم المحصَّل وتوريك الباقى، وبتعرض إيصالات الغرامات كلها بأرقامها.'],
   ['🧾 الإيصال بيوضّح الموقف — ويتجمد','كل إيصال بقى فيه سطرين زيادة: «غرامات تأخير حتى تاريخه»، و«حالة العميل». والأرقام بتاريخ الإيصال هو، مش بتاريخ النهاردة — فإيصال يوم ٢٢/١٠ بيوريك المستحق لحد ٢٢/١٠ والغرامة لحد ٢٢/١٠. والحالة بتمشى بقاعدة الملف: شاملة الغرامة لو مفتاح الاحتساب مفعّل للعميل ده، وبدونها لو مطفى. ومربع «إظهاره فى إيصال الدفع» اللى كان موجود اتشال — بقى مالوش لازمة لأن الأرقام بتطلع دايمًا.'],
@@ -13077,6 +13231,99 @@ function apDotsRole(){
   return '';
 }
 /* القائمة والشريط للعميل والشريك والموظف — المدير شاشته زى ما هى */
+/* =====================================================================
+   v61.82 — الأدوات التجريبية: المفاتيح والتحميل الكسول
+   الحالات لكل أداة: off (مقفولة) · admin (المدير بس) · all (كل المصرّح لهم)
+   محفوظة فى DB.settings.tools ومتزامنة مع باقى البيانات، فلو غيّرتها من
+   جهاز توصل لباقى الأجهزة. ومفيش أداة بتروح لـ«all» لوحدها أبدًا.
+
+   الأمان: كود الأدوات كله فى ملف tools.js منفصل، مابيتحمّلش إلا لما
+   المستخدم المسموح له يفتح الدرج. فجهاز العميل عمره ما ينزّله ولا يشوف
+   سطر منه — وده أقوى من إخفاء بـCSS أو شرط فى الواجهة، ومفيش أقوى منه
+   من غير سيرفر.
+   ===================================================================== */
+const AP_TOOL_DEFS=[
+  {id:'quote', ic:'🧮', name:'حاسبة عرض السعر'},
+  {id:'calc',  ic:'🔢', name:'الآلة الحاسبة'},
+  {id:'tasbih',ic:'📿', name:'المسبحة'}
+];
+function apToolsCfg(){
+  try{ const s=S(); if(!s.tools||typeof s.tools!=='object') s.tools={}; return s.tools; }
+  catch(e){ return {}; }
+}
+function apToolState(id){
+  const c=apToolsCfg(), v=c[id];
+  return (v==='off'||v==='all'||v==='admin')?v:'admin';   /* الافتراضى: المدير بس */
+}
+function apToolStateSet(id,v){
+  if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
+  if(v!=='off'&&v!=='all'&&v!=='admin') return;
+  const c=apToolsCfg(); c[id]=v; save();
+  const d=AP_TOOL_DEFS.find(x=>x.id===id);
+  toast((d?d.name:'الأداة')+' ← '+({off:'مقفولة',admin:'المدير فقط',all:'كل المستخدمين'}[v]),'ok');
+  try{ apToolsTabSync(); if(window.AP_TOOLS_READY&&typeof apTRender==='function') apTRender(); }catch(e){}
+  try{ if(currentScreen==='settings') renderSettings(); }catch(e){}
+}
+/* هل للمستخدم ده أى أداة أصلًا؟ ولو لأ، التبويب مايترسمش */
+function apToolsAny(){
+  try{
+    if(!CURRENT_USER) return false;
+    const adm=!!CURRENT_USER.admin;
+    return AP_TOOL_DEFS.some(function(d){
+      const st=apToolState(d.id);
+      return st==='all' ? true : (st==='admin' ? adm : false);
+    });
+  }catch(e){ return false; }
+}
+function apToolsTabSync(){
+  const t=document.getElementById('apTTab'); if(!t) return;
+  if(apToolsAny()) t.classList.add('on'); else { t.classList.remove('on'); apToolsClose(); }
+}
+let AP_TOOLS_LOADING=false;
+function apToolsOpen(){
+  if(!apToolsAny()){ apToolsTabSync(); return; }
+  const d=document.getElementById('apTDrawer'), b=document.getElementById('apTBack2');
+  if(d) d.classList.add('open'); if(b) b.classList.add('open');
+  document.body.classList.add('apTOn');
+  if(window.AP_TOOLS_READY){ try{ apToolsDrawer(true); }catch(e){} return; }
+  if(AP_TOOLS_LOADING) return;
+  AP_TOOLS_LOADING=true;
+  const sc=document.createElement('script');
+  sc.src='./tools.js?v='+encodeURIComponent(APP_VER);
+  sc.onload=function(){ AP_TOOLS_LOADING=false; try{ apToolsDrawer(true); }catch(e){ console.warn(e); } };
+  sc.onerror=function(){
+    AP_TOOLS_LOADING=false;
+    const bd=document.getElementById('apTBody');
+    if(bd) bd.innerHTML='<p class="apTNote">مش قادر يحمّل الأدوات. لو إنت أوفلاين لأول مرة، '
+      +'افتحها وإنت أونلاين مرة واحدة وبعدها هتشتغل من غير نت.</p>';
+  };
+  document.head.appendChild(sc);
+}
+function apToolsClose(){
+  const d=document.getElementById('apTDrawer'), b=document.getElementById('apTBack2');
+  if(d) d.classList.remove('open'); if(b) b.classList.remove('open');
+  document.body.classList.remove('apTOn');
+  try{ if(window.AP_TOOLS_READY) apToolsDrawer(false); }catch(e){}
+}
+/* السحب لليمين يقفل الدرج + Esc */
+(function(){
+  let x0=null,y0=null;
+  document.addEventListener('touchstart',function(e){
+    const d=document.getElementById('apTDrawer');
+    if(!d||!d.classList.contains('open')) return;
+    if(!d.contains(e.target)) return;
+    const t=e.touches[0]; x0=t.clientX; y0=t.clientY;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0==null) return;
+    const t=e.changedTouches[0], dx=t.clientX-x0, dy=Math.abs(t.clientY-y0);
+    x0=null; y0=null;
+    if(dx>70&&dy<60) apToolsClose();
+  },{passive:true});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape') apToolsClose();
+  });
+})();
 function apDotsOn(){ const r=apDotsRole();
   return r==='client'||r==='partner'||r==='staff'||(r==='admin'&&apAdmMobile()); }
 function apSvcPanelHTML(){
@@ -13171,7 +13418,7 @@ function apAgo(iso){
   return fmtD(String(iso).slice(0,10));
 }
 const AP_NW_TYPE={news:'خبر',offer:'عرض',alert:'تنبيه'};
-/* v61.81: تنسيق بسيط وآمن لنص الخبر.
+/* v61.82: تنسيق بسيط وآمن لنص الخبر.
    النص بيتهرب أول حاجة (esc) فأى HTML حقيقى بيفضل معطّل، وبعدين
    بنحوّل **كده** لغامق و_كده_ لمائل وبس. */
 function apRich(t){
@@ -14585,7 +14832,7 @@ function apHomeHTML(title){
   /* v61.54: الشريك كمان بياخد الكارت اليومى والتلات نقط
      v61.72: والمدير على الموبايل بياخد الفيد كامل زى العميل */
   const admM=(typeof apAdmMobile==='function')&&apAdmMobile();
-  /* v61.81: الموظف بياخد الفيد من رئيسيته هو (renderDashboard) — المنشور بس.
+  /* v61.82: الموظف بياخد الفيد من رئيسيته هو (renderDashboard) — المنشور بس.
      الشريك لأ: الكارت اليومى بس زى ما هو. */
   const feedOn=(cli||admM);
   const feed=feedOn?apFeedHTML(!cli):(apDotsRole()==='partner'?apDailyHTML():'');
@@ -14987,7 +15234,7 @@ function savePayment(andPrint){
   const p={id:uid(),saleId:s.id,kind:payKind,receiptNo:nextReceiptNo(),amount,date:$('#payDate').value||todayISO(),method:$('#payMethod').value,notes:$('#payNotes').value.trim(),files:[],createdAt:new Date().toISOString()};
   const _payFiles=attGet('pay');
   if(p.kind==='delivery'||p.kind==='club')p.toPartners=(S().depositClubToPartners!==false);
-  if(p.kind==='fine')p.toPartners=false;   /* v61.81: الغرامة إيراد شركة، خارج توزيع الشركاء */
+  if(p.kind==='fine')p.toPartners=false;   /* v61.82: الغرامة إيراد شركة، خارج توزيع الشركاء */
   DB.payments.push(p);
   {const _u=unitById(s.unitId);if(_u)bankCredit(_u.building,kindAr(p.kind),p.amount,p.date,'إيصال '+p.receiptNo+' — '+s.customer.name,p.id);}
   if(_payFiles.length)attOffload(_payFiles,'إيصال سداد — '+p.receiptNo,
@@ -15016,7 +15263,7 @@ function buildReceiptHTML(p){
            finalPrice:snap.price, down:snap.down, deliveryDeposit:snap.deliveryDeposit};
   const u=snap.unit;
   const col=snap.col, pos=snap.pos, totalInst=snap.totalInst, depPaidTo=snap.depPaidTo;
-  const snapPen=Math.round(Number(snap.pen)||0);   /* v61.81: غرامات التأخير حتى تاريخ الإيصال */
+  const snapPen=Math.round(Number(snap.pen)||0);   /* v61.82: غرامات التأخير حتى تاريخ الإيصال */
   const posColor=pos.state==='debtor'?'#c0392b':'#0f8f57';
   const isDep=p.kind==='delivery';
   const isFine=p.kind==='fine';
@@ -16940,7 +17187,7 @@ function bankCredit(building,kind,amount,date,ref,payId){
   DB.bankTx.push({id:uid(),bankId:bk.id,building,kind,amount:Number(amount)||0,date:date||todayISO(),
     ref:ref||'',payId:payId||'',createdAt:new Date().toISOString()});
 }
-/* v61.81: حذف الدفعة لازم يشيل قيدها من البنك، وإلا الرصيد يفضل زايد بقيمتها.
+/* v61.82: حذف الدفعة لازم يشيل قيدها من البنك، وإلا الرصيد يفضل زايد بقيمتها.
    بنطابق بالـ payId للدفعات الجديدة، وبرقم الإيصال للقديمة اللى مالهاش payId. */
 function bankTxOfPayment(pay){
   if(!pay) return [];
@@ -16957,7 +17204,7 @@ function bankRemoveForPayment(pay){
   DB.bankTx=(DB.bankTx||[]).filter(function(t){ return !ids[t.id]; });
   return hit.reduce(function(a,t){ return a+Number(t.amount||0); },0);
 }
-/* قيود بنك لإيصالات محذوفة — بقايا من قبل v61.81 */
+/* قيود بنك لإيصالات محذوفة — بقايا من قبل v61.82 */
 function bankOrphanTx(){
   const live={};
   (DB.payments||[]).forEach(function(p){ if(p.receiptNo) live[String(p.receiptNo)]=1; if(p.id) live['#'+p.id]=1; });
@@ -17468,7 +17715,7 @@ function viewPartnerStmt(id,type){
 function renderBanks(){
   const blds=buildingsAll();
   const bankTag=b=>{const bk=bankOfBuilding(b);return bk?` <span class="gray-note">(في ${esc(bk.name)})</span>`:'';};
-  /* v61.81: تنبيه بقيود البنك اللى إيصالاتها اتمسحت — الرصيد بيبقى زايد بقيمتها */
+  /* v61.82: تنبيه بقيود البنك اللى إيصالاتها اتمسحت — الرصيد بيبقى زايد بقيمتها */
   const orph=(function(){ try{ return isAdmin()?bankOrphanTx():[]; }catch(e){ return []; } })();
   const orphBox=orph.length?`<div class="card no-print" style="border-color:var(--red);background:#fdeeee">
     <h3 style="color:var(--red)">🧹 قيود بلا إيصال — ${fmtN(orph.length)}</h3>
