@@ -19,6 +19,14 @@
 /* v61.94: شارات شاشات سجل الاستخدام */
 .useChip{display:inline-block;margin:0 0 6px;padding:3px 10px;border-radius:999px;
   background:#eef4f8;border:1px solid var(--line);font-size:12.5px;color:var(--navy2)}
+/* v61.99: وحدات زيادة فى شاشة تعديل المستخدم */
+.euUnits{margin-top:8px;display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.euUnitChip{display:inline-flex;align-items:center;gap:6px;padding:4px 7px 4px 11px;
+  border:1px solid var(--line);border-radius:999px;background:#eef4f8;
+  font-size:12.5px;font-weight:700;color:var(--navy2)}
+.euUnitChip button{border:0;background:#d9534f;color:#fff;width:19px;height:19px;
+  border-radius:50%;font-size:11px;line-height:1;cursor:pointer;font-family:inherit;padding:0}
+@media(prefers-color-scheme:dark){.euUnitChip{background:rgba(255,255,255,.06);color:#dce9f1}}
 /* v61.99: تنبيه «العميل ده عنده حساب» فى شاشة إضافة مستخدم */
 .nuAttach{margin-top:9px;padding:11px 13px;border:1px solid #d7c48a;border-radius:12px;
   background:#fdf8e9;color:#5a4a1e;font-size:13.5px;line-height:1.75}
@@ -5175,7 +5183,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.99';
+const APP_VER  = 'v62.00';
 const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -7090,7 +7098,8 @@ function renderSettings(){
     <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl usrTbl"><thead><tr><th>المستخدم</th><th>النوع</th><th>الاسم</th><th>البريد</th><th>كلمة السر</th><th>البوابات المسموحة</th><th title="التقويم القبطى بدل مواقيت الصلاة فى الكارت اليومى">🕊️ تقويم</th><th class="no-print"></th></tr></thead><tbody>
     ${(DB.users||[]).map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.admin?'<span class="badge sold">مدير</span>':(u.client?'<span class="badge res">عميل</span>':(u.partner?'<span class="badge ret">شريك</span>':'<span class="badge av">مستخدم</span>'))}</td>
       <td style="white-space:nowrap">${(function(){
-          if(u.client){ const sl=(DB.sales||[]).find(x=>x.unitId===u.unitId);
+          if(u.client){ const id=(apUserUnits(u)[0])||u.unitId;
+            const sl=(DB.sales||[]).find(x=>x.unitId===id);
             return sl&&sl.customer&&sl.customer.name?esc(sl.customer.name):'<span class="gray-note">—</span>'; }
           if(u.partner){ const pr=partnerById(u.partnerId); return pr?esc(pr.name||''):'<span class="gray-note">—</span>'; }
           return '<span class="gray-note">—</span>'; })()}</td>
@@ -7109,8 +7118,15 @@ function renderSettings(){
               : '<span class="gray-note">— غير متاحة (قديمة)</span>'}
              <button class="btn sm gold no-print" style="padding:1px 7px" onclick="setUserPass('${u.id}')" title="تغيير كلمة السر">🔑</button>`}</td>
       <td style="white-space:nowrap">${u.admin?'كل البوابات'
-        :(u.client?(function(){const un=unitById(u.unitId);
-            return '<span title="ملفه فقط">'+(un?esc((un.building||'')+' '+(un.unitNo||'')):'—')+'</span>';})()
+        :(u.client?(function(){
+            /* v61.99: كل وحدات العميل مش الأولى بس */
+            const ids=apUserUnits(u);
+            if(!ids.length) return '<span class="gray-note">—</span>';
+            const lb=ids.map(function(id){ const un=unitById(id);
+              return un?esc((un.building||'')+' '+(un.unitNo||'')):''; }).filter(Boolean).join('  ·  ');
+            const t=ids.length>1?('ملفه فقط — '+ids.length+' وحدات'):'ملفه فقط';
+            return '<span title="'+t+'">'+lb+(ids.length>1?' <span class="badge res">'+ids.length+'</span>':'')+'</span>';
+          })()
         :(u.partner?(function(){const pr=partnerById(u.partnerId);
             return '<span title="حسابه فقط">'+(pr?esc(pr.name||''):'—')+'</span>';})()
         :((u.perms||[]).map(p=>{const s=SCREENS.find(x=>x[0]===p);return s?s[1]:p;}).join('، ')||'—')))}</td>
@@ -7581,6 +7597,37 @@ function apNuAttachPick(userId){
   });
   toast(on?'هتتضاف لحساب موجود — من غير اسم دخول ولا كلمة سر جديدة'
           :'هيتعمل حساب جديد منفصل','ok');
+}
+/* v61.99: وحدات العميل الزيادة فى شاشة تعديل المستخدم — مع زرار شيل
+   لكل واحدة، عشان لو اتضافت وحدة بالغلط تتشال من غير لف ودوران.
+   الوحدة الأولى هى اللى فى القايمة المنسدلة فوق، فمابتظهرش هنا. */
+function apEuUnitsHTML(u){
+  try{
+    const ids=apUserUnits(u);
+    if(ids.length<2) return '';
+    const extra=ids.slice(1).map(function(id){
+      const un=unitById(id)||{};
+      return '<span class="euUnitChip">'+esc((un.building||'')+' - '+(un.unitNo||''))
+        +'<button type="button" title="شيل الوحدة دى من حسابه" '
+        +'onclick="apEuUnitDrop(\''+u.id+'\',\''+id+'\')">✕</button></span>';
+    }).join('');
+    return '<div class="euUnits"><span class="gray-note">🏢 وحدات زيادة فى نفس الحساب ('
+      +ids.length+' إجمالًا):</span> '+extra+'</div>';
+  }catch(e){ return ''; }
+}
+function apEuUnitDrop(userId,unitId){
+  const u=(DB.users||[]).find(x=>x.id===userId); if(!u) return;
+  const un=unitById(unitId)||{};
+  const lb=(un.building||'')+'-'+(un.unitNo||'');
+  if(!confirm('تشيل الوحدة '+lb+' من حساب '+u.name+'؟\n\nالوحدة والتعاقد وكل الإيصالات مش هيتمسوا — '
+    +'هو بس مش هيشوفها فى حسابه.')) return;
+  const ids=apUserUnits(u).filter(x=>x!==unitId);
+  if(!ids.length){ toast('مينفعش تشيل آخر وحدة — امسح الحساب نفسه بدل كده','err'); return; }
+  u.unitIds=ids; u.unitId=ids[0];
+  save();
+  toast('اتشالت '+lb+' من حسابه ✔','ok');
+  try{ apPushAccess(); }catch(e){}
+  renderSettings();
 }
 /* الإضافة الفعلية لحساب موجود */
 function apAttachUnitTo(userId,unitId){
@@ -8171,7 +8218,8 @@ function editUser(id){
         </select></div>
       <div id="euUnitWrap" style="display:${u.client?'block':'none'};margin-top:8px">
         <div class="form-row"><label>🏢 وحدة العميل</label>
-          <select id="euUnit"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML(u.unitId||'')}</select></div>
+          <select id="euUnit"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML((apUserUnits(u)[0])||u.unitId||'')}</select></div>
+        ${apEuUnitsHTML(u)}
       </div>
       <div id="euPartnerWrap" style="display:${u.partner?'block':'none'};margin-top:8px">
         <div class="form-row"><label>🤝 الشريك</label>
@@ -8202,8 +8250,16 @@ function editUser(id){
     }
     u.name=nm;
     u.email=($('#euMail').value||'').trim();
-    delete u.client; delete u.unitId; delete u.partner; delete u.partnerId;
-    if(isC){ u.client=true; u.unitId=cu; u.perms=['customerFile']; }
+    /* v61.99: لازم نشيل قايمة الوحدات كمان، وإلا تفضل متعلّقة بعد ما
+       يتغيّر نوع الحساب أو وحدته. */
+    const prevIds=apUserUnits(u);
+    delete u.client; delete u.unitId; delete u.unitIds; delete u.partner; delete u.partnerId;
+    if(isC){ u.client=true; u.unitId=cu; u.perms=['customerFile'];
+      /* لو عنده وحدات تانية والوحدة المختارة من ضمنها — نسيب القايمة
+         زى ما هى عشان ما نضيّعش وحداته بالغلط */
+      u.unitIds = (prevIds.length>1 && prevIds.indexOf(cu)>=0) ? prevIds.slice() : [cu];
+      if(u.unitIds.indexOf(cu)<0) u.unitIds.unshift(cu);
+    }
     else if(isP){ u.partner=true; u.partnerId=cp; u.perms=[]; }
     else{ u.perms=$$('#euPerms input:checked').map(c=>c.value); }
     save(); apPushAccess(); renderSettings();
@@ -13107,6 +13163,7 @@ const AP_GUIDE={
   ['🛟 شبكة أمان للمستند','لو حصل أى سقوط فى نظام التخزين لأى سبب، بقى يتمسك ويروح للشبكة مباشرة، ولو هى كمان فشلت بيطلّع النسخة المحفوظة، ولو مفيش بيطلّع شاشتنا بزرار إعادة. صفحة المتصفح البيضا مش هتوصل للمستخدم تانى مهما حصل.'],
   ['🏢 العميل اللى عنده أكتر من وحدة','بقى حساب واحد يشوف كل وحداته. يدخل بنفس اسم دخوله وكلمة سره، ويلاقى فوق شريط «وحداتى» فيه وحداته يدوس على أى واحدة فيشوف ملفها كامل — أقساط وإيصالات وغرامات ومدفوعات. والشريط ده مابيظهرش أصلًا لو عنده وحدة واحدة، فاللى عندهم وحدة واحدة مش هيحسّوا بأى تغيير.'],
   ['➕ إزاى تضيف وحدة تانية لعميل','من نفس مكان إضافة المستخدم: اختار الوحدة الجديدة، وأول ما تختارها التطبيق بيبصّ على صاحب التعاقد — لو لقاه عنده حساب بيقولك «فلان عنده حساب على كذا، تضيف الوحدة دى لنفس الحساب؟». تدوس «ضيف للحساب» فخانات اسم الدخول وكلمة السر بتتقفل لأنها مالهاش لزمة، وتدوس إضافة المستخدم. مفيش حساب جديد بيتعمل ولا حساب سحابة جديد. والربط بيتم بالرقم القومى لو موجود، وإلا بالاسم زى ما هو فى التعاقد بالظبط.'],
+  ['📋 الوحدات فى جدول المستخدمين','عمود «البوابات المسموحة» بقى يعرض كل وحدات العميل مش الأولى بس، ومعاها رقم صغير بعددها. وفى شاشة تعديل المستخدم بقيت تلاقى الوحدات الزيادة كشرايح جنب بعض، كل واحدة عليها ✕ لو حبيت تشيلها — مفيدة لو وحدة اتضافت بالغلط. والشيل بيشيلها من حسابه وبس: الوحدة والتعاقد وكل الإيصالات مابيتمسوش، هو بس مش هيشوفها. وماينفعش تشيل آخر وحدة — لو عايز تلغى الحساب كله امسح المستخدم نفسه.'],
   ['🔽 القايمة المنسدلة بقت أقصر','الوحدات اللى ليها حساب عميل بالفعل اختفت من قايمة إضافة المستخدم — فالقايمة بقت فيها المتاح بس، وماينفعش تختار وحدة متسجّلة بالغلط. وشاشة تعديل المستخدم زى ما هى: وحدته الحالية بتفضل ظاهرة فيها عشان تقدر تغيّرها.'],
   ['🔒 ولا بايت زيادة بيوصل لجهاز العميل','القاعدة دى ماتغيّرتش ولا هتتغيّر. اختبرناها على الحساب متعدد الوحدات: النسخة اللى راحت لجهازه كانت ٢ كيلوبايت من قاعدة بيانات ٥٤٧ كيلوبايت — وحداته هو بس وتعاقداتها وإيصالاتها. صفر شركاء، صفر بنوك، صفر حركات بنكية، صفر مصروفات، صفر زكاة، صفر مستخدمين، ولا اسم عميل تانى واحد، ولا أى مفتاح خدمة أو رابط. نفس القاعدة بالظبط على الشريك.'],
   ['🔄 التطبيق كان بيفضل عالق على نسخة قديمة','حصلت معاك بنفسك: الموبايل خد v61.97 والكمبيوتر فضل على v61.96 مهما عملت ريفريش وخروج ودخول. السبب إن التطبيق كان بيسأل السيرفر «فيه نسخة جديدة؟» بطلب عادى، وكلاودفلير بيحط على ملف النظام مدة صلاحية — فالمتصفح كان بيرد على السؤال من مخزنه هو من غير ما يسأل السيرفر أصلًا. يبقى التطبيق بيقارن النسخة القديمة بنفسها، يلاقيها زى بعض، ويقول مفيش تحديث. ويفضل كدة لحد ما الصلاحية تخلص. دلوقتى السؤال بقى إجبارى للسيرفر: لو مفيش جديد السيرفر بيرد «زى ما هى» من غير ما ينزّل بايت، فمفيش أى تكلفة. جرّبناها قبل وبعد: القديمة فضلت عالقة بعد أربع مرات قفل وفتح، والجديدة خدت التحديث من أول مرة.'],
