@@ -38,11 +38,14 @@
    غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
    أى تدخل.
    ===================================================================== */
-const VER   = 'v61.96';
+const VER   = 'v61.97';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
 const DOC_KEY = './index.html';
+/* v61.97: أقصى انتظار لأول رد من الشبكة لما مايبقاش فيه نسخة محفوظة.
+   بعدها بنطلّع شاشتنا بزرار إعادة بدل ما المتصفح يقطع بنفسه. */
+const DOC_NET_TIMEOUT = 25000;
 /* v61.74: ملفات الصوت (الأذان والتكبير) فى مخزن مستقل عن رقم النسخة،
    زى المخططات — عشان ما تتحملش من أول وجديد مع كل تحديث. */
 const AUDIO = 'aqua-pearl-audio';
@@ -123,15 +126,34 @@ async function cachePut(name, key, res) {
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
-    /* ملف النظام أولًا وفى مخزنه الثابت — وما يتحفظش إلا لو كامل.
-       لو التحميل اتقطع، القديم بيفضل مكانه ولا بيتلمس. */
+    /* ملف النظام فى مخزنه الثابت — وما يتحفظش إلا لو كامل.
+       v61.97: بننزّله هنا بس لو مفيش نسخة محفوظة بالفعل.
+       قبل كده كان بينزّله كل مرة: يعنى أول فتحة للتطبيق كانت بتنزّل
+       الـ٣.٥ ميجا مرتين فى نفس اللحظة — مرة للمتصفح عشان يعرض الصفحة
+       ومرة هنا — وكل واحدة بتتحمّل كاملة فى الذاكرة كنص. ده اللى كان
+       بيخنق الآيفون. دلوقتى الفتحة الأولى نفسها هى اللى بتملا المخزن
+       من معالج المستند، ومابنزّلش حاجة زيادة. */
     try {
-      const r = await fetch(DOC_KEY, { cache: 'reload' });
-      if (r && r.ok) {
-        const t = await r.text();
-        if (docCheckText(t)) {
-          await cachePut(DOC, DOC_KEY, new Response(t, { status: 200,
-            headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+      let have = null;
+      try {
+        const old = await cacheMatch(DOC, DOC_KEY);
+        if (old) have = await docCheckStream(old.clone());
+      } catch (e1) {}
+      if (!have) {
+        /* v61.97: من غير cache:'reload'. ريلود كانت بتجبر تنزيلة جديدة
+           من السيرفر رغم إن المتصفح لسه نازّل نفس الملف من ثانية عشان
+           يعرض الصفحة — يعنى ٣.٥ ميجا مرتين فى نفس اللحظة على أول فتحة.
+           من غيرها بياخدها من مخزن المتصفح. */
+        const r = await fetch(DOC_KEY);
+        if (r && r.ok) {
+          const copy = r.clone();
+          const r2 = await Promise.all([
+            cachePut(DOC, DOC_KEY, r),
+            docCheckStream(copy)
+          ]);
+          if (!r2[1]) {
+            try { const c = await openCache(DOC); if (c) await c.delete(DOC_KEY); } catch (e3) {}
+          }
         }
       }
     } catch (e2) {}
@@ -193,6 +215,41 @@ function docCheckText(t) {
 async function docCheck(r) {
   try { return docCheckText(await r.text()); } catch (e) { return null; }
 }
+/* v61.97: نفس الفحص بالظبط — بس بيقرا الملف على دفعات بدل ما يحمّله
+   كله فى الذاكرة. الفحص محتاج تلات حاجات: الحجم، ورقم النسخة، وإن
+   الملف قافل بـ</html>. كلهم بيتحسبوا والملف ماشى، فالذاكرة بتفضل
+   كيلوبايتات معدودة بدل ٣.٥ ميجا.
+   ده اللى كان بيخنق الآيفون: كل فتحة للتطبيق كانت بتحمّل الملف كله
+   كنص مرة على الأقل عشان تفحصه قبل ما تعرضه. */
+async function docCheckStream(res) {
+  try {
+    if (!res || !res.body || typeof res.body.getReader !== 'function') {
+      return await docCheck(res);
+    }
+    const rd = res.body.getReader();
+    const dec = new TextDecoder('utf-8');
+    let total = 0, ver = null, carry = '', tail = '';
+    for (;;) {
+      const r = await rd.read();
+      if (r.done) break;
+      const v = r.value;
+      total += (v && v.byteLength) || 0;
+      const chunk = dec.decode(v, { stream: true });
+      if (!ver) {
+        const hay = carry + chunk;
+        const m = hay.match(/APP_VER\s*=\s*'([^']+)'/);
+        if (m) ver = m[1];
+        carry = hay.slice(-200);        /* لو الرقم اتقسم بين دفعتين */
+      }
+      tail = (tail + chunk).slice(-3000);
+    }
+    tail = (tail + dec.decode()).slice(-3000);
+    if (total < DOC_MIN) return null;
+    if (!ver) return null;
+    if (!/<\/html>/i.test(tail)) return null;
+    return ver;
+  } catch (e) { return null; }
+}
 let AP_UPD_READY = false;
 async function notifyUpdate() {
   AP_UPD_READY = true;
@@ -219,7 +276,7 @@ async function handleDoc(evt, req) {
   try {
     cached = await cacheMatch(DOC, DOC_KEY);
     if (cached) {
-      cachedVer = await docCheck(cached.clone());
+      cachedVer = await docCheckStream(cached.clone());   /* v61.97: بالدفعات */
       if (!cachedVer) {
         try { const c = await openCache(DOC); if (c) await c.delete(DOC_KEY); } catch (e) {}
         cached = null;
@@ -227,18 +284,38 @@ async function handleDoc(evt, req) {
     }
   } catch (e) { cached = null; cachedVer = null; }
 
-  /* ٢ — النسخة اللى على السيرفر: بنقراها مرة واحدة ونتحقق منها، وما
-     بنحفظش إلا الكاملة. */
+  /* ٢ — النسخة اللى على السيرفر.
+     v61.97: مابقناش نحمّل الملف كله فى الذاكرة قبل ما نرجّع حاجة.
+     قبل كده كنا بنعمل res.text() على ٣.٥ ميجا، نتحقق منها، نبنى منها
+     ردًا جديدًا، وبعدين نعرض — يعنى المستخدم قاعد مستنى من غير ما
+     يشوف أى حاجة، وتلات نسخ من الملف فى ذاكرة الجهاز فى نفس اللحظة.
+     أندرويد كان بيبلعها، والآيفون لأ: سفارى عندها سقف ذاكرة للصفحة
+     وبتقتل الـSW لو طوّل، فالتنقّل كان بيفضل بلا رد وتطلع رسالة
+     «السيرفر وقف يرد».
+     دلوقتى بنرجّع رد الشبكة زى ما هو — المتصفح بيبدأ يرسم وهو بينزّل —
+     وبناخد نسخة تانية (clone) نتحقق منها ونخزّنها ورا فى الخلفية. */
   let net;
   try {
-    net = fetch(req).then(async res => {
+    net = fetch(req).then(res => {
       if (!res || !res.ok) return null;
-      const t = await res.text();
-      const ver = docCheckText(t);
-      const resp = new Response(t, { status: 200,
-        headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-      if (ver) { await cachePut(DOC, DOC_KEY, resp.clone()); }
-      return { ver: ver, resp: resp };
+      const copy = res.clone(), copy2 = res.clone();
+      const done = (async () => {
+        try {
+          /* بنخزّن وبنفحص فى نفس الوقت: التخزين بيكتب على القرص على
+             طول، والفحص ماشى معاه دفعة بدفعة — فمفيش نسخة كاملة فى
+             الذاكرة ولا الاتنين بيستنوا بعض. ولو طلع ناقص بنمسحه. */
+          const r2 = await Promise.all([
+            cachePut(DOC, DOC_KEY, copy2),
+            docCheckStream(copy)
+          ]);
+          const ver = r2[1];
+          if (!ver) {
+            try { const c = await openCache(DOC); if (c) await c.delete(DOC_KEY); } catch (e1) {}
+          }
+          return ver;
+        } catch (e) { return null; }
+      })();
+      return { resp: res, ver: done };   /* ver وعد — مش قيمة جاهزة */
     }).catch(() => null);
   } catch (e) { net = Promise.resolve(null); }
 
@@ -247,18 +324,33 @@ async function handleDoc(evt, req) {
     try {
       evt.waitUntil((async () => {
         const r = await net;
-        if (!r || !r.ver) return;                /* مفيش شبكة أو الرد ناقص */
-        if (r.ver !== cachedVer) notifyUpdate(); else AP_UPD_READY = false;
+        if (!r) return;                          /* مفيش شبكة */
+        const ver = await r.ver;                 /* بيخلص بعد ما ينزّل ورا */
+        if (!ver) return;                        /* الرد ناقص — مانعملش حاجة */
+        if (ver !== cachedVer) notifyUpdate(); else AP_UPD_READY = false;
       })());
     } catch (e) {}
     return cached;
   }
 
-  /* ٤ — مفيش محفوظة: ننتظر الشبكة. وما نعرضش رد ناقص — صفحة
-     «مفيش اتصال» أحسن ألف مرة من نظام نصّه ناقص. */
+  /* ٤ — مفيش محفوظة: دى الحالة اللى كانت بتعلّق الآيفون.
+     v61.97: بنستنى أول رد من الشبكة بمهلة، ونرجّعه فورًا من غير ما
+     ننتظر الملف يكمل — المتصفح بيرسم وهو بينزّل. التحقق والتخزين
+     ماشيين ورا فى الخلفية، ولو طلع ناقص مابيتخزّنش. ولو مفيش رد
+     خالص خلال المهلة بنطلّع شاشتنا اللى فيها زرار إعادة، بدل ما
+     نسيب التنقّل معلّق لحد ما المتصفح يقطعه برسالته هو. */
   let r = null;
-  try { r = await net; } catch (e) {}
-  if (r && r.ver) return r.resp;
+  try {
+    r = await Promise.race([
+      net,
+      new Promise(res => setTimeout(() => res(null), DOC_NET_TIMEOUT))
+    ]);
+  } catch (e) { r = null; }
+
+  if (r && r.resp) {
+    try { evt.waitUntil(Promise.resolve(r.ver).catch(() => null)); } catch (e) {}
+    return r.resp;
+  }
 
   return offlinePage();
 }
