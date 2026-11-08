@@ -19,6 +19,21 @@
 /* v61.94: شارات شاشات سجل الاستخدام */
 .useChip{display:inline-block;margin:0 0 6px;padding:3px 10px;border-radius:999px;
   background:#eef4f8;border:1px solid var(--line);font-size:12.5px;color:var(--navy2)}
+/* v61.99: تنبيه «العميل ده عنده حساب» فى شاشة إضافة مستخدم */
+.nuAttach{margin-top:9px;padding:11px 13px;border:1px solid #d7c48a;border-radius:12px;
+  background:#fdf8e9;color:#5a4a1e;font-size:13.5px;line-height:1.75}
+.nuAttBtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.nuAttBtns .btn{flex:1 1 150px;min-width:0}
+@media(prefers-color-scheme:dark){.nuAttach{background:rgba(255,220,120,.08);color:#e8d9a8}}
+/* v61.99: شريط وحدات العميل */
+.unitSw{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:0 0 12px;
+  padding:9px 11px;border:1px solid var(--line);border-radius:13px;background:#eef4f8;
+  overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x}
+.unitSwLb{font-size:12.5px;font-weight:700;color:var(--navy2);white-space:nowrap;opacity:.85}
+.unitSwB{padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;
+  color:var(--navy2);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.unitSwB.on{background:linear-gradient(180deg,var(--navy2),var(--aqua));color:#fff;border-color:transparent}
+@media(prefers-color-scheme:dark){.unitSw{background:rgba(255,255,255,.05)}.unitSwB{background:transparent;color:#dce9f1}}
 .apTTab{position:fixed;top:50%;transform:translateY(-50%);right:0;z-index:80;display:none;
   width:19px;height:66px;padding:0;border:0;cursor:pointer;
   border-radius:9px 0 0 9px;background:linear-gradient(180deg,var(--navy2),var(--aqua));
@@ -5160,8 +5175,8 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v61.98';
-const APP_BUILD= '2026-11-08';
+const APP_VER  = 'v61.99';
+const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
    لحظة الفتح ثم يُصحَّح بعد تحميل البيانات. الآن مصدره واحد فقط. */
@@ -7118,7 +7133,8 @@ function renderSettings(){
         </select></div>
       <div id="nuUnitWrap" style="display:none;margin-top:8px">
         <div class="form-row"><label>🏢 وحدة العميل</label>
-          <select id="nuUnit"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML('')}</select></div>
+          <select id="nuUnit" onchange="apNuUnitHint()"><option value="">— اختر الوحدة —</option>${apUnitOptionsHTML('',true)}</select>
+          <div id="nuAttach" class="nuAttach" style="display:none"></div></div>
         <span class="gray-note">يُنشأ حسابه على السحابة تلقائيًا وتُرفع له نسخة ملفه فى مساحة منفصلة — لا يرى أى بيانات أخرى ولا يقدر يعدّل.</span>
       </div>
       <div id="nuPartnerWrap" style="display:none;margin-top:8px">
@@ -7496,7 +7512,103 @@ function apPartnerOptionsHTML(sel){
   return (DB.partners||[]).map(p=>
     '<option value="'+p.id+'"'+(p.id===sel?' selected':'')+'>'+esc(p.name||'')+'</option>').join('');
 }
+/* =====================================================================
+   v61.99 — إضافة وحدة تانية لعميل عنده حساب
+   أول ما تختار وحدة، التطبيق بيبصّ: صاحب التعاقد ده عنده حساب خلاص؟
+   لو أيوه بيسألك تضيفها لحسابه ولا تعمل حساب جديد. الربط بيتم
+   بالاسم والرقم القومى من بيانات التعاقد نفسها.
+   ===================================================================== */
+function apSameCustomer(a,b){
+  const n=x=>String(x||'').replace(/\s+/g,' ').trim();
+  const d=x=>String(x||'').replace(/\D/g,'');
+  if(!a||!b) return false;
+  const na=d(a.nid||a.nationalId), nb=d(b.nid||b.nationalId);
+  if(na&&nb) return na===nb;                 /* الرقم القومى أقوى دليل */
+  return !!n(a.name)&&n(a.name)===n(b.name); /* وإلا الاسم بالظبط */
+}
+/* بيرجّع حساب العميل اللى صاحب الوحدة دى عنده بالفعل — أو null */
+function apOwnerAccountFor(unitId){
+  const s=(DB.sales||[]).find(x=>x.unitId===unitId);
+  if(!s||!s.customer) return null;
+  let hit=null;
+  (DB.users||[]).forEach(function(u){
+    if(hit||!u||!u.client) return;
+    const ids=apUserUnits(u);
+    if(ids.indexOf(unitId)>=0) return;       /* الوحدة دى عنده أصلًا */
+    const other=ids.some(function(id){
+      const s2=(DB.sales||[]).find(x=>x.unitId===id);
+      return s2&&apSameCustomer(s.customer,s2.customer);
+    });
+    if(other) hit=u;
+  });
+  return hit;
+}
+function apNuUnitHint(){
+  const box=$('#nuAttach'); if(!box) return;
+  const id=(($('#nuUnit')&&$('#nuUnit').value)||'').trim();
+  const own=id?apOwnerAccountFor(id):null;
+  if(!own){ box.style.display='none'; box.innerHTML=''; AP_NU_ATTACH=''; return; }
+  const u=unitById(id)||{};
+  const have=apUserUnits(own).map(function(x){ const uu=unitById(x)||{};
+    return (uu.building||'')+'-'+(uu.unitNo||''); }).join(' · ');
+  let nm=own.name;
+  try{ const s2=(DB.sales||[]).find(x=>x.unitId===apUserUnits(own)[0]);
+       if(s2&&s2.customer&&s2.customer.name) nm=s2.customer.name; }catch(e){}
+  box.style.display='';
+  box.innerHTML='<div class="nuAttIn"><b>'+esc(nm)+'</b> عنده حساب خلاص على: '+esc(have)
+    +'<br>تضيف <b>'+esc((u.building||'')+'-'+(u.unitNo||''))+'</b> لنفس الحساب؟</div>'
+    +'<div class="nuAttBtns">'
+    +'<button type="button" class="btn green" onclick="apNuAttachPick(\''+own.id+'\')">➕ ضيف للحساب</button>'
+    +'<button type="button" class="btn ghost" onclick="apNuAttachPick(\'\')">حساب جديد منفصل</button>'
+    +'</div>';
+  AP_NU_ATTACH='';
+}
+let AP_NU_ATTACH='';
+function apNuAttachPick(userId){
+  AP_NU_ATTACH=userId||'';
+  const box=$('#nuAttach'); if(!box) return;
+  const on=!!userId;
+  box.querySelectorAll('.btn').forEach(function(b,i){
+    b.classList.toggle('green', on?i===0:i===1);
+    b.classList.toggle('ghost', on?i!==0:i!==1);
+  });
+  /* خانات الاسم وكلمة السر مالهاش لزمة لو بنضيف لحساب موجود */
+  ['#nuName','#nuPass','#nuMail'].forEach(function(sel){
+    const e=$(sel); if(!e) return;
+    const row=e.closest('.form-row')||e.parentElement;
+    if(row) row.style.opacity=on?'.45':'';
+    e.disabled=on;
+  });
+  toast(on?'هتتضاف لحساب موجود — من غير اسم دخول ولا كلمة سر جديدة'
+          :'هيتعمل حساب جديد منفصل','ok');
+}
+/* الإضافة الفعلية لحساب موجود */
+function apAttachUnitTo(userId,unitId){
+  const u=(DB.users||[]).find(x=>x.id===userId);
+  if(!u||!u.client) { toast('الحساب مش موجود','err'); return false; }
+  if(!(DB.sales||[]).some(x=>x.unitId===unitId)) { toast('الوحدة مش متعاقد عليها','err'); return false; }
+  const ids=apUserUnits(u);
+  if(ids.indexOf(unitId)>=0){ toast('الوحدة دى فى حسابه أصلًا','err'); return false; }
+  if(!Array.isArray(u.unitIds)) u.unitIds=ids.slice();
+  u.unitIds.push(unitId);
+  if(!u.unitId) u.unitId=unitId;
+  save();
+  return true;
+}
 async function addUser(){
+  /* v61.99: اخترت تضيف الوحدة لحساب موجود — مفيش حساب جديد بيتعمل،
+     ومفيش اسم دخول ولا كلمة سر ولا حساب سحابة. وحدة بتتضاف وبس. */
+  if(AP_NU_ATTACH){
+    const unit=(($('#nuUnit')&&$('#nuUnit').value)||'').trim();
+    if(!unit){ toast('اختر وحدة العميل','err'); return; }
+    if(!apAttachUnitTo(AP_NU_ATTACH,unit)) return;
+    const uu=unitById(unit)||{};
+    toast('اتضافت '+((uu.building||'')+'-'+(uu.unitNo||''))+' لحسابه ✔ — يدخل بنفس اسمه وكلمة سره','ok');
+    AP_NU_ATTACH='';
+    apPushAccess();
+    renderSettings();
+    return;
+  }
   const name=$('#nuName').value.trim(), pass=$('#nuPass').value;
   if(!name||!pass){toast('أدخل اسم المستخدم وكلمة السر','err');return;}
   if((DB.users||[]).some(u=>String(u.name||'').toLowerCase()===name.toLowerCase())){toast('اسم المستخدم موجود بالفعل','err');return;}
@@ -7510,7 +7622,7 @@ async function addUser(){
     cUnit=(($('#nuUnit')&&$('#nuUnit').value)||'').trim();
     if(!cUnit){toast('اختر وحدة العميل','err');return;}
     if(!mail){toast('حساب العميل لازم بريد — العميل بيدخل ببريده','err');return;}
-    if((DB.users||[]).some(u=>u.client&&u.unitId===cUnit)){toast('الوحدة دى لها حساب عميل بالفعل','err');return;}
+    if(apUnitsWithAccount()[cUnit]){toast('الوحدة دى لها حساب عميل بالفعل','err');return;}
     perms=['customerFile'];
   }
   if(isPartner){
@@ -7545,7 +7657,7 @@ async function addUser(){
     if(!r||!r.ok){ toast(r&&r.err?r.err:'تعذر حجز اسم المستخدم','err'); return; }
   }
   const rec={id:uid(),name:un,uname:un,pass:pHash(pass),pPlain:pass,email:mail,admin:false,perms};
-  if(isClient){ rec.client=true; rec.unitId=cUnit; }
+  if(isClient){ rec.client=true; rec.unitId=cUnit; rec.unitIds=[cUnit]; }   /* v61.99 */
   if(isPartner){ rec.partner=true; rec.partnerId=cPartner; }
   DB.users.push(rec);
   save();
@@ -7570,7 +7682,7 @@ function invCode(){
 async function apInvGen(saleId){
   if(!isAdmin()){ toast('للمدير فقط 🔒','err'); return; }
   const s=saleById(saleId); if(!s){ toast('مفيش عميل','err'); return; }
-  if((DB.users||[]).some(u=>u.client&&u.unitId===s.unitId)){ toast('الوحدة دى لها حساب بالفعل','err'); return; }
+  if(apUnitsWithAccount()[s.unitId]){ toast('الوحدة دى لها حساب بالفعل','err'); return; }
   if(typeof window.apInvitePut!=='function'||!(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin())){
     toast('محتاج اتصال بالسحابة عشان تولّد كود','err'); return;
   }
@@ -7726,14 +7838,14 @@ async function apSuApprove(k){
   const r=it.rec||{};
   const un=unameNorm(r.uname||''), mail=String(r.mail||'').trim();
   if(unameWhy(un)){ toast('اسم المستخدم غير صالح','err'); return; }
-  if((DB.users||[]).some(u=>u.client&&u.unitId===unitId)){ toast('الوحدة دى لها حساب بالفعل','err'); return; }
+  if(apUnitsWithAccount()[unitId]){ toast('الوحدة دى لها حساب بالفعل','err'); return; }
   if((DB.users||[]).some(u=>String(u.email||'').toLowerCase()===mail.toLowerCase())){ toast('البريد ده مستخدم','err'); return; }
   if(typeof window.apUnameClaim==='function'){
     const c=await window.apUnameClaim(un,mail,'');
     if(!c||!c.ok){ toast((c&&c.err)||'تعذر حجز الاسم','err'); return; }
   }
   DB.users.push({id:uid(),name:un,uname:un,pass:'',pPlain:'',email:mail,
-                 admin:false,client:true,unitId:unitId,perms:['customerFile']});
+                 admin:false,client:true,unitId:unitId,unitIds:[unitId],perms:['customerFile']});
   save();
   try{ await window.apSignupDrop(k); }catch(e){}
   apPushAccess();
@@ -7761,10 +7873,10 @@ async function apInvCollect(){
       const mail=String(u.mail||'').trim(), un=unameNorm(u.uname||'');
       if(!mail||!un||!r.unitId) continue;
       const dup=(DB.users||[]).some(x=>String(x.email||'').toLowerCase()===mail.toLowerCase())
-             || (DB.users||[]).some(x=>x.client&&x.unitId===r.unitId);
+             || apUnitsWithAccount()[r.unitId];
       if(!dup){
         DB.users.push({id:uid(),name:un,uname:un,pass:'',pPlain:'',email:mail,
-                       admin:false,client:true,unitId:r.unitId,perms:['customerFile']});
+                       admin:false,client:true,unitId:r.unitId,unitIds:[r.unitId],perms:['customerFile']});
         n++;
       }
       try{ await window.apInviteDone(it.code); }catch(e){}
@@ -7838,7 +7950,7 @@ async function apInvRedeem(){
 function apBulkAccRows(){
   const out=[];
   (DB.sales||[]).forEach(s=>{
-    if((DB.users||[]).some(u=>u.client&&u.unitId===s.unitId)) return;   /* له حساب */
+    if(apUnitsWithAccount()[s.unitId]) return;   /* له حساب */
     const u=unitById(s.unitId)||{};
     out.push({sid:s.id, unitId:s.unitId,
       name:(s.customer&&s.customer.name)||'',
@@ -7917,7 +8029,7 @@ async function apBulkAccRun(){
       const why=unameWhy(un); if(why) throw new Error(why);
       if((DB.users||[]).some(u=>unameNorm(u.uname||u.name||'')===un)) throw new Error('الاسم محجوز');
       if((DB.users||[]).some(u=>String(u.email||'').toLowerCase()===mail.toLowerCase())) throw new Error('البريد مستخدم');
-      if((DB.users||[]).some(u=>u.client&&u.unitId===unitId)) throw new Error('الوحدة لها حساب');
+      if(apUnitsWithAccount()[unitId]) throw new Error('الوحدة لها حساب');
       if(pw.length<6) throw new Error('كلمة السر قصيرة');
       if(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin()){
         try{ await window.apCloudCreateUser(mail,pw); }
@@ -7928,7 +8040,7 @@ async function apBulkAccRun(){
         }
       }
       DB.users.push({id:uid(),name:un,uname:un,pass:pHash(pw),pPlain:pw,email:mail,
-                     admin:false,client:true,unitId:unitId,perms:['customerFile']});
+                     admin:false,client:true,unitId:unitId,unitIds:[unitId],perms:['customerFile']});
       if(sale&&sale.customer&&!sale.customer.email) sale.customer.email=mail;
       save();
       set('✔ اتعمل','pos');
@@ -8081,7 +8193,7 @@ function editUser(id){
     if(isC){
       if(!cu){toast('اختر وحدة العميل','err');return false;}
       if(!($('#euMail').value||'').trim()){toast('حساب العميل لازم بريد','err');return false;}
-      if((DB.users||[]).some(x=>x.id!==u.id&&x.client&&x.unitId===cu)){toast('الوحدة دى لها حساب عميل بالفعل','err');return false;}
+      if((DB.users||[]).some(x=>x.id!==u.id&&x.client&&apUserUnits(x).indexOf(cu)>=0)){toast('الوحدة دى لها حساب عميل بالفعل','err');return false;}
     }
     if(isP){
       if(!cp){toast('اختر الشريك','err');return false;}
@@ -10163,7 +10275,7 @@ function apSeenKey(mail){
   return String(mail||'').trim().toLowerCase().split('.').join(',').replace('@','_at_');
 }
 function apSaleMail(sale){
-  const u=(DB.users||[]).find(x=>x.client&&x.unitId===sale.unitId&&x.email);
+  const u=(DB.users||[]).find(x=>x.client&&x.email&&apUserUnits(x).indexOf(sale.unitId)>=0);
   if(u) return String(u.email).trim();
   return String((sale.customer&&sale.customer.email)||'').trim();
 }
@@ -10279,7 +10391,7 @@ function apBulkRows(){
   return out;
 }
 function apBulkUser(sale){
-  return (DB.users||[]).find(u=>u.client&&u.unitId===sale.unitId)||null;
+  return (DB.users||[]).find(u=>u.client&&apUserUnits(u).indexOf(sale.unitId)>=0)||null;
 }
 function apBulkMail(sale){
   const u=apBulkUser(sale);
@@ -10712,6 +10824,40 @@ function bpOpen(which){
   else toast('لا توجد بنود لعرضها','err');
 }
 
+/* =====================================================================
+   v61.99 — العميل اللى عنده أكتر من وحدة
+   بيظهر له شريط فيه وحداته يبدّل بينهم. وما يظهرش أصلًا لو عنده وحدة
+   واحدة — يعنى ٣٤ حساب من الـ٣٧ مش هيحسّوا بأى تغيير.
+   ومفيش هنا أى بيانات زيادة: الشريط بيتبنى من الوحدات اللى على جهازه
+   أصلًا، واللى هى وحداته هو وبس.
+   ===================================================================== */
+function apUnitSwitchHTML(cur){
+  try{
+    if(!AP_CLIENT) return '';
+    const list=(DB.sales||[]);
+    if(list.length<2) return '';
+    return '<div class="unitSw" data-no-swipe="1">'
+      +'<span class="unitSwLb">🏢 وحداتى</span>'
+      +list.map(function(s){
+          const u=unitById(s.unitId)||{};
+          const lb=(u.building||'')+' - '+(u.unitNo||'');
+          const on=(cur&&s.id===cur.id)?' on':'';
+          return '<button class="unitSwB'+on+'" onclick="apUnitSwitch(\''+s.id+'\')">'
+                 +esc(lb)+'</button>';
+        }).join('')
+      +'</div>';
+  }catch(e){ return ''; }
+}
+function apUnitSwitch(saleId){
+  try{
+    if(!saleId||saleId===cfSaleId) return;
+    AP_CTAB='file';
+    renderCustomerFile(saleId);
+    const s=saleById(saleId);
+    if(s){ try{ apBellRender(s); }catch(e){} }
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){}
+}
 function renderCustomerFile(saleId){
   if(saleId&&saleId!==cfSaleId)cfEdit=false;
   if(saleId)cfSaleId=saleId;
@@ -10730,7 +10876,7 @@ function renderCustomerFile(saleId){
   if(AP_CLIENT){
     /* v61.54: زرار «الرجوع للرئيسية» اتشال — الشريط الأزرق والتلات نقط
        فى كل شاشة، وزرار الباك فى الموبايل بيرجّع للرئيسية. */
-    el.innerHTML=apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
+    el.innerHTML=apUnitSwitchHTML(s)+apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
     try{ apBellRender(s); }catch(e){}
     try{ apBarMount(); }catch(e){}          /* v61.54 */
     if(AP_CTAB==='home'){
@@ -11484,7 +11630,7 @@ function apGreetCount(el,target,ms){
 function apInviteHasMail(sale){
   const m=String((sale.customer&&sale.customer.email)||'').trim();
   if(m) return m;
-  const u=(DB.users||[]).find(x=>x.client&&x.unitId===sale.unitId&&x.email);
+  const u=(DB.users||[]).find(x=>x.client&&x.email&&apUserUnits(x).indexOf(sale.unitId)>=0);
   return u?String(u.email).trim():'';
 }
 function apInviteText(sale,mail){
@@ -12494,7 +12640,7 @@ function apWtSave(){
    =================================================================== */
 function apSaleMailOf(sale){
   if(!sale) return '';
-  const u=(DB.users||[]).find(x=>x.client&&x.unitId===sale.unitId);
+  const u=(DB.users||[]).find(x=>x.client&&apUserUnits(x).indexOf(sale.unitId)>=0);
   return (u&&u.email)?String(u.email).toLowerCase():'';
 }
 function apWalFromLog(log){
@@ -12957,6 +13103,12 @@ const AP_GUIDE={
   ['🗑️ ذِكران اتشالوا','«حسبى الله لا إله إلا هو عليه توكلت» سبع مرات فى الصباح والمساء — اتشال من التطبيق. السبب إنه فى سنن أبى داود ٥٠٨١ وحكم عليه الألبانى بأنه «موضوع»، والحكم ده منقول من المصدر مش اجتهاد منى. وواتشال كمان «اللهم إنى أصبحت/أمسيت أُشهدك» (أبو داود ٥٠٦٩ — ضعيف عند الألبانى)، و«اللهم صل على محمد عشرًا صباحًا ومساءً» (ضعَّفه العراقى والسخاوى والوادعى، وتراجع الألبانى عن تحسينه وضعَّفه فى الضعيفة ٥٧٨٨، ولم يوجد فى المطبوع من المعجم الكبير). إجمالى اللى اتشال: تلات أذكار فى ستة مواضع. لو شيخك شاف إنها ترجع، قوللى وأرجّعها.'],
   ['📎 مصدر كل ذِكر تحته','البانر الأصفر اللى كان فوق قسم الأذكار اتشال، لأنه كان بيشكّك الناس فى نصوص كل واحد فيها مصدره مكتوب تحته برقمه أصلًا. المرجع بقى فى الكارت نفسه: كل ذِكر تحته سطر صغير باسم الكتاب ورقم الحديث، والنص القرآنى عليه علامة «قرآن»، والحديث اللى له حكم صريح بالصحة أو الحُسن عليه علامة «مُخرَّج». والبنود اللى عددها أو موضعها محلّ خلاف لسه عليها علامة «للمراجعة» — زى عدد المعوّذات بعد الصلاة — والاستغفار مائة مرة مكتوب جنبه إنه ذِكر مطلق فى اليوم مش مقيّد بالصباح والمساء.'],
   ['🕊️ الأذكار والمسبحة والتقويم القبطى','الأداتين دول بيختفوا تلقائيًا عن أى حساب مختار التقويم القبطى — نفس القاعدة بالظبط اللى ماشى عليها الأذان. باقى الأدوات والألعاب بتظهرلهم عادى. ومش إخفاء بالشكل بس: الأداة اللى مش مسموح بيها مابتترسمش أصلًا فى القايمة، ولو حد حاول يفتحها بأى طريقة تانية بترفض تتفتح.'],
+  ['⬜ الصفحة البيضا ساعة تثبيت الأيقونة','كانت بتحصل لما تنزّل التطبيق لحد وتثبّت الأيقونة: التطبيق مايفتحش، وترجع للمتصفح تلاقيه وقع هو كمان، وبعد كام ريفريش يرجع. السبب إنى فى v61.97 خلّيت الملف الجاى من السيرفر يتقرا من تلات جهات فى نفس الوقت — المتصفح بيعرضه، وواحدة بتخزّنه، وواحدة بتفحصه. ولملف ٣.٥ ميجا المتصفح بيضطر يمسك الفرق بينهم فى الذاكرة، وساعة التثبيت الذاكرة مضغوطة أصلًا، فالمجرى الماشى للمتصفح بيقع فى نصّه. دلوقتى بقت قراءة واحدة: المتصفح بياخد الملف، واحنا بنخزّنه، وبنفحصه من المخزن بعد كده مش من نفس المجرى.'],
+  ['🛟 شبكة أمان للمستند','لو حصل أى سقوط فى نظام التخزين لأى سبب، بقى يتمسك ويروح للشبكة مباشرة، ولو هى كمان فشلت بيطلّع النسخة المحفوظة، ولو مفيش بيطلّع شاشتنا بزرار إعادة. صفحة المتصفح البيضا مش هتوصل للمستخدم تانى مهما حصل.'],
+  ['🏢 العميل اللى عنده أكتر من وحدة','بقى حساب واحد يشوف كل وحداته. يدخل بنفس اسم دخوله وكلمة سره، ويلاقى فوق شريط «وحداتى» فيه وحداته يدوس على أى واحدة فيشوف ملفها كامل — أقساط وإيصالات وغرامات ومدفوعات. والشريط ده مابيظهرش أصلًا لو عنده وحدة واحدة، فاللى عندهم وحدة واحدة مش هيحسّوا بأى تغيير.'],
+  ['➕ إزاى تضيف وحدة تانية لعميل','من نفس مكان إضافة المستخدم: اختار الوحدة الجديدة، وأول ما تختارها التطبيق بيبصّ على صاحب التعاقد — لو لقاه عنده حساب بيقولك «فلان عنده حساب على كذا، تضيف الوحدة دى لنفس الحساب؟». تدوس «ضيف للحساب» فخانات اسم الدخول وكلمة السر بتتقفل لأنها مالهاش لزمة، وتدوس إضافة المستخدم. مفيش حساب جديد بيتعمل ولا حساب سحابة جديد. والربط بيتم بالرقم القومى لو موجود، وإلا بالاسم زى ما هو فى التعاقد بالظبط.'],
+  ['🔽 القايمة المنسدلة بقت أقصر','الوحدات اللى ليها حساب عميل بالفعل اختفت من قايمة إضافة المستخدم — فالقايمة بقت فيها المتاح بس، وماينفعش تختار وحدة متسجّلة بالغلط. وشاشة تعديل المستخدم زى ما هى: وحدته الحالية بتفضل ظاهرة فيها عشان تقدر تغيّرها.'],
+  ['🔒 ولا بايت زيادة بيوصل لجهاز العميل','القاعدة دى ماتغيّرتش ولا هتتغيّر. اختبرناها على الحساب متعدد الوحدات: النسخة اللى راحت لجهازه كانت ٢ كيلوبايت من قاعدة بيانات ٥٤٧ كيلوبايت — وحداته هو بس وتعاقداتها وإيصالاتها. صفر شركاء، صفر بنوك، صفر حركات بنكية، صفر مصروفات، صفر زكاة، صفر مستخدمين، ولا اسم عميل تانى واحد، ولا أى مفتاح خدمة أو رابط. نفس القاعدة بالظبط على الشريك.'],
   ['🔄 التطبيق كان بيفضل عالق على نسخة قديمة','حصلت معاك بنفسك: الموبايل خد v61.97 والكمبيوتر فضل على v61.96 مهما عملت ريفريش وخروج ودخول. السبب إن التطبيق كان بيسأل السيرفر «فيه نسخة جديدة؟» بطلب عادى، وكلاودفلير بيحط على ملف النظام مدة صلاحية — فالمتصفح كان بيرد على السؤال من مخزنه هو من غير ما يسأل السيرفر أصلًا. يبقى التطبيق بيقارن النسخة القديمة بنفسها، يلاقيها زى بعض، ويقول مفيش تحديث. ويفضل كدة لحد ما الصلاحية تخلص. دلوقتى السؤال بقى إجبارى للسيرفر: لو مفيش جديد السيرفر بيرد «زى ما هى» من غير ما ينزّل بايت، فمفيش أى تكلفة. جرّبناها قبل وبعد: القديمة فضلت عالقة بعد أربع مرات قفل وفتح، والجديدة خدت التحديث من أول مرة.'],
   ['🛠️ صفحة إصلاح التخزين','على الرابط ‎/reset.html‎ — بتنضّف ملفات النظام المخزّنة على الجهاز وتنزّلها من أول وجديد. استعملها لو جهاز وقف على نسخة قديمة أو النظام فتح ناقص. ومابتمسحش أى بيانات: اختبرناها على نسخة كاملة من بياناتك والملف طلع بنفس الحجم بالبايت وبنفس عدد الإيصالات والتعاقدات. وهى موجودة كمان كزرار فى شاشة «مفيش اتصال».'],
   ['🍏 «السيرفر وقف يرد» على الآيفون','كان فيه عملاء على آيفون بيفتحوا التطبيق فتطلعلهم رسالة من سفارى إن السيرفر وقف يرد، ونفس اللحظة الأندرويد شغّال عادى. السيرفر ماكانش واقف — المشكلة كانت عندنا. أول ما الموبايل يفتح التطبيق وهو مش محفوظ عنده، كان بينزّل ملف النظام (٣.٥ ميجا) مرتين فى نفس اللحظة: مرة عشان المتصفح يعرض الصفحة ومرة جوّه نظام التخزين عشان يحفظها. وكل واحدة كان بيحمّلها كاملة فى الذاكرة قبل ما يعمل بيها أى حاجة. أندرويد بيبلع ده، وسفارى لأ: عندها سقف ذاكرة للصفحة وبتقتل نظام التخزين لو طوّل — فالصفحة ماكانتش بتلاقى رد وتطلع الرسالة دى.'],
@@ -15519,9 +15671,15 @@ function apClientGo(tab){
   try{ apUseHit('c:'+tab); }catch(e){}    /* v61.94: سجل الاستخدام */
   window.scrollTo({top:0});
 }
-function apUnitOptionsHTML(sel){
+/* v61.99: hideTaken — الوحدات اللى ليها حساب عميل بالفعل تختفى من
+   القايمة، فالقايمة تفضل قصيرة وما تختارش وحدة متسجّلة بالغلط.
+   شاشة تعديل المستخدم بتبعت hideTaken=false عشان الوحدة الحالية
+   تفضل ظاهرة فيها. */
+function apUnitOptionsHTML(sel,hideTaken){
+  const taken=hideTaken?apUnitsWithAccount():{};
   return (DB.sales||[]).map(s=>{
     const u=unitById(s.unitId); if(!u) return '';
+    if(hideTaken&&taken[u.id]&&u.id!==sel) return '';
     const lb=(u.unitNo||'')+' - '+(u.building||'')+' — '+((s.customer&&s.customer.name)||'');
     return '<option value="'+u.id+'"'+(u.id===sel?' selected':'')+'>'+esc(lb)+'</option>';
   }).join('');
@@ -15533,21 +15691,55 @@ function apClientOpenFile(){
 }
 
 /* ---- بناء النسخة المصغّرة لعميل واحد (وحدة واحدة فقط) ---- */
+/* v61.99: وحدات العميل — واحدة أو أكتر. بنرجّع قايمة منظّفة من أى
+   تكرار ومن أى وحدة مش موجودة أو مش متباعة. */
+function apUserUnits(u){
+  if(!u) return [];
+  const raw=[].concat(Array.isArray(u.unitIds)?u.unitIds:[], u.unitId?[u.unitId]:[]);
+  const seen={}, out=[];
+  raw.forEach(function(id){
+    if(!id||seen[id]) return; seen[id]=1;
+    if(!(DB.units||[]).some(x=>x.id===id)) return;
+    if(!(DB.sales||[]).some(x=>x.unitId===id)) return;
+    out.push(id);
+  });
+  return out;
+}
+/* الوحدات اللى ليها حساب عميل بالفعل — للقايمة المنسدلة */
+function apUnitsWithAccount(){
+  const s={};
+  (DB.users||[]).forEach(function(u){
+    if(!u||!u.client) return;
+    apUserUnits(u).forEach(function(id){ s[id]=1; });
+  });
+  return s;
+}
+/* الشريحة: وحدة واحدة أو أكتر — ونفس القاعدة الصارمة زى ما هى.
+   ولا بيانات عميل تانى، ولا شركاء، ولا بنوك، ولا مصروفات، ولا تدفقات،
+   ولا مستخدمين، ولا مفاتيح خدمات. اللى بيوصل لجهازه: وحداته هو،
+   تعاقداتها، وإيصالاتها. وبس. */
 function apClientSlice(unitId){
-  const u=(DB.units||[]).find(x=>x.id===unitId);
-  const s=(DB.sales||[]).find(x=>x.unitId===unitId);
-  if(!u||!s) return null;
+  const ids=Array.isArray(unitId)?unitId:[unitId];
+  const units=[], sales=[];
+  ids.forEach(function(id){
+    const u=(DB.units||[]).find(x=>x.id===id);
+    const s=(DB.sales||[]).find(x=>x.unitId===id);
+    if(u&&s&&!units.some(x=>x.id===u.id)){ units.push(u); sales.push(s); }
+  });
+  if(!units.length) return null;
   const st=Object.assign({},DB.settings||{});
   /* لا تُرسَل أى مفاتيح أو روابط خدمات مع نسخة العميل */
   ['gsUrl','gsSheet','gsEnabled','driveUrl','backupDirName','ffPdfPath','sfPdfPath'].forEach(k=>{ delete st[k]; });
-  const cu=(DB.users||[]).find(x=>x.client&&x.unitId===unitId);
+  const first=units[0].id;
+  const cu=(DB.users||[]).find(x=>x.client&&apUserUnits(x).indexOf(first)>=0);
+  const saleIds={}; sales.forEach(function(s){ saleIds[s.id]=1; });
   return {
     cal:(cu&&cu.copt)?'copt':'isl',
     settings:st,
     seq:{year:new Date().getFullYear(),counter:0},
-    units:[u],
-    sales:[s],
-    payments:(DB.payments||[]).filter(p=>p.saleId===s.id),
+    units:units,
+    sales:sales,
+    payments:(DB.payments||[]).filter(p=>saleIds[p.saleId]),
     returned:[],partners:[],banks:[],bankTx:[],expenses:[],zakatPays:[],
     cashflowCfg:{start:'',overdue:false,b:{}},
     attIdx:[],
@@ -15642,13 +15834,15 @@ function apAccessMaps(){
   (DB.users||[]).forEach(u=>{
     const em=String(u.email||'').trim(); if(!em) return;
     if(u.client){
-      const sl=apClientSlice(u.unitId); if(!sl) return;
+      /* v61.99: كل وحدات العميل — واحدة أو أكتر */
+      const ids=apUserUnits(u); if(!ids.length) return;
+      const sl=apClientSlice(ids); if(!sl) return;
       /* v61.35: اسم الدخول بقى إنجليزى، فالبوابة تعرض الاسم العربى
          من بيانات التعاقد نفسها — ده اسمه الرسمى مش اسم دخوله. */
       let nm=u.name;
-      try{ const s2=(DB.sales||[]).find(x=>x.unitId===u.unitId);
+      try{ const s2=(DB.sales||[]).find(x=>x.unitId===ids[0]);
            if(s2&&s2.customer&&s2.customer.name) nm=s2.customer.name; }catch(e){}
-      clients[apMailKey(em)]={name:nm,unitId:u.unitId,slice:sl};
+      clients[apMailKey(em)]={name:nm,unitId:ids[0],unitIds:ids,slice:sl};
     }else if(u.partner){
       const sl=apPartnerSlice(u.partnerId); if(!sl) return;
       let nm=u.name;
@@ -16980,7 +17174,7 @@ async function apNotify(space,mail,title,body,url){
 /* إشعار العميل بدفعة اتسجّلت له */
 async function apNotifyPayment(sale,pay){
   try{
-    const u=(DB.users||[]).find(x=>x.client&&x.unitId===sale.unitId&&x.email);
+    const u=(DB.users||[]).find(x=>x.client&&x.email&&apUserUnits(x).indexOf(sale.unitId)>=0);
     if(!u) return;
     await apNotify('clients',u.email,'تم تسجيل دفعة جديدة ✅',
       'إيصال '+pay.receiptNo+' بمبلغ '+fmtN(pay.amount)+' ج.م بتاريخ '+fmtD(pay.date),

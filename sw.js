@@ -38,11 +38,18 @@
    غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
    أى تدخل.
    ===================================================================== */
-const VER   = 'v61.98';
+const VER   = 'v61.99';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
 const DOC_KEY = './index.html';
+/* v61.99: مفتاح تخزين مؤقت. النسخة الجديدة بتتكتب عليه الأول، وما
+   تتنقلش لمكانها الأصلى غير بعد ما تتحقق إنها كاملة. كده النسخة
+   الشغّالة على الجهاز مابتتلمسش أبدًا قبل ما يبقى فيه بديل سليم.
+   قبل كده كنا بنكتب على المفتاح الأصلى على طول وبنمسحه لو الفحص فشل —
+   ولو حصل أى تضارب (التثبيت والفتح شغّالين مع بعض، أو الكتابة اتقطعت)
+   كانت نسخة سليمة بتتمسح، فالتطبيق يقع ويفضل يقع لحد ما ينزّل تانى. */
+const DOC_TMP = './index.html?__ap_staging=1';
 /* v61.97: أقصى انتظار لأول رد من الشبكة لما مايبقاش فيه نسخة محفوظة.
    بعدها بنطلّع شاشتنا بزرار إعادة بدل ما المتصفح يقطع بنفسه. */
 const DOC_NET_TIMEOUT = 25000;
@@ -145,16 +152,7 @@ self.addEventListener('install', e => {
            يعرض الصفحة — يعنى ٣.٥ ميجا مرتين فى نفس اللحظة على أول فتحة.
            من غيرها بياخدها من مخزن المتصفح. */
         const r = await fetch(DOC_KEY);
-        if (r && r.ok) {
-          const copy = r.clone();
-          const r2 = await Promise.all([
-            cachePut(DOC, DOC_KEY, r),
-            docCheckStream(copy)
-          ]);
-          if (!r2[1]) {
-            try { const c = await openCache(DOC); if (c) await c.delete(DOC_KEY); } catch (e3) {}
-          }
-        }
+        if (r && r.ok) await docStageAndPromote(r);
       }
     } catch (e2) {}
     /* الباقى: كل ملف لوحده. addAll كانت بتفشل كلها لو ملف واحد ناقص. */
@@ -221,6 +219,27 @@ async function docCheck(r) {
    كيلوبايتات معدودة بدل ٣.٥ ميجا.
    ده اللى كان بيخنق الآيفون: كل فتحة للتطبيق كانت بتحمّل الملف كله
    كنص مرة على الأقل عشان تفحصه قبل ما تعرضه. */
+/* v61.99: بتخزّن رد الشبكة على المفتاح المؤقت وبتفحصه فى نفس الوقت،
+   وما بتنقلهش لمكانه الأصلى غير لو طلع كامل. بترجّع رقم النسخة أو null.
+   مابتمسحش النسخة الأصلية أبدًا مهما حصل. */
+async function docStageAndPromote(res) {
+  let ver = null;
+  try {
+    /* بنكتبه على القرص الأول، وبعدين بنقراه من القرص ونفحصه.
+       مابنفحصش من نفس المجرى اللى ماشى للمتصفح — ده كان الغلط. */
+    await cachePut(DOC, DOC_TMP, res);
+    const staged = await cacheMatch(DOC, DOC_TMP);
+    if (staged) {
+      ver = await docCheckStream(staged.clone());
+      if (ver) {
+        const s2 = await cacheMatch(DOC, DOC_TMP);
+        if (s2) await cachePut(DOC, DOC_KEY, s2); else ver = null;
+      }
+    }
+  } catch (e) { ver = null; }
+  try { const c = await openCache(DOC); if (c) await c.delete(DOC_TMP); } catch (e) {}
+  return ver;
+}
 async function docCheckStream(res) {
   try {
     if (!res || !res.body || typeof res.body.getReader !== 'function') {
@@ -278,7 +297,9 @@ async function handleDoc(evt, req) {
     if (cached) {
       cachedVer = await docCheckStream(cached.clone());   /* v61.97: بالدفعات */
       if (!cachedVer) {
-        try { const c = await openCache(DOC); if (c) await c.delete(DOC_KEY); } catch (e) {}
+        /* v61.99: مابنمسحهاش. بنتجاهلها بس ونجيب من الشبكة — ولو الشبكة
+           فشلت، نسخة قديمة أحسن من ولا حاجة. المسح هو اللى كان بيخلّى
+           الجهاز يقع ويفضل واقع. */
         cached = null;
       }
     }
@@ -308,21 +329,17 @@ async function handleDoc(evt, req) {
        ينزّل بايت، فمفيش أى تكلفة. */
     net = fetch(req, { cache: 'no-cache' }).then(res => {
       if (!res || !res.ok) return null;
-      const copy = res.clone(), copy2 = res.clone();
+      /* v61.99: نسخة واحدة بس. قبل كده كنا بناخد نسختين ونسيب الأصل
+         ماشى للمتصفح — يعنى تلات قُرّاء على نفس المجرى فى نفس الوقت
+         لملف ٣.٥ ميجا. المتصفح بيضطر يخزّن الفرق بينهم فى الذاكرة،
+         ولو الذاكرة ضاقت أو النظام اتقفل، المجرى الماشى للمتصفح نفسه
+         بيقع فى نصّه — فالصفحة تطلع بيضا من المتصفح، مش شاشتنا.
+         ودى بالظبط اللى كانت بتحصل ساعة تثبيت الأيقونة، لأن التثبيت
+         والفتح بيشتغلوا مع بعض فالذاكرة بتبقى مضغوطة. */
+      const copy = res.clone();
       const done = (async () => {
         try {
-          /* بنخزّن وبنفحص فى نفس الوقت: التخزين بيكتب على القرص على
-             طول، والفحص ماشى معاه دفعة بدفعة — فمفيش نسخة كاملة فى
-             الذاكرة ولا الاتنين بيستنوا بعض. ولو طلع ناقص بنمسحه. */
-          const r2 = await Promise.all([
-            cachePut(DOC, DOC_KEY, copy2),
-            docCheckStream(copy)
-          ]);
-          const ver = r2[1];
-          if (!ver) {
-            try { const c = await openCache(DOC); if (c) await c.delete(DOC_KEY); } catch (e1) {}
-          }
-          return ver;
+          return await docStageAndPromote(copy);
         } catch (e) { return null; }
       })();
       return { resp: res, ver: done };   /* ver وعد — مش قيمة جاهزة */
@@ -398,7 +415,21 @@ self.addEventListener('fetch', e => {
                 /\/index\.html$/.test(path) ||
                 (req.mode === 'navigate' && !/\.[a-zA-Z0-9]{1,6}$/.test(path));
 
-  if (isDoc) { e.respondWith(handleDoc(e, req)); return; }
+  /* v61.99: شبكة أمان. قبل كده لو معالج المستند وقع لأى سبب، الوعد
+     كان بيرجع فاشل من غير ما حد يمسكه — فالمتصفح يطلّع صفحته البيضا
+     بتاعته. دلوقتى أى سقوط بنمسكه ونحاول الشبكة مباشرة، ولو هى كمان
+     فشلت بنطلّع شاشتنا اللى فيها زرار إعادة. المستخدم مايشوفش صفحة
+     بيضا من المتصفح أبدًا مهما حصل. */
+  if (isDoc) {
+    e.respondWith(
+      handleDoc(e, req).catch(async () => {
+        try { const r = await fetch(req); if (r && r.ok) return r; } catch (err2) {}
+        try { const hit = await cacheMatch(DOC, DOC_KEY); if (hit) return hit; } catch (err3) {}
+        return offlinePage();
+      })
+    );
+    return;
+  }
 
   // ملف المخططات: مخزن مستقل يعيش عبر التحديثات
   /* الأدوات: الشبكة الأول وبعدين المخزن (stale-while-revalidate) */
