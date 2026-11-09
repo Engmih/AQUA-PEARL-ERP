@@ -38,7 +38,7 @@
    غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
    أى تدخل.
    ===================================================================== */
-const VER   = 'v62.04';
+const VER   = 'v62.05';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
@@ -103,10 +103,38 @@ function offlinePage() {
 '<div style="font-size:40px;margin-bottom:6px">📡</div>' +
 '<h1>مفيش اتصال بالإنترنت دلوقتى</h1>' +
 '<p>النظام نفسه سليم — الاتصال بس هو اللى اتقطع لحظة. اتأكد من النت واضغط «حاول تانى».</p>' +
-'<button class="p" onclick="location.reload()">🔄 حاول تانى</button>' +
-'<button class="g" onclick="location.href=\'./fix.html\'">🛠️ إصلاح الجهاز</button>' +
-'<small>«إصلاح التخزين» بيعيد تحميل ملفات النظام من أول وجديد،<br>ومش بيمسح أى بيانات مسجّلة على الجهاز.</small>' +
-'</div></body></html>';
+'<button class="p" id="rt" onclick="location.reload()">🔄 حاول تانى</button>' +
+'<button class="g" id="fx" style="display:none" onclick="location.href=\'./fix.html\'">🛠️ إصلاح الجهاز</button>' +
+'<small id="nt">بيحاول يصلّح نفسه…</small>' +
+'</div>' +
+/* v62.05: الشاشة دى بتصلّح نفسها فى صمت.
+   أول ما تظهر بتجرّب السيرفر؛ لو رد، بتعيد الفتح على طول والمستخدم
+   أصلًا مشافش حاجة. لو مارّدش من أول مرة، بتشيل نظام التخزين ومخزنه
+   وتعيد الفتح — وده بيحلّ حالة «الجهاز عالق» من غير ما حد يعمل أى
+   حاجة. زرار «إصلاح الجهاز» مابيظهرش غير لو كل ده فشل. */
+'<script>(function(){' +
+'var n=document.getElementById("nt"),f=document.getElementById("fx");' +
+'function give(m){if(n)n.textContent=m;if(f)f.style.display="block";}' +
+'function boot(){location.replace("./index.html?healed="+Date.now());}' +
+'async function heal(hard){' +
+' try{' +
+'  var r=await fetch("./index.html?probe="+Date.now(),{cache:"reload"});' +
+'  if(r&&r.ok){var t=await r.text(); if(t&&t.length>200000){' +
+'    if(hard){try{var ks=await caches.keys();await Promise.all(ks.map(function(k){return caches.delete(k)}));}catch(e){}' +
+'            try{var rs=await navigator.serviceWorker.getRegistrations();' +
+'                 await Promise.all(rs.map(function(x){return x.unregister()}));}catch(e){}}' +
+'    boot(); return true;}}' +
+' }catch(e){}' +
+' return false;' +
+'}' +
+'(async function(){' +
+'  if(await heal(false)) return;' +
+'  if(n)n.textContent="بيصلّح نفسه…";' +
+'  if(await heal(true)) return;' +
+'  give("مفيش رد من السيرفر. اتأكد من النت واضغط «حاول تانى».");' +
+'})();' +
+'})();<\/script>' +
+'</body></html>';
   return new Response(html, {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
