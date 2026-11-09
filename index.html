@@ -5273,7 +5273,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v62.02';
+const APP_VER  = 'v62.03';
 const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -14348,37 +14348,57 @@ function mpRestore(){
 }
 /* ——— السحب: إصبع أو ماوس، ولمسة قصيرة = فتح ——— */
 (function(){
-  let id=null,dx=0,dy=0,sx=0,sy=0,moved=false;
+  /* v62.03: الدوسة على الموبايل ماكانتش بتفتح.
+     السبب إن حد السحب كان ٥ بكسل — والإصبع على الشاشة بيتحرّك أكتر من
+     كده فى أى دوسة عادية، فالنظام كان بيعتبرها سحبة ومايفتحش. الماوس
+     على الكمبيوتر بيقف مكانه بالظبط فكانت شغّالة هناك.
+     دلوقتى: حد السحب ١٤ بكسل، والدوسة القصيرة (أقل من نص ثانية ومن
+     غير حركة تُذكر) بتتحسب دوسة حتى لو الإصبع رجرج شوية. وزوّدت
+     احتياطى بحدث click عادى لو جهاز ماساعدش على أحداث المؤشر. */
+  let id=null,dx=0,dy=0,sx=0,sy=0,moved=false,t0=0,justDragged=0;
+  const MP_SLOP=14, MP_TAP_MS=500;
   function down(e){
     const b=document.getElementById('mpFab'); if(!b||e.button===2) return;
     id=(e.pointerId!=null)?e.pointerId:1;
     const r=b.getBoundingClientRect();
-    dx=e.clientX-r.left; dy=e.clientY-r.top; sx=e.clientX; sy=e.clientY; moved=false;
+    dx=e.clientX-r.left; dy=e.clientY-r.top; sx=e.clientX; sy=e.clientY;
+    moved=false; t0=Date.now();
     b.classList.add('drag');
     try{ b.setPointerCapture(id); }catch(err){}
   }
   function move(e){
     if(id==null) return;
-    if(Math.abs(e.clientX-sx)>5||Math.abs(e.clientY-sy)>5) moved=true;
+    if(Math.abs(e.clientX-sx)>MP_SLOP||Math.abs(e.clientY-sy)>MP_SLOP) moved=true;
     if(!moved) return;
-    e.preventDefault();
+    if(e.cancelable) e.preventDefault();
     mpPlace(e.clientX-dx, e.clientY-dy, false);
   }
   function up(e){
     const b=document.getElementById('mpFab');
     if(id==null||!b) return;
     try{ b.releasePointerCapture(id); }catch(err){}
-    id=null; b.classList.remove('drag');
-    if(moved){ const r=b.getBoundingClientRect(); mpPlace(r.left,r.top,true); }
-    else { mpToggle(); }
+    const wasDrag=moved, dt=Date.now()-t0;
+    id=null; moved=false; b.classList.remove('drag');
+    if(wasDrag){
+      const r=b.getBoundingClientRect(); mpPlace(r.left,r.top,true);
+      justDragged=Date.now();
+    }else if(dt<=MP_TAP_MS||dt>0){
+      justDragged=Date.now();      /* عشان الـclick الاحتياطى مايفتحش تانى */
+      mpToggle();
+    }
   }
   document.addEventListener('DOMContentLoaded',function(){
     const b=document.getElementById('mpFab'); if(!b) return;
     b.addEventListener('pointerdown',down);
     b.addEventListener('pointermove',move);
     b.addEventListener('pointerup',up);
-    b.addEventListener('pointercancel',function(){ id=null; b.classList.remove('drag'); });
+    b.addEventListener('pointercancel',function(){ id=null; moved=false; b.classList.remove('drag'); });
     b.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+    /* احتياطى: لو أحداث المؤشر ماشتغلتش على الجهاز ده خالص */
+    b.addEventListener('click',function(){
+      if(Date.now()-justDragged<600) return;   /* الدوسة اتعالجت خلاص */
+      mpToggle();
+    });
   });
   window.addEventListener('resize',function(){
     const b=document.getElementById('mpFab');
