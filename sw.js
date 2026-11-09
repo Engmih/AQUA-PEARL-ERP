@@ -38,7 +38,7 @@
    غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
    أى تدخل.
    ===================================================================== */
-const VER   = 'v62.03';
+const VER   = 'v62.04';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
@@ -53,6 +53,8 @@ const DOC_TMP = './index.html?__ap_staging=1';
 /* v61.97: أقصى انتظار لأول رد من الشبكة لما مايبقاش فيه نسخة محفوظة.
    بعدها بنطلّع شاشتنا بزرار إعادة بدل ما المتصفح يقطع بنفسه. */
 const DOC_NET_TIMEOUT = 25000;
+/* v62.03: عدّاد فشل تسليم المستند — بيتصفّر مع أول نجاح */
+let DOC_FAILS = 0;
 /* v61.74: ملفات الصوت (الأذان والتكبير) فى مخزن مستقل عن رقم النسخة،
    زى المخططات — عشان ما تتحملش من أول وجديد مع كل تحديث. */
 const AUDIO = 'aqua-pearl-audio';
@@ -69,6 +71,7 @@ const CORE = [
   /* v61.60: الجذر './' اتشال من هنا — المستند مصدره مخزن DOC وحده بعد
      التحقق منه، فما ينفعش يكون فيه نسخة تانية غير متحقَّق منها. */
   './reset.html',
+  './fix.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -101,7 +104,7 @@ function offlinePage() {
 '<h1>مفيش اتصال بالإنترنت دلوقتى</h1>' +
 '<p>النظام نفسه سليم — الاتصال بس هو اللى اتقطع لحظة. اتأكد من النت واضغط «حاول تانى».</p>' +
 '<button class="p" onclick="location.reload()">🔄 حاول تانى</button>' +
-'<button class="g" onclick="location.href=\'./reset.html\'">🛠️ إصلاح التخزين</button>' +
+'<button class="g" onclick="location.href=\'./fix.html\'">🛠️ إصلاح الجهاز</button>' +
 '<small>«إصلاح التخزين» بيعيد تحميل ملفات النظام من أول وجديد،<br>ومش بيمسح أى بيانات مسجّلة على الجهاز.</small>' +
 '</div></body></html>';
   return new Response(html, {
@@ -357,6 +360,7 @@ async function handleDoc(evt, req) {
         if (ver !== cachedVer) notifyUpdate(); else AP_UPD_READY = false;
       })());
     } catch (e) {}
+    DOC_FAILS = 0;
     return cached;
   }
 
@@ -376,9 +380,23 @@ async function handleDoc(evt, req) {
 
   if (r && r.resp) {
     try { evt.waitUntil(Promise.resolve(r.ver).catch(() => null)); } catch (e) {}
+    DOC_FAILS = 0;
     return r.resp;
   }
 
+  /* v62.03: صمّام أمان.
+     لو وصلنا هنا يبقى مافيش نسخة محفوظة ومافيش شبكة. لو ده حصل تلات
+     مرات ورا بعض، يبقى نظام التخزين ده نفسه هو المشكلة — ساعتها
+     بيشيل نفسه وبيمسح مخزنه، فالفتحة الجاية بتروح للسيرفر مباشرة
+     من غير أى وسيط. كده مستحيل جهاز يفضل عالق لحد ما حد يتدخّل. */
+  DOC_FAILS++;
+  if (DOC_FAILS >= 3) {
+    try {
+      const ks = await caches.keys();
+      await Promise.all(ks.map(k => caches.delete(k)));
+      await self.registration.unregister();
+    } catch (e) {}
+  }
   return offlinePage();
 }
 
@@ -397,6 +415,11 @@ self.addEventListener('fetch', e => {
      ومخزَّنها احتياطى لو مفيش نت — عشان تشتغل فى كل الحالات.
      v61.60: قبل كده كانت بتعدّى من غير أى معالجة، فما كانتش تفتح
      أصلًا من غير إنترنت. */
+  /* v62.03: صفحة الإنقاذ fix.html مابنلمسهاش خالص — مفيش respondWith
+     ولا تخزين ولا أى تدخّل. المتصفح بيجيبها من السيرفر مباشرة مهما
+     كان نظام التخزين ده بايظ أو قديم. دى الباب اللى مايتقفلش. */
+  if (/\/fix\.html$/.test(path)) return;
+
   if (/\/reset\.html$/.test(path)) {
     e.respondWith((async () => {
       try {

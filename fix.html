@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Aqua Pearl — إصلاح الجهاز</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;align-items:center;justify-content:center;padding:22px;
+  background:linear-gradient(160deg,#0d2b45,#12415f);color:#eaf3f8;
+  font-family:"Segoe UI",Tahoma,system-ui,-apple-system,sans-serif}
+.b{width:100%;max-width:400px;text-align:center;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:26px 20px}
+.ico{font-size:40px;line-height:1;margin-bottom:10px}
+h1{font-size:19px;margin:0 0 8px}
+p{font-size:14.5px;line-height:1.85;color:#c6dbe8;margin:0 0 16px}
+.log{text-align:right;font-size:13px;line-height:2;color:#bcd4e4;
+  background:rgba(0,0,0,.22);border-radius:11px;padding:11px 13px;margin:0 0 16px;
+  max-height:170px;overflow:auto}
+.log b{color:#7fe0a8;font-weight:700}
+button{display:block;width:100%;margin:8px 0 0;padding:14px;border:0;border-radius:12px;
+  font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;
+  background:#1195b2;color:#fff}
+button.g{background:transparent;color:#cfe3ef;border:1px solid rgba(255,255,255,.25)}
+.sm{font-size:12.5px;color:#9fbdd1;margin:14px 0 0;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="b">
+  <div class="ico" id="ico">🛠️</div>
+  <h1 id="ttl">إصلاح الجهاز</h1>
+  <p id="sub">هينضّف ملفات النظام المخزّنة على الجهاز ده وينزّلها من أول وجديد.<br>
+     <b>مش بيمسح أى بيانات.</b></p>
+  <div class="log" id="log"></div>
+  <button id="go">🧹 ابدأ الإصلاح</button>
+  <button class="g" id="back">↩️ رجوع للنظام</button>
+  <p class="sm">الصفحة دى بتشتغل حتى لو النظام نفسه مش راضى يفتح،
+     لأنها مابتعتمدش على أى حاجة متخزّنة على الجهاز.</p>
+</div>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   صفحة إنقاذ مستقلّة تمامًا.
+   اسمها مختلف عن index.html عن قصد: نظام التخزين القديم بيعترض
+   الصفحة الرئيسية بس، فالصفحة دى بتعدّى منه وبتتحمّل من السيرفر
+   مباشرة مهما كان الجهاز عالق.
+   بتشيل كل نسخ نظام التخزين وكل الملفات المخزّنة، ومابتلمسش
+   localStorage ولا IndexedDB — يعنى بيانات النظام مابتتمسّش.
+   ═══════════════════════════════════════════════════════════════ */
+var L = document.getElementById('log');
+function say(t, ok){
+  var d = document.createElement('div');
+  d.innerHTML = (ok ? '<b>✔</b> ' : '• ') + t;
+  L.appendChild(d); L.scrollTop = L.scrollHeight;
+}
+function fail(t){ say('⚠️ ' + t); }
+
+document.getElementById('back').onclick = function(){
+  location.replace('./index.html?fixed=' + Date.now());
+};
+
+document.getElementById('go').onclick = async function(){
+  var btn = this; btn.disabled = true; btn.textContent = '⏳ بيصلّح…';
+  L.innerHTML = '';
+  var swN = 0, cN = 0;
+
+  /* ١ — شيل كل نسخ نظام التخزين */
+  try{
+    if ('serviceWorker' in navigator) {
+      var rs = await navigator.serviceWorker.getRegistrations();
+      for (var i = 0; i < rs.length; i++) {
+        try { await rs[i].unregister(); swN++; } catch(e){}
+      }
+      say('اتشال ' + swN + ' من نظام التخزين', true);
+    } else { say('الجهاز ده مافيهوش نظام تخزين', true); }
+  }catch(e){ fail('مامقدرتش أشيل نظام التخزين'); }
+
+  /* ٢ — امسح كل الملفات المخزّنة (مش البيانات) */
+  try{
+    if (window.caches) {
+      var ks = await caches.keys();
+      for (var j = 0; j < ks.length; j++) {
+        try { await caches.delete(ks[j]); cN++; } catch(e){}
+      }
+      say('اتمسحت ' + cN + ' مجموعة ملفات مخزّنة', true);
+    }
+  }catch(e){ fail('مامقدرتش أمسح الملفات المخزّنة'); }
+
+  /* ٣ — تأكيد إن البيانات زى ما هى */
+  try{
+    var raw = localStorage.getItem('aquaPearlERP_v1');
+    say(raw ? ('بياناتك سليمة ومالمستهاش (' + Math.round(raw.length/1024) + ' كيلوبايت)')
+            : 'مفيش بيانات محفوظة على الجهاز ده', true);
+  }catch(e){}
+
+  /* ٤ — هات النسخة الجديدة من السيرفر مباشرة */
+  var ver = '';
+  try{
+    var r = await fetch('./index.html?fix=' + Date.now(), { cache: 'reload' });
+    var t = await r.text();
+    var m = /APP_VER\s*=\s*'([^']+)'/.exec(t);
+    ver = m ? m[1] : '';
+    say(ver ? ('النسخة اللى على السيرفر: ' + ver) : 'نزّلت النظام من السيرفر', true);
+  }catch(e){ fail('مامقدرتش أوصل للسيرفر — اتأكد من النت'); }
+
+  document.getElementById('ico').textContent = '✅';
+  document.getElementById('ttl').textContent = 'تم الإصلاح';
+  document.getElementById('sub').innerHTML =
+    'الجهاز بقى نضيف' + (ver ? (' وجاهز للنسخة <b>' + ver + '</b>') : '') +
+    '.<br>هيفتح النظام لوحده خلال ثوانى.';
+  btn.textContent = '🚀 افتح النظام دلوقتى';
+  btn.disabled = false;
+  btn.onclick = function(){ location.replace('./index.html?fixed=' + Date.now()); };
+  setTimeout(function(){ location.replace('./index.html?fixed=' + Date.now()); }, 2600);
+};
+</script>
+</body>
+</html>
