@@ -1105,16 +1105,17 @@ body.pvOn #mpFab{display:none!important}           /* v62.01 */
 #mpFab:active{cursor:grabbing;transform:scale(.94)}
 #mpFab.drag{transition:none;cursor:grabbing;transform:scale(1.07)}
 /* الهزة: معظم الوقت ساكن، وكل ٦ ثوانى هزة قصيرة */
+/* v62.02: نفس الهزة بالظبط — بس فترة السكون بقت ثانية واحدة بدل ٥.
+   الدورة ٢.٢ ثانية: أول ٤٥٪ سكون (≈ ثانية)، والباقى الهزة نفسها. */
 @keyframes mpWig{
-  0%,76%,100%{transform:rotate(0) translateY(0)}
-  79%{transform:rotate(-7deg) translateY(-4px)}
-  82%{transform:rotate(6deg) translateY(0)}
-  85%{transform:rotate(-5deg) translateY(-3px)}
-  88%{transform:rotate(4deg) translateY(0)}
+  0%,45%,100%{transform:rotate(0) translateY(0)}
+  55%{transform:rotate(-7deg) translateY(-4px)}
+  64%{transform:rotate(6deg) translateY(0)}
+  73%{transform:rotate(-5deg) translateY(-3px)}
+  82%{transform:rotate(4deg) translateY(0)}
   91%{transform:rotate(-2deg) translateY(-1px)}
-  94%{transform:rotate(0) translateY(0)}
 }
-#mpFab:not(.drag):not(.quiet){animation:mpWig 6.5s ease-in-out infinite}
+#mpFab:not(.drag):not(.quiet){animation:mpWig 2.2s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){#mpFab{animation:none!important}}
 /* الشات */
 #mpBack{position:fixed;inset:0;z-index:92;background:rgba(8,24,40,.42);
@@ -5272,7 +5273,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v62.01';
+const APP_VER  = 'v62.02';
 const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
