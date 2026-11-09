@@ -5321,7 +5321,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v62.07';
+const APP_VER  = 'v62.08';
 const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -7759,7 +7759,7 @@ function apNameClose(x,y){
   const uni={}; wa.concat(wb).forEach(function(w){ uni[w]=1; });
   const uniN=Object.keys(uni).length||1;
   if(inter/uniN>=0.55) return true;            /* أغلب الكلمات مشتركة */
-  /* اسم مختصر جوّه اسم أطول: «محمد رمضان» و«محمد رمضان مصطفى علي بديوي» */
+  /* اسم مختصر جوّه اسم أطول: «فلان الفلانى» و«فلان الفلانى عبد الله» */
   const shortW=(wa.length<=wb.length?wa:wb);
   if(inter>=2&&inter===new Set(shortW).size) return true;
   return false;
