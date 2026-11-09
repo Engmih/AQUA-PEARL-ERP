@@ -1118,15 +1118,20 @@ body.pvOn #mpFab{display:none!important}           /* v62.01 */
 #mpBack{position:fixed;inset:0;z-index:92;background:rgba(8,24,40,.42);
   opacity:0;pointer-events:none;transition:opacity .2s}
 #mpBack.open{opacity:1;pointer-events:auto}
+/* v62.07: الشاشة وهى مقفولة كانت بتتخفى بالشفافية بس على الكمبيوتر —
+   فاضلة مكانها ومستقبلة الدوس، يعنى مستطيل 420×640 فى الناحية اليمين
+   تحت بيبلع أى دوسة تقع جوّاه (١٣٪ من شاشة 1920 و٢١٪ من 1366). دلوقتى
+   pointer-events:none وهى مقفولة، ومابترجعش تستقبل غير وهى مفتوحة. */
 #mpPanel{position:fixed;z-index:93;left:50%;bottom:0;transform:translate(-50%,105%);
   width:min(420px,100%);height:min(78vh,620px);display:flex;flex-direction:column;
   background:var(--card,#fff);border-radius:20px 20px 0 0;overflow:hidden;
+  pointer-events:none;
   box-shadow:0 -10px 40px rgba(8,24,40,.3);transition:transform .26s cubic-bezier(.3,.9,.3,1)}
-#mpPanel.open{transform:translate(-50%,0)}
+#mpPanel.open{transform:translate(-50%,0);pointer-events:auto}
 @media(min-width:760px){
   #mpPanel{left:auto;right:26px;bottom:26px;transform:translateY(16px) scale(.97);opacity:0;
-    border-radius:20px;height:min(74vh,640px)}
-  #mpPanel.open{transform:translateY(0) scale(1);opacity:1}
+    border-radius:20px;height:min(74vh,640px);pointer-events:none}
+  #mpPanel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
 }
 .mpHead{display:flex;align-items:center;gap:11px;padding:13px 15px;
   background:linear-gradient(135deg,var(--navy2),var(--aqua));color:#fff;flex:0 0 auto}
@@ -5316,7 +5321,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v62.06';
+const APP_VER  = 'v62.07';
 const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -5615,14 +5620,18 @@ function apBackInit(){
     const ov=document.getElementById('loginOverlay');
     const atLogin=ov&&ov.classList.contains('open');
     if(!atLogin){
-      /* ٤) جوّه شاشة داخلية؟ ارجع للرئيسية */
+      /* ٤) v62.07: ارجع للصفحة السابقة فعلًا — مش قفزة للرئيسية.
+         لو المكدّس فضى بس إحنا مش على الرئيسية، نروح الرئيسية. */
       try{
         if(typeof AP_CLIENT!=='undefined'&&AP_CLIENT){
+          if(apTabBack(apClientGo)){ apBackPush(); return; }
           if(AP_CTAB!=='home'){ apClientGo('home'); apBackPush(); return; }
         }else if(typeof AP_PARTNER!=='undefined'&&AP_PARTNER){
+          if(apTabBack(apPartnerGo)){ apBackPush(); return; }
           if(AP_PTAB!=='home'){ apPartnerGo('home'); apBackPush(); return; }
-        }else if(CURRENT_USER&&currentScreen&&currentScreen!=='dashboard'){
-          nav('dashboard'); apBackPush(); return;
+        }else if(CURRENT_USER){
+          if(apNavBack()){ apBackPush(); return; }
+          if(currentScreen&&currentScreen!=='dashboard'){ nav('dashboard'); apBackPush(); return; }
         }
       }catch(e){}
     }
@@ -6632,6 +6641,7 @@ async function doLoginEmail(){
   toast('أهلًا '+u.name+' — تم تحميل أحدث نسخة من السحابة ✔','ok');
 }
 function logout(){
+  try{ apNavReset(); AP_TAB_NAV=[]; }catch(e){}     /* v62.07: مكدّس التنقّل يتفضّى مع الجلسة */
   try{ apToolsClose(); const _t=document.getElementById('apTTab'); if(_t) _t.classList.remove('on'); }catch(e){}
   try{ if(typeof window.apCloudLogout==='function') window.apCloudLogout(); }catch(e){}
   /* v61.16: الخروج من جلسة عميل يُعيد تحميل الصفحة حتى تعود بيانات النظام
@@ -6641,8 +6651,64 @@ function logout(){
     try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){} location.reload(); return; }
   showLogin();}
 let currentScreen='dashboard';
+/* =====================================================================
+   v62.07: مكدّس التنقّل
+   زرار الرجوع كان بيرجّع للرئيسية مهما كنت جاى منين، فلو فتحت ملف عميل
+   من قاعدة العملاء ودوست رجوع كنت تلاقى نفسك على الرئيسية وتبدأ من أول
+   وجديد. دلوقتى كل شاشة بتتسجّل قبل ما تسيبها، والرجوع بيمشى عكسى خطوة
+   خطوة. وبنسجّل المُعامل كمان (رقم العميل أو الوحدة) فبترجع لنفس الملف
+   اللى كنت فيه مش لرأس الشاشة. النوافذ فاضلة لها الأولوية: الرجوع بيقفل
+   المفتوح الأول قبل ما يتنقّل.
+   ===================================================================== */
+let AP_NAV=[];            /* [{id,arg}] — آخر واحد هو اللى قبل الحالى */
+let AP_ARG=null;          /* مُعامل الشاشة الحالية */
+let AP_NAV_BACK=false;    /* بنرجع دلوقتى؟ ماتسجّلش الخطوة */
+const AP_NAV_MAX=40;
+function apNavReset(){ AP_NAV=[]; AP_ARG=null; }
+function apNavPush(id,arg){
+  if(!id) return;
+  const last=AP_NAV[AP_NAV.length-1];
+  if(last&&last.id===id&&String(last.arg||'')===String(arg||'')) return;
+  AP_NAV.push({id:id,arg:(arg===undefined?null:arg)});
+  if(AP_NAV.length>AP_NAV_MAX) AP_NAV.shift();
+}
+/* بيرجع خطوة واحدة — وبيعدّى أى شاشة بقت مش مسموحة */
+function apNavBack(){
+  while(AP_NAV.length){
+    const prev=AP_NAV.pop();
+    if(!prev||!prev.id) continue;
+    try{ if(typeof allowed==='function'&&!allowed(prev.id)) continue; }catch(e){}
+    AP_NAV_BACK=true;
+    try{ nav(prev.id, prev.arg==null?undefined:prev.arg); }
+    catch(e){ AP_NAV_BACK=false; continue; }
+    AP_NAV_BACK=false;
+    return true;
+  }
+  return false;
+}
+/* نفس الفكرة لتبويبات العميل والشريك */
+let AP_TAB_NAV=[], AP_TAB_BACK=false;
+function apTabPush(t){
+  if(!t) return;
+  if(AP_TAB_NAV[AP_TAB_NAV.length-1]===t) return;
+  AP_TAB_NAV.push(t);
+  if(AP_TAB_NAV.length>AP_NAV_MAX) AP_TAB_NAV.shift();
+}
+function apTabBack(go){
+  const prev=AP_TAB_NAV.pop();
+  if(!prev) return false;
+  AP_TAB_BACK=true;
+  try{ go(prev); } finally{ AP_TAB_BACK=false; }
+  return true;
+}
 function nav(id,arg){
   if(!allowed(id)){toast('غير مصرح لك بفتح هذه البوابة 🔒','err');return;}
+  /* v62.07: سجّل اللى كنا فيه قبل ما نسيبه */
+  if(!AP_NAV_BACK && currentScreen &&
+     (currentScreen!==id || String(AP_ARG||'')!==String(arg||''))){
+    apNavPush(currentScreen, AP_ARG);
+  }
+  AP_ARG=(arg===undefined?null:arg);
   currentScreen=id;
   $$('.screen').forEach(s=>s.classList.toggle('active',s.id==='scr-'+id));
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===id));
@@ -7669,13 +7735,60 @@ function apPartnerOptionsHTML(sel){
    لو أيوه بيسألك تضيفها لحسابه ولا تعمل حساب جديد. الربط بيتم
    بالاسم والرقم القومى من بيانات التعاقد نفسها.
    ===================================================================== */
+/* v62.07: مقارنة أسامى متسامحة.
+   الرقم القومى بيخص إنسان واحد، فلو اتطابق على اسمين مختلفين تمامًا
+   يبقى واحد منهم مكتوب غلط — والنظام كان بيعرض يضمّهم فى حساب واحد.
+   لكن ماينفعش نقارن حرفيًا: نفس الشخص ممكن يتكتب اسمه بشرطة فى عقد
+   ومن غيرها فى التانى، أو بألف همزة ومن غيرها. فبنطبّع الاسم الأول
+   (تشكيل وعلامات وألف وياء وتاء مربوطة) وبعدين نقارن بالكلمات. */
+function apNameNorm(t){
+  return apNorm(String(t||'').replace(/[^\w\s\u0600-\u06FF]/g,' '));
+}
+function apNameWords(t){
+  return apNameNorm(t).split(' ').filter(function(w){ return w.length>1; });
+}
+function apNameClose(x,y){
+  const A=apNameNorm(x), B=apNameNorm(y);
+  if(!A||!B) return false;
+  if(A===B) return true;                       /* مطابق بعد التطبيع */
+  const wa=apNameWords(x), wb=apNameWords(y);
+  if(!wa.length||!wb.length) return false;
+  const sb={}; wb.forEach(function(w){ sb[w]=1; });
+  let inter=0; const seen={};
+  wa.forEach(function(w){ if(sb[w]&&!seen[w]){ seen[w]=1; inter++; } });
+  const uni={}; wa.concat(wb).forEach(function(w){ uni[w]=1; });
+  const uniN=Object.keys(uni).length||1;
+  if(inter/uniN>=0.55) return true;            /* أغلب الكلمات مشتركة */
+  /* اسم مختصر جوّه اسم أطول: «محمد رمضان» و«محمد رمضان مصطفى علي بديوي» */
+  const shortW=(wa.length<=wb.length?wa:wb);
+  if(inter>=2&&inter===new Set(shortW).size) return true;
+  return false;
+}
+/* الرقم القومى واحد بس الأسامى مختلفة تمامًا — غلطة إدخال مش نفس الشخص */
+function apNidClash(a,b){
+  const d=x=>String(x||'').replace(/\D/g,'');
+  if(!a||!b) return false;
+  const na=d(a.nid||a.nationalId), nb=d(b.nid||b.nationalId);
+  if(!na||!nb||na!==nb) return false;
+  return !apNameClose(a.name,b.name);
+}
 function apSameCustomer(a,b){
   const n=x=>String(x||'').replace(/\s+/g,' ').trim();
   const d=x=>String(x||'').replace(/\D/g,'');
   if(!a||!b) return false;
   const na=d(a.nid||a.nationalId), nb=d(b.nid||b.nationalId);
-  if(na&&nb) return na===nb;                 /* الرقم القومى أقوى دليل */
+  /* v62.07: الرقم القومى دليل قوى — بس مش لوحده. لازم الاسم يسانده. */
+  if(na&&nb) return na===nb && apNameClose(a.name,b.name);
   return !!n(a.name)&&n(a.name)===n(b.name); /* وإلا الاسم بالظبط */
+}
+/* بيدوّر على عقد تانى بنفس الرقم القومى واسم مختلف — للتحذير */
+function apNidClashFor(unitId){
+  const s=(DB.sales||[]).find(x=>x.unitId===unitId);
+  if(!s||!s.customer) return null;
+  const hit=(DB.sales||[]).find(function(x){
+    return x.unitId!==unitId && x.customer && apNidClash(s.customer,x.customer);
+  });
+  return hit||null;
 }
 /* بيرجّع حساب العميل اللى صاحب الوحدة دى عنده بالفعل — أو null */
 function apOwnerAccountFor(unitId){
@@ -7698,6 +7811,26 @@ function apNuUnitHint(){
   const box=$('#nuAttach'); if(!box) return;
   const id=(($('#nuUnit')&&$('#nuUnit').value)||'').trim();
   const own=id?apOwnerAccountFor(id):null;
+  /* v62.07: رقم قومى واحد على اسمين مختلفين = غلطة إدخال فى أحد العقدين.
+     مابنعرضش ضم، بنقول للمدير يراجع العقد — والقرار يفضل عنده. */
+  if(!own&&id){
+    const cl=apNidClashFor(id);
+    if(cl){
+      const me=((DB.sales||[]).find(x=>x.unitId===id)||{}).customer||{};
+      const cu=unitById(cl.unitId)||{};
+      box.style.display='';
+      box.innerHTML='<div class="nuAttIn" style="border-right:4px solid #d97706">'
+        +'⚠️ <b>الرقم القومى ده متسجّل على اسم تانى.</b><br>'
+        +esc(String(me.nid||''))+' مكتوب على <b>'+esc(me.name||'')+'</b> '
+        +'وكمان على <b>'+esc((cl.customer||{}).name||'')+'</b> فى '
+        +esc((cu.building||'')+'-'+(cu.unitNo||''))+'.<br>'
+        +'الرقم القومى بيخص شخص واحد — يعنى واحد من العقدين مكتوب فيه رقم غلط. '
+        +'راجع البطاقة وصحّحه من «ملف العميل ← تعديل البيانات».<br>'
+        +'<span class="gray-note">الرقم ده مش داخل فى أى حساب، فمفيش مبالغ متأثرة. '
+        +'وتقدر تكمّل إنشاء الحساب عادى دلوقتى.</span></div>';
+      AP_NU_ATTACH=''; return;
+    }
+  }
   if(!own){ box.style.display='none'; box.innerHTML=''; AP_NU_ATTACH=''; return; }
   const u=unitById(id)||{};
   const have=apUserUnits(own).map(function(x){ const uu=unitById(x)||{};
@@ -7814,29 +7947,36 @@ async function addUser(){
     if((DB.users||[]).some(u=>u.partner&&u.partnerId===cPartner)){toast('الشريك ده له حساب بالفعل','err');return;}
     perms=[];
   }
-  /* v64: لو فيه بريد والمدير متصل بالسحابة — يُنشأ حساب Firebase تلقائيًا */
+  /* v62.07: ترتيب الخطوات اتغيّر.
+     قبل كده كنا بننشئ حساب السحابة الأول وبعدين نتحقق من اسم المستخدم —
+     فلو التحقق فشل، الدالة بترجع والحساب فاضل موجود على Firebase من غير
+     مستخدم عندنا. وبعدها كل محاولة بنفس البريد بتقول «له حساب بالفعل»
+     من غير ما يبان سببها. دلوقتى كل تحقق محلى بيتعمل الأول، والسحابة
+     آخر خطوة — ولو حجز الاسم فشل بعد ما الحساب اتعمل، بنسجّل المستخدم
+     عندنا برضه ونقول للمدير يصلّح الفهرس، فمايفضلش حساب تايه أبدًا. */
+  const un=unameNorm(name);
+  const why=unameWhy(un);
+  if(why){ toast('اسم المستخدم: '+why,'err'); return; }
+  if((DB.users||[]).some(u=>unameNorm(u.uname||u.name||'')===un)){ toast('اسم المستخدم ده محجوز','err'); return; }
   const canCloud=mail&&(typeof window.apIsCloudAdmin==='function')&&window.apIsCloudAdmin();
+  if(canCloud&&pass.length<6){ toast('كلمة السر لازم ٦ أحرف على الأقل عشان حساب السحابة','err'); return; }
   if(canCloud){
-    if(pass.length<6){toast('كلمة السر لازم ٦ أحرف على الأقل عشان حساب السحابة','err');return;}
     try{
       await window.apCloudCreateUser(mail,pass);
       toast('تم إنشاء حساب السحابة ✔','ok');
     }catch(e){
       if(e&&e.code==='auth/email-already-in-use'){
-        toast('البريد ده له حساب على السحابة بالفعل — هيتربط بالمستخدم','ok');
+        toast('البريد ده له حساب على السحابة من قبل — هيتربط بالمستخدم ده','ok');
       }else{
         toast('تعذر إنشاء حساب السحابة: '+(e&&e.message||''),'err'); return;
       }
     }
   }
-  /* v61.35: الاسم واسم الدخول بقوا خانة واحدة — تُتحقَّق وتُحجز على الفهرس */
-  const un=unameNorm(name);
-  const why=unameWhy(un);
-  if(why){ toast('اسم المستخدم: '+why,'err'); return; }
-  if((DB.users||[]).some(u=>unameNorm(u.uname||u.name||'')===un)){ toast('اسم المستخدم ده محجوز','err'); return; }
   if(mail && typeof window.apUnameClaim==='function'){
     const r=await window.apUnameClaim(un,mail,'');
-    if(!r||!r.ok){ toast(r&&r.err?r.err:'تعذر حجز اسم المستخدم','err'); return; }
+    if(!r||!r.ok){
+      toast('الحساب اتعمل بس حجز اسم الدخول فشل — دوس «إصلاح الأسامى» فى الإعدادات','err');
+    }
   }
   const rec={id:uid(),name:un,uname:un,pass:pHash(pass),pPlain:pass,email:mail,admin:false,perms};
   if(isClient){ rec.client=true; rec.unitId=cUnit; rec.unitIds=[cUnit]; }   /* v61.99 */
@@ -8213,19 +8353,23 @@ async function apBulkAccRun(){
       if((DB.users||[]).some(u=>String(u.email||'').toLowerCase()===mail.toLowerCase())) throw new Error('البريد مستخدم');
       if(apUnitsWithAccount()[unitId]) throw new Error('الوحدة لها حساب');
       if(pw.length<6) throw new Error('كلمة السر قصيرة');
+      /* v62.07: فشل حجز الاسم مابقاش يرمى — الحساب بقى موجود على السحابة
+         فعلًا، فلو وقفنا هنا هيفضل تايه من غير مستخدم عندنا. بنكمّل
+         التسجيل محليًا ونعلّم الصف بتحذير عشان المدير يصلّح الفهرس. */
+      let claimWarn='';
       if(typeof window.apIsCloudAdmin==='function'&&window.apIsCloudAdmin()){
         try{ await window.apCloudCreateUser(mail,pw); }
         catch(e){ if(!(e&&e.code==='auth/email-already-in-use')) throw e; }
         if(typeof window.apUnameClaim==='function'){
           const r=await window.apUnameClaim(un,mail,'');
-          if(!r||!r.ok) throw new Error((r&&r.err)||'تعذر حجز الاسم');
+          if(!r||!r.ok) claimWarn=' (الاسم مااتحجزش — دوس «إصلاح الأسامى»)';
         }
       }
       DB.users.push({id:uid(),name:un,uname:un,pass:pHash(pw),pPlain:pw,email:mail,
                      admin:false,client:true,unitId:unitId,unitIds:[unitId],perms:['customerFile']});
       if(sale&&sale.customer&&!sale.customer.email) sale.customer.email=mail;
       save();
-      set('✔ اتعمل','pos');
+      set(claimWarn?('✔ اتعمل'+claimWarn):'✔ اتعمل', claimWarn?'gray-note':'pos');
       tr.dataset.done='1'; ok++;
     }catch(e){
       set('⛔ '+((e&&e.message)||'فشل'),'warn-red'); fail++;
@@ -11517,6 +11661,7 @@ function apPBack(){
   return '';
 }
 function apPartnerGo(tab){
+  if(!AP_TAB_BACK && AP_PTAB && AP_PTAB!==tab) apTabPush(AP_PTAB);   /* v62.07 */
   AP_PTAB=tab;
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===tab));
   apPartnerRender();
@@ -13281,6 +13426,7 @@ const AP_GUIDE={
   ['⚙️ الإعدادات','غيّر كلمة سرك واسم المستخدم، فعّل الدخول بالبصمة على موبايلك، واتحكم فى موسيقى الخلفية.'],
   ['🔐 الدخول بالبصمة','أول ما تفعّلها هيطلب كلمة سرك مرة واحدة ويحفظها مشفّرة على موبايلك ده وحده. بعدها بتلاقى زرار «دخول ببصمتك» فى شاشة الدخول. ولو غيّرت كلمة السر بتتحدّث لوحدها. وإلغاء البصمة بيمسح البيانات دى من جهازك فورًا.'],
   ['🆔 اسم المستخدم','تقدر تدخل التطبيق باسم المستخدم بدل البريد. حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة، وبيتكتب كابيتال. لو الاسم محجوز لحد تانى النظام هيقولك تختار غيره.'],
+  ['↩️ زرار الرجوع','بيرجّعك خطوة لورا بالترتيب اللى فتحت بيه — مش للرئيسية على طول. ولو فيه نافذة مفتوحة بيقفلها الأول. ولما توصل للرئيسية، دوسة تانية بتقفل التطبيق.'],
   ['🤖 Mr. Pearl','أيقونة طايرة بصورته بتفضل موجودة قدامك فى أى شاشة وبتتهز هزة خفيفة. دوسة واحدة عليها تفتح شاشته، ودوسة برّه تقفلها. وتقدر تمسكها وتسحبها لأى مكان يريحك، ومكانها بيتحفظ على موبايلك. دوس على السؤال اللى تحت وهو هيرد عليك بفيديو بيتكلم فيه بنفسه — ولما يخلص فيه زرار «↻ إعادة». دلوقتى عنده سؤال واحد، والباقى جاى.'],
  ]},
  partner:{t:'دليل الشريك',s:[
@@ -13359,6 +13505,10 @@ const AP_GUIDE={
   ['🎥 الردود بقت فيديو','مستر بيرل مابقاش بيكتب — بيرد بفيديو هو بيتكلم فيه بنفسه. الكتابة اتشالت خالص من الشات: مفيش رسالة ترحيب ومفيش ردود مكتوبة. أول ما تفتح الشات تلاقى وقفته مستنية فى النص، وأول ما تدوس سؤال الفيديو بياخد المساحة كلها ويشتغل، ولما يخلص بيظهر زرار «↻ إعادة». ولسه زى ما هو: مفيش أى اتصال بأى خدمة خارجية ومفيش أى بيانات بتطلع من التطبيق.'],
   ['❓ سؤال واحد دلوقتى','الأسئلة الستة اتقفلوا مؤقتًا وفضل «🤔 إنت مين؟» بس، لأنه هو اللى اتصوّرله فيديو. كل سؤال هيرجع يظهر أول ما يوصل فيديو إجابته — سطر واحد فى الكود وخلاص، والباقى مكتوب ومستنى جنبه. كده محدش بيدوس على سؤال ويلاقى رد فاضى.'],
   ['📦 الفيديو مش جوّه ملف النظام','كل فيديو ملف لوحده فى مجلد media جنب التطبيق، مش مدمج فى index.html — عشان ملف النظام مايكبرش ويبقى تقيل على كل فتحة. وبيتخزّن على الجهاز فى مخزن مستقل عن رقم النسخة، يعنى بيتحمّل مرة واحدة بس: بعد كده بيشتغل من غير نت، ومابيتحملش تانى مع كل تحديث. والتطبيق بيبدأ يجيبه بهدوء أول ما تفتح الشات، فالدوسة بتشغّل على طول من غير استنى.'],
+  ['🖱️ إصلاح: الدوس كان بيضيع فى ناحية من الشاشة','لحد v62.06 كانت شاشة Mr. Pearl وهى مقفولة بتتخفى بالشفافية بس على الكمبيوتر — فاضلة مكانها ومستقبلة الدوس. النتيجة مستطيل شفاف فى الناحية اليمين تحت بيبلع أى دوسة تقع جوّاه: ١٣٪ من شاشة 1920 و٢١٪ من شاشة 1366. ده كان بيخلّى زراير وخانات تبان شغّالة وهى مش بتستجيب، والمؤشر مايديش علامة الكتابة فوق الخانة. اتصلّح: الشاشة المقفولة بقت شفافة للدوس تمامًا ومابترجعش تستقبله غير وهى مفتوحة. على الموبايل ماكانتش بتحصل أصلًا لأن الشاشة بتتزحلق برّه حدود الشاشة.'],
+  ['⚠️ رقم قومى على اسمين مختلفين','الرقم القومى بيخص إنسان واحد، فالنظام بيعتبره أقوى دليل على إن ده نفس العميل. لكن لو اتكتب نفس الرقم بالغلط على عقدين لعميلين مختلفين، كان بيفكرهم شخص واحد ويعرض يضمّ وحدتهم فى حساب واحد. دلوقتى بيقارن الاسم كمان: لو الأسامى مختلفة تمامًا مايعرضش الضم، ويقوللك إن الرقم ده متسجّل على اسم تانى وفين، عشان تراجع العقد وتصحّحه. والمقارنة متسامحة — بتشيل الشرطة والسلاش والتشكيل وتوحّد الألف والياء والتاء المربوطة، وبتبص على الكلمات المشتركة. يعنى نفس الشخص لو اسمه مكتوب بفرق بسيط فى عقدين، الضمّ هيفضل شغّال معاه عادى. والرقم القومى نفسه مش داخل فى أى عملية حسابية — عرض وبحث بس — فغلطة فيه مابتأثرش على ولا جنيه.'],
+  ['☁️ مافيش حسابات تايهة على السحابة','كان ترتيب إنشاء المستخدم بينشئ حساب Firebase الأول وبعدين يتحقق من اسم الدخول. فلو التحقق فشل، الدالة بترجع والحساب يفضل موجود على السحابة من غير مستخدم عندك — وبعدها كل محاولة بنفس البريد تقول «البريد ده له حساب بالفعل» من غير ما يبان السبب. دلوقتى كل تحقق محلى بيتعمل الأول والسحابة آخر خطوة، ولو حجز اسم الدخول فشل بعد ما الحساب اتعمل، المستخدم بيتسجّل عندك برضه ويطلعلك تنبيه تدوس «إصلاح الأسامى» فى الإعدادات.'],
+  ['↩️ الرجوع بيرجع خطوة','كان زرار الرجوع بيرجّعك للرئيسية مهما كنت جاى منين. دلوقتى بيمشى عكس خطواتك: كل شاشة بتتسجّل قبل ما تسيبها، والرجوع بيرجّعك واحدة واحدة لحد الرئيسية، وهناك بس تشتغل «دوس رجوع تانى للخروج». وبيحفظ معاه العميل أو الوحدة اللى كنت فاتحها، فبترجع لنفس الملف مش لرأس الشاشة. والنوافذ لها الأولوية زى ما هى: الرجوع بيقفل المفتوح الأول قبل ما يتنقّل. وشغّال عند المدير والعميل والشريك.'],
   ['🚫 ليه مفيش أرقام فى كلامه','لأن الخدمات دى لسه ماشتغلتش، والإعلان نفسه بيقول «قريبًا بعد بدء السكن وتفعيل الخدمات». فهو بيشرح إيه اللى هيقدر يعمله ومتى، من غير ما يدّى رقم إشغال حمام سباحة أو ميعاد فيلم مش موجود. لو العميل شاف رقم واكتشف إنه متخيّل، هيفقد ثقته فى كل الأرقام اللى فى التطبيق — وأرقام أقساطه دى حقيقية ومحسوبة.'],
   ['📤 زرار مشاركة PDF الطاير اتشال','الزرار اللى كان تحت على الشمال اتشال عشان يفضّى المكان لمستر بيرل. وظيفة الطباعة نفسها لسه موجودة فى الكود كلها — أى شاشة تحتاج زرار طباعة، قوللى وأحطه فى مكانه جوّه الشاشة.'],
   ['⬜ الصفحة البيضا ساعة تثبيت الأيقونة','كانت بتحصل لما تنزّل التطبيق لحد وتثبّت الأيقونة: التطبيق مايفتحش، وترجع للمتصفح تلاقيه وقع هو كمان، وبعد كام ريفريش يرجع. السبب إنى فى v61.97 خلّيت الملف الجاى من السيرفر يتقرا من تلات جهات فى نفس الوقت — المتصفح بيعرضه، وواحدة بتخزّنه، وواحدة بتفحصه. ولملف ٣.٥ ميجا المتصفح بيضطر يمسك الفرق بينهم فى الذاكرة، وساعة التثبيت الذاكرة مضغوطة أصلًا، فالمجرى الماشى للمتصفح بيقع فى نصّه. دلوقتى بقت قراءة واحدة: المتصفح بياخد الملف، واحنا بنخزّنه، وبنفحصه من المخزن بعد كده مش من نفس المجرى.'],
@@ -16204,6 +16354,7 @@ function apClientHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls){
   return apClientFileHTML(s,u,pos,col,due,depPaid,depSt,depCls,posCls);
 }
 function apClientGo(tab){
+  if(!AP_TAB_BACK && AP_CTAB && AP_CTAB!==tab) apTabPush(AP_CTAB);   /* v62.07 */
   if(AP_CTAB!==tab) AP_SVCSUB=null;
   AP_CTAB=tab;
   $$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.s===tab));
