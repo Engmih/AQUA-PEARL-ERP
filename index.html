@@ -1119,13 +1119,13 @@ body.pvOn #mpFab{display:none!important}           /* v62.01 */
   opacity:0;pointer-events:none;transition:opacity .2s}
 #mpBack.open{opacity:1;pointer-events:auto}
 #mpPanel{position:fixed;z-index:93;left:50%;bottom:0;transform:translate(-50%,105%);
-  width:min(420px,100%);max-height:min(78vh,620px);display:flex;flex-direction:column;
+  width:min(420px,100%);height:min(78vh,620px);display:flex;flex-direction:column;
   background:var(--card,#fff);border-radius:20px 20px 0 0;overflow:hidden;
   box-shadow:0 -10px 40px rgba(8,24,40,.3);transition:transform .26s cubic-bezier(.3,.9,.3,1)}
 #mpPanel.open{transform:translate(-50%,0)}
 @media(min-width:760px){
   #mpPanel{left:auto;right:26px;bottom:26px;transform:translateY(16px) scale(.97);opacity:0;
-    border-radius:20px;max-height:min(74vh,640px)}
+    border-radius:20px;height:min(74vh,640px)}
   #mpPanel.open{transform:translateY(0) scale(1);opacity:1}
 }
 .mpHead{display:flex;align-items:center;gap:11px;padding:13px 15px;
@@ -1140,8 +1140,36 @@ body.pvOn #mpFab{display:none!important}           /* v62.01 */
 .mpX{width:32px;height:32px;border:0;border-radius:50%;cursor:pointer;flex:0 0 auto;
   background:rgba(255,255,255,.18);color:#fff;font-size:15px;font-family:inherit}
 .mpX:hover{background:rgba(255,255,255,.3)}
-.mpBody{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:11px;
-  background:var(--bg,#f4f8fb);-webkit-overflow-scrolling:touch}
+/* v62.06: جسم الشات بقى مسرح فيديو — الردود كلها بالفيديو، مفيش كتابة.
+   خلفية التدرّج هنا هى نفسها خلفية الفيديو بالظبط، فحوافه بتندمج مع
+   الشاشة ومحدش بيحسّ إن فيه مستطيل مركّب جوّه الشات. */
+.mpBody{flex:1;min-height:0;position:relative;overflow:hidden;display:flex;
+  align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#f7fbfd 0%,#e9f4f9 55%,#d2e7f1 100%)}
+.mpIdle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  max-width:72%;max-height:86%;object-fit:contain;
+  transition:opacity .3s ease;pointer-events:none}
+.mpIdle.off{opacity:0}
+.mpVid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;
+  opacity:0;transition:opacity .35s ease;background:transparent;z-index:2}
+.mpVid.on{opacity:1}
+.mpLoad{position:absolute;inset:0;z-index:3;display:none;
+  align-items:center;justify-content:center;background:rgba(243,249,252,.72)}
+.mpLoad.on{display:flex}
+.mpSpin{width:38px;height:38px;border-radius:50%;
+  border:3px solid #cfe3ee;border-top-color:var(--aqua);animation:mpSpin .8s linear infinite}
+@keyframes mpSpin{to{transform:rotate(360deg)}}
+.mpReplay{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:4;
+  display:none;border:0;border-radius:999px;cursor:pointer;padding:9px 18px;
+  font:inherit;font-size:13px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--navy2),var(--aqua));
+  box-shadow:0 4px 14px rgba(11,42,74,.3)}
+.mpReplay.on{display:block}
+.mpNote{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:4;
+  display:none;max-width:88%;text-align:center;padding:9px 14px;border-radius:12px;
+  background:rgba(255,255,255,.95);border:1px solid var(--line);
+  color:var(--navy2);font-size:12.5px;line-height:1.7}
+.mpNote.on{display:block}
 .mpMsg{max-width:86%;padding:10px 13px;border-radius:15px;font-size:14px;line-height:1.85;
   white-space:pre-wrap;word-break:break-word;animation:mpIn .22s ease}
 @keyframes mpIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
@@ -1155,6 +1183,7 @@ body.pvOn #mpFab{display:none!important}           /* v62.01 */
 .mpQ{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:#eef4f8;
   color:var(--navy2);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .mpQ:hover{background:var(--aqua);color:#fff;border-color:transparent}
+.mpQ.on{background:var(--aqua);color:#fff;border-color:transparent}
 
 
 /* ===== Toast ===== */
@@ -2524,7 +2553,13 @@ if (!AP_NOSW && 'serviceWorker' in navigator && location.protocol.startsWith('ht
     <div class="mpHeadTx"><b>Mr. Pearl</b><span>مساعدك الذكى فى Aqua Pearl City</span></div>
     <button type="button" class="mpX" onclick="mpClose()" aria-label="إغلاق">✕</button>
   </div>
-  <div class="mpBody" id="mpBody"></div>
+  <div class="mpBody" id="mpBody">
+    <img class="mpIdle" id="mpIdle" alt="Mr. Pearl">
+    <video class="mpVid" id="mpVid" playsinline webkit-playsinline preload="none"></video>
+    <div class="mpLoad" id="mpLoad"><div class="mpSpin"></div></div>
+    <button type="button" class="mpReplay" id="mpReplay" onclick="mpReplay()">↻ إعادة</button>
+    <div class="mpNote" id="mpNote"></div>
+  </div>
   <div class="mpQs" id="mpQs"></div>
 </div>
 
@@ -5281,7 +5316,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v62.05';
+const APP_VER  = 'v62.06';
 const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -13245,7 +13280,8 @@ const AP_GUIDE={
   ['🔔 الجرس','بيوريك الأقساط المتأخرة وأقرب قسط مستحق وأى دفعة جديدة اتسجّلت لك.'],
   ['⚙️ الإعدادات','غيّر كلمة سرك واسم المستخدم، فعّل الدخول بالبصمة على موبايلك، واتحكم فى موسيقى الخلفية.'],
   ['🔐 الدخول بالبصمة','أول ما تفعّلها هيطلب كلمة سرك مرة واحدة ويحفظها مشفّرة على موبايلك ده وحده. بعدها بتلاقى زرار «دخول ببصمتك» فى شاشة الدخول. ولو غيّرت كلمة السر بتتحدّث لوحدها. وإلغاء البصمة بيمسح البيانات دى من جهازك فورًا.'],
-  ['🆔 اسم المستخدم','تقدر تدخل التطبيق باسم المستخدم بدل البريد. حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة، وبيتكتب كابيتال. لو الاسم محجوز لحد تانى النظام هيقولك تختار غيره.']
+  ['🆔 اسم المستخدم','تقدر تدخل التطبيق باسم المستخدم بدل البريد. حروف إنجليزى وأرقام و _ و - فقط، من ٣ لـ٢٠ خانة، وبيتكتب كابيتال. لو الاسم محجوز لحد تانى النظام هيقولك تختار غيره.'],
+  ['🤖 Mr. Pearl','أيقونة طايرة بصورته بتفضل موجودة قدامك فى أى شاشة وبتتهز هزة خفيفة. دوسة واحدة عليها تفتح شاشته، ودوسة برّه تقفلها. وتقدر تمسكها وتسحبها لأى مكان يريحك، ومكانها بيتحفظ على موبايلك. دوس على السؤال اللى تحت وهو هيرد عليك بفيديو بيتكلم فيه بنفسه — ولما يخلص فيه زرار «↻ إعادة». دلوقتى عنده سؤال واحد، والباقى جاى.'],
  ]},
  partner:{t:'دليل الشريك',s:[
   ['🧰 أدوات وألعاب','على يمين الشاشة سهم صغير بيفتح درج «Aqua Pearl Smart Tools»: آلة حاسبة، وأذكار فى ٦ أقسام مكتوب تحت كل ذِكر مصدره ورقمه، ومسبحة بعدّاد بيتحفظ، وحاسبة تشطيب تقديرية بباقات المشروع، وسبع ألعاب — سودوكو وإكس أو والذاكرة وخمّن الرقم وترتيب الأرقام ومعلومات عامة وكلمات متقاطعة عربى. كله بيشتغل من غير إنترنت وبيحفظ تقدّمك على جهازك، ومعزول تمامًا عن حسابك ومافيهوش أى بيانات. الأذكار والمسبحة بيختفوا لوحدهم لو حسابك مختار التقويم القبطى — نفس قاعدة الأذان. والدرج بيفتح ويقفل من نفس السهم: دوسة تفتح ودوسة تقفل، أو سحبة على السهم نفسه.'],
@@ -13320,8 +13356,10 @@ const AP_GUIDE={
   ['🌓 الموبايل اللى على الوضع الداكن','الإجابات كانت بتبان فاضية على الموبايل وشغّالة على الكمبيوتر. السبب إنى كنت ضايف قواعد ألوان للوضع الداكن — والتطبيق كله مصمَّم فاتح بس، فالقواعد دى كانت بتخلّى الكتابة بيضا والخلفية فاضلة فاتحة، يعنى أبيض على أبيض. اتشالت، والتباين بقى 11:1 فى الوضعين. ودى كانت هتأثّر كمان على شريط وحدات العميل وشارات سجل الاستخدام.'],
   ['🤖 مستر بيرل','أيقونة طايرة بصورة Mr. Pearl بتظهر لكل الناس — عملاء وشركاء وموظفين ومدير — وفى كل الشاشات. دوسة عليها تفتح شات، ودوسة برّه تقفله (وزرار Escape على الكمبيوتر). وبتتهز هزة خفيفة كل كام ثانية عشان تلفت النظر، والهزة بتقف وإنت فاتح الشات عشان ماتلخبطش.'],
   ['✋ بتتسحب وتحطها اللى إنت عايزه','مسك الأيقونة وسحبها بالإصبع أو بالماوس بيحرّكها لأى مكان فى الشاشة، ومكانها بيتحفظ على الجهاز — فكل واحد بيحطها مكان ما يريحه ومابيعدّهاش كل مرة. ومينفعش ترميها برّه الشاشة، بترجع لحد الحافة لوحدها. ولو لفّيت الموبايل، بتتظبط مع المقاس الجديد. والسحبة القصيرة بتتحسب دوسة، فمفيش فتح بالغلط وإنت بتحرّكها.'],
-  ['💬 الإجابات دلوقتى مسجّلة','مستر بيرل دلوقتى بيجاوب من إجابات مكتوبة فى التطبيق نفسه — مفيش أى اتصال بأى خدمة خارجية، ومفيش أى بيانات بتتبعت لأى حد. الأسئلة الجاهزة هى اللى فى الإعلان: حمامات السباحة، السينما، المواصلات، الاستهلاكات، المول والعروض، وتعريف بنفسه.'],
-  ['🚫 ليه مفيش أرقام فى إجاباته','لأن الخدمات دى لسه ماشتغلتش، والإعلان نفسه بيقول «قريبًا بعد بدء السكن وتفعيل الخدمات». فالإجابات بتشرح إيه اللى هيقدر يعمله ومتى، من غير ما تدّى رقم إشغال حمام سباحة أو ميعاد فيلم مش موجود. لو العميل شاف رقم واكتشف إنه متخيّل، هيفقد ثقته فى كل الأرقام اللى فى التطبيق — وأرقام أقساطه دى حقيقية ومحسوبة.'],
+  ['🎥 الردود بقت فيديو','مستر بيرل مابقاش بيكتب — بيرد بفيديو هو بيتكلم فيه بنفسه. الكتابة اتشالت خالص من الشات: مفيش رسالة ترحيب ومفيش ردود مكتوبة. أول ما تفتح الشات تلاقى وقفته مستنية فى النص، وأول ما تدوس سؤال الفيديو بياخد المساحة كلها ويشتغل، ولما يخلص بيظهر زرار «↻ إعادة». ولسه زى ما هو: مفيش أى اتصال بأى خدمة خارجية ومفيش أى بيانات بتطلع من التطبيق.'],
+  ['❓ سؤال واحد دلوقتى','الأسئلة الستة اتقفلوا مؤقتًا وفضل «🤔 إنت مين؟» بس، لأنه هو اللى اتصوّرله فيديو. كل سؤال هيرجع يظهر أول ما يوصل فيديو إجابته — سطر واحد فى الكود وخلاص، والباقى مكتوب ومستنى جنبه. كده محدش بيدوس على سؤال ويلاقى رد فاضى.'],
+  ['📦 الفيديو مش جوّه ملف النظام','كل فيديو ملف لوحده فى مجلد media جنب التطبيق، مش مدمج فى index.html — عشان ملف النظام مايكبرش ويبقى تقيل على كل فتحة. وبيتخزّن على الجهاز فى مخزن مستقل عن رقم النسخة، يعنى بيتحمّل مرة واحدة بس: بعد كده بيشتغل من غير نت، ومابيتحملش تانى مع كل تحديث. والتطبيق بيبدأ يجيبه بهدوء أول ما تفتح الشات، فالدوسة بتشغّل على طول من غير استنى.'],
+  ['🚫 ليه مفيش أرقام فى كلامه','لأن الخدمات دى لسه ماشتغلتش، والإعلان نفسه بيقول «قريبًا بعد بدء السكن وتفعيل الخدمات». فهو بيشرح إيه اللى هيقدر يعمله ومتى، من غير ما يدّى رقم إشغال حمام سباحة أو ميعاد فيلم مش موجود. لو العميل شاف رقم واكتشف إنه متخيّل، هيفقد ثقته فى كل الأرقام اللى فى التطبيق — وأرقام أقساطه دى حقيقية ومحسوبة.'],
   ['📤 زرار مشاركة PDF الطاير اتشال','الزرار اللى كان تحت على الشمال اتشال عشان يفضّى المكان لمستر بيرل. وظيفة الطباعة نفسها لسه موجودة فى الكود كلها — أى شاشة تحتاج زرار طباعة، قوللى وأحطه فى مكانه جوّه الشاشة.'],
   ['⬜ الصفحة البيضا ساعة تثبيت الأيقونة','كانت بتحصل لما تنزّل التطبيق لحد وتثبّت الأيقونة: التطبيق مايفتحش، وترجع للمتصفح تلاقيه وقع هو كمان، وبعد كام ريفريش يرجع. السبب إنى فى v61.97 خلّيت الملف الجاى من السيرفر يتقرا من تلات جهات فى نفس الوقت — المتصفح بيعرضه، وواحدة بتخزّنه، وواحدة بتفحصه. ولملف ٣.٥ ميجا المتصفح بيضطر يمسك الفرق بينهم فى الذاكرة، وساعة التثبيت الذاكرة مضغوطة أصلًا، فالمجرى الماشى للمتصفح بيقع فى نصّه. دلوقتى بقت قراءة واحدة: المتصفح بياخد الملف، واحنا بنخزّنه، وبنفحصه من المخزن بعد كده مش من نفس المجرى.'],
   ['🛟 شبكة أمان للمستند','لو حصل أى سقوط فى نظام التخزين لأى سبب، بقى يتمسك ويروح للشبكة مباشرة، ولو هى كمان فشلت بيطلّع النسخة المحفوظة، ولو مفيش بيطلّع شاشتنا بزرار إعادة. صفحة المتصفح البيضا مش هتوصل للمستخدم تانى مهما حصل.'],
@@ -14358,21 +14396,27 @@ const MP_POSE='data:image/webp;base64,UklGRrZVAABXRUJQVlA4WAoAAAAQAAAAEQEAKwEAQU
 let MP_OPEN=false;
 
 /* ——— الأسئلة والإجابات المسجّلة ——— */
+/* ===================================================================
+   v62.06 — ردود مستر بيرل بقت فيديو
+   كل سؤال ليه ملف فيديو واحد جنب التطبيق فى مجلد media/. مفيش ردود
+   مكتوبة خالص. الأسئلة بترجع واحد واحد مع فيديو كل واحد — دلوقتى
+   «إنت مين؟» بس، والباقى تحت مستنى فيديوهاته.
+   =================================================================== */
+const MP_VDIR  = './media/';
+const MP_VCACHE= 'aqua-pearl-video';   /* مخزن مستقل عن رقم النسخة */
+let   MP_VURL  = null;                 /* رابط الـ blob الحالى عشان نفكّه */
+let   MP_VKEY  = '';
+let   MP_PRE   = false;
+
 const MP_QA=[
- ['🏊 حمامات السباحة',
-  'حمامات السباحة هتبقى شغّالة مع بدء السكن إن شاء الله.\n\nوساعتها هقدر أقولك على طول:\n• الحمام مفتوح دلوقتى ولا لأ\n• كام واحد موجود فيه ومدى الزحمة\n• مواعيد التنظيف والصيانة\n\nدلوقتى لسه الخدمة ماشتغلتش، فمش عايز أديك رقم مش حقيقى.'],
- ['🎬 السينما',
-  'سينما Aqua Pearl هتفتح مع بدء السكن.\n\nوهقدر وقتها أقولك:\n• الأفلام المتاحة ومواعيد العروض\n• الأماكن الفاضية فى كل عرض\n• الحجز من التطبيق على طول\n\nاستنانى شوية — أول ما تشتغل هتلاقى كل ده هنا.'],
- ['🚌 المواصلات',
-  'باصات المشروع هتشتغل بمواعيد منتظمة مع بدء السكن.\n\nوهقدر أقولك:\n• ميعاد أقرب باص وخط سيره\n• المحطات ومواعيدها\n• أى تغيير أو تعطيل أول بأول\n\nلو محتاج تعرف حاجة عن المواصلات دلوقتى، كلّم إدارة المشروع.'],
- ['💡 الاستهلاكات',
-  'بعد بدء السكن هتقدر تشوف من هنا:\n• فاتورة المياه والكهرباء والخدمات\n• المستحق والمتأخر على وحدتك\n• تسدد من التطبيق مباشرة\n\nأما أقساط وحدتك دلوقتى، دى موجودة فعلًا فى «أقساطى» و«إيصالاتى» من القايمة — وهى أرقام حقيقية محدّثة.'],
- ['🛍️ المول والعروض',
-  'مول Aqua Pearl ومحلاته هيفتحوا مع بدء السكن.\n\nوهقدر أقولك:\n• أحدث العروض والخصومات جوّه المشروع\n• المحلات المفتوحة دلوقتى ومواعيدها\n• عروض خاصة لسكان Aqua Pearl\n\nخليك متابع — أول ما يفتح هتعرف منى.'],
- ['🤔 إنت مين؟',
-  'أنا Mr. Pearl — مساعدك الذكى فى Aqua Pearl City من Trust Group.\n\nمهمتى إنى أجاوبك على أى حاجة تخص المشروع وخدماته، من غير ما تتصل بحد ولا تستنى رد.\n\nدلوقتى أنا لسه فى بدايتى وبجاوب على أسئلة محدودة. وبعد بدء السكن هبقى أعرف أرد على أى سؤال وأجيبلك معلومتك لحظة بلحظة.']
+ ['🤔 إنت مين؟','mrpearl-who.mp4']
+ /* الباقى بيترجّع سطر سطر أول ما يوصل فيديو كل واحد:
+    ,['🏊 حمامات السباحة','mrpearl-pools.mp4']
+    ,['🎬 السينما',        'mrpearl-cinema.mp4']
+    ,['🚌 المواصلات',      'mrpearl-bus.mp4']
+    ,['💡 الاستهلاكات',    'mrpearl-bills.mp4']
+    ,['🛍️ المول والعروض',  'mrpearl-mall.mp4']  */
 ];
-const MP_FALLBACK='السؤال ده لسه مش فى قدراتى دلوقتى 🙂\n\nأنا فى بدايتى وبجاوب على الأسئلة اللى تحت. وبعد بدء السكن وتفعيل الخدمات هبقى أقدر أرد على أى سؤال.\n\nولو محتاج حاجة مستعجلة، تقدر تبعت من «شكاوى واقتراحات» فى القايمة وهيوصل للإدارة على طول.';
 
 function mpName(){
   try{
@@ -14482,20 +14526,98 @@ function mpSync(){
   b.style.display=on?'block':'none';
   if(on) mpRestore();
 }
-function mpAdd(txt,who){
-  const body=document.getElementById('mpBody'); if(!body) return;
-  const d=document.createElement('div');
-  d.className='mpMsg '+(who||'bot'); d.textContent=txt;
-  body.appendChild(d);
-  body.scrollTop=body.scrollHeight;
+/* ---------- v62.06: تشغيل الفيديو ----------
+   الفيديو بيتخزّن كـ blob فى مخزن مستقل عن رقم النسخة، فبعد أول مرة
+   بيشتغل من غير نت ومابيتحملش تانى مع كل تحديث. ورابط الـ blob بيدّى
+   المتصفح الملف كامل فى الذاكرة، فمفيش مشاكل طلبات Range على الآيفون. */
+function mpEls(){
+  return { idle:document.getElementById('mpIdle'),
+           vid :document.getElementById('mpVid'),
+           load:document.getElementById('mpLoad'),
+           rep :document.getElementById('mpReplay'),
+           note:document.getElementById('mpNote') };
+}
+function mpSay(msg){
+  const n=document.getElementById('mpNote'); if(!n) return;
+  n.textContent=msg||''; n.classList.toggle('on',!!msg);
+}
+async function mpVideoSrc(name){
+  const key=MP_VDIR+name;
+  try{
+    const c=await caches.open(MP_VCACHE);
+    let r=await c.match(key);
+    if(!r){
+      const n=await fetch(key,{cache:'no-cache'});
+      if(n&&n.ok){ try{ await c.put(key,n.clone()); }catch(e){} r=n; }
+    }
+    if(r){ const b=await r.blob(); if(b&&b.size>20000) return URL.createObjectURL(b); }
+  }catch(e){}
+  return key;                       /* آخر حل: الرابط المباشر من الشبكة */
+}
+/* بنجيب الفيديو مقدّمًا أول ما الشات يتفتح، فالدوسة على السؤال بتشغّل
+   على طول من غير انتظار — ودى كمان بتخلّى play() جوّه دوسة المستخدم
+   نفسها، وهو شرط سفارى عشان يسمح بالصوت. */
+function mpPrefetch(){
+  if(MP_PRE) return; MP_PRE=true;
+  const qa=MP_QA[0]; if(!qa) return;
+  try{ const c=navigator.connection;
+       if(c&&(c.saveData||/(^|-)2g$/.test(c.effectiveType||''))) return; }catch(e){}
+  (async function(){
+    const src=await mpVideoSrc(qa[1]);
+    const v=document.getElementById('mpVid');
+    if(v&&!v.getAttribute('src')&&src){
+      if(src.indexOf('blob:')===0) MP_VURL=src;
+      v.setAttribute('src',src); MP_VKEY=qa[1];
+    }
+  })();
 }
 function mpAsk(i){
   const qa=MP_QA[i]; if(!qa) return;
-  mpAdd(qa[0],'me');
-  const body=document.getElementById('mpBody');
-  const t=document.createElement('div'); t.className='mpMsg bot'; t.textContent='…';
-  body.appendChild(t); body.scrollTop=body.scrollHeight;
-  setTimeout(function(){ t.textContent=qa[1]; body.scrollTop=body.scrollHeight; },420);
+  const e=mpEls(); if(!e.vid) return;
+  mpSay(''); if(e.rep) e.rep.classList.remove('on');
+  const qs=document.getElementById('mpQs');
+  if(qs) Array.prototype.forEach.call(qs.children,function(b,j){ b.classList.toggle('on',j===i); });
+  /* لسه ماوصلش الفيديو المجهّز، أو سؤال تانى: الرابط المباشر فورًا */
+  if(MP_VKEY!==qa[1] || !e.vid.getAttribute('src')){
+    if(MP_VURL){ try{ URL.revokeObjectURL(MP_VURL); }catch(x){} MP_VURL=null; }
+    e.vid.setAttribute('src',MP_VDIR+qa[1]); MP_VKEY=qa[1];
+  }
+  if(e.load) e.load.classList.add('on');
+  try{ e.vid.currentTime=0; }catch(x){}
+  const p=e.vid.play();
+  if(p&&p.catch) p.catch(function(){
+    if(e.load) e.load.classList.remove('on');
+    mpSay('دوس على السؤال تانى عشان الفيديو يشتغل 🙂');
+  });
+}
+function mpReplay(){
+  const e=mpEls(); if(!e.vid) return;
+  mpSay(''); if(e.rep) e.rep.classList.remove('on');
+  try{ e.vid.currentTime=0; }catch(x){}
+  const p=e.vid.play(); if(p&&p.catch) p.catch(function(){});
+}
+function mpBindVid(){
+  const e=mpEls(); const v=e.vid; if(!v||v.__apBound) return; v.__apBound=true;
+  v.addEventListener('playing',function(){
+    if(e.load) e.load.classList.remove('on');
+    v.classList.add('on'); if(e.idle) e.idle.classList.add('off'); mpSay('');
+  });
+  v.addEventListener('waiting',function(){ if(e.load) e.load.classList.add('on'); });
+  /* دوسة على الفيديو نفسه = وقف/كمّل */
+  v.addEventListener('click',function(){
+    if(!v.getAttribute('src')) return;
+    if(v.paused){ const p=v.play(); if(p&&p.catch) p.catch(function(){}); } else v.pause();
+  });
+  v.addEventListener('ended',function(){
+    if(e.rep) e.rep.classList.add('on');
+    const qs=document.getElementById('mpQs');
+    if(qs) Array.prototype.forEach.call(qs.children,function(b){ b.classList.remove('on'); });
+  });
+  v.addEventListener('error',function(){
+    if(e.load) e.load.classList.remove('on');
+    v.classList.remove('on'); if(e.idle) e.idle.classList.remove('off');
+    mpSay('الفيديو محتاج اتصال بالنت أول مرة — بعدها هيشتغل من غير نت.');
+  });
 }
 function mpOpen(){
   const b=document.getElementById('mpBack'), p=document.getElementById('mpPanel'),
@@ -14504,12 +14626,11 @@ function mpOpen(){
   if(!b||!p) return;
   MP_OPEN=true;
   if(f) f.classList.add('quiet');
-  if(body&&!body.childElementCount){
-    const img=document.createElement('img');
-    img.className='mpHero'; img.alt='Mr. Pearl'; img.src=MP_POSE;
-    body.appendChild(img);
-    mpAdd('أهلًا بيك'+mpName()+' 👋\n\nأنا Mr. Pearl — مساعدك الذكى فى Aqua Pearl City.\nاسألنى عن أى حاجة فى المشروع، أو دوس على سؤال من اللى تحت.');
-  }
+  /* v62.06: مفيش رسالة ترحيب ولا أى كتابة — وقفة مستر بيرل هى اللى
+     مستنية فى المسرح لحد ما تدوس سؤال، وساعتها الفيديو بياخد المكان. */
+  const idle=document.getElementById('mpIdle');
+  if(idle&&!idle.getAttribute('src')) idle.src=MP_POSE;
+  mpBindVid();
   if(qs&&!qs.childElementCount){
     MP_QA.forEach(function(q,i){
       const btn=document.createElement('button');
@@ -14518,6 +14639,7 @@ function mpOpen(){
       qs.appendChild(btn);
     });
   }
+  mpPrefetch();
   b.classList.add('open'); p.classList.add('open');
   try{ localStorage.setItem(MP_SEEN,'1'); }catch(e){}
 }
@@ -14528,6 +14650,8 @@ function mpClose(){
   if(b) b.classList.remove('open');
   if(p) p.classList.remove('open');
   if(f) f.classList.remove('quiet');
+  /* v62.06: الفيديو بيقف مع قفل الشات — عشان ماحدش يسمع صوت من ورا شاشة مقفولة */
+  try{ const v=document.getElementById('mpVid'); if(v) v.pause(); }catch(e){}
 }
 function mpToggle(){ MP_OPEN?mpClose():mpOpen(); }
 document.addEventListener('DOMContentLoaded',function(){

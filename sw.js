@@ -38,7 +38,7 @@
    غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
    أى تدخل.
    ===================================================================== */
-const VER   = 'v62.05';
+const VER   = 'v62.06';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
@@ -63,6 +63,9 @@ const AUDIO = 'aqua-pearl-audio';
    فالأداة اللى فتحتها مرة بتفضل شغالة أوفلاين، وتحديث النظام
    مابيضيّعش تقدّمك المحفوظ لأنه فى localStorage مش فى المخزن. */
 const TOOLS = 'aqua-pearl-tools';
+/* v62.06: فيديوهات مستر بيرل فى مخزن ثابت مستقل عن رقم النسخة — زى الصوت
+   والمخططات بالظبط. فيديو اتحمّل مرة مابيتحملش تانى مع كل تحديث. */
+const VIDEO = 'aqua-pearl-video';
 
 /* ملفات صغيرة تُحمَّل مسبقًا. الفيديو والموسيقى والمخططات غير موجودة هنا
    عمدًا: حجمها كبير ولا يحتاجها كل مستخدم فورًا، ومعالج fetch يخزّنها أول
@@ -498,7 +501,8 @@ self.addEventListener('fetch', e => {
   }
 
   const bucket = /plans\.js$/.test(path) ? PLANS
-               : (/\.(mp3|m4a|ogg|wav|aac)$/i.test(path) ? AUDIO : CACHE);
+               : (/\.(mp3|m4a|ogg|wav|aac)$/i.test(path) ? AUDIO
+               : (/\.(mp4|webm|m4v|mov)$/i.test(path) ? VIDEO : CACHE));
 
   // باقى الملفات: المخزّن أولًا — ولا ترجع أبدًا قيمة فارغة
   e.respondWith((async () => {
