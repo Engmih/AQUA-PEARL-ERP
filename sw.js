@@ -38,7 +38,7 @@
    غيرها — فالأجهزة اللى فيها ملف ناقص دلوقتى بتصلّح نفسها من غير
    أى تدخل.
    ===================================================================== */
-const VER   = 'v62.09';
+const VER   = 'v62.10';
 const CACHE = 'aqua-pearl-erp-' + VER;   /* الأيقونات والوسائط — يتغيّر مع النسخة */
 const DOC   = 'aqua-pearl-doc';          /* ملف النظام — ثابت لا يُمسح أبدًا */
 const PLANS = 'aqua-pearl-plans';        /* المخططات (٩ ميجا) — ثابت كذلك */
@@ -503,6 +503,22 @@ self.addEventListener('fetch', e => {
   const bucket = /plans\.js$/.test(path) ? PLANS
                : (/\.(mp3|m4a|ogg|wav|aac)$/i.test(path) ? AUDIO
                : (/\.(mp4|webm|m4v|mov)$/i.test(path) ? VIDEO : CACHE));
+
+  /* v62.10: المخططات (PDF) بتتحدّث كل ما تتغيّر الوحدات، والمخزّن-أولًا
+     كان بيقدّم النسخة القديمة لحد ما رقم النسخة يتغيّر. دلوقتى الشبكة
+     أولًا: لو فيه نت بيجيب الجديد ويحدّث المخزّن، ولو مفيش بيرجع للمخزّن
+     فيفضل شغّال أوفلاين زى ما هو. */
+  if (/\.pdf$/i.test(path)) {
+    e.respondWith((async () => {
+      try {
+        const res = await fetch(req, { cache: 'no-cache' });
+        if (res && res.ok) { cachePut(bucket, req, res.clone()); return res; }
+      } catch (err) {}
+      const hit = await cacheMatch(bucket, req);
+      return hit || new Response('', { status: 504, statusText: 'offline' });
+    })());
+    return;
+  }
 
   // باقى الملفات: المخزّن أولًا — ولا ترجع أبدًا قيمة فارغة
   e.respondWith((async () => {
