@@ -5342,7 +5342,7 @@ window.PLAN_MAP=[{"pdf": "FF", "page": 3, "b": "B06", "m": 2, "ft": "F", "a": 15
 "use strict";
 /* ============ Aqua Pearl ERP — Trust Group ============ */
 /* ====== رقم الإصدار — يُحدَّث من هنا فقط ويظهر فى كل مكان ====== */
-const APP_VER  = 'v62.11';
+const APP_VER  = 'v62.12';
 const APP_BUILD= '2026-11-09';
 window.APP_VER = APP_VER;
 /* v61.19: اكتب الإصدار فورًا — كان مكتوبًا يدويًا فى الـHTML فيومض القديم
@@ -6977,6 +6977,7 @@ function auSnapshot(){
   return DB.units.filter(u=>u.status==='available').map(u=>({
     id:u.id, isNew:false, deleted:false,
     building:u.building, floor:(u.floor==null?'':u.floor), unitNo:u.unitNo, flat:(u.flat||u.unitNo||''),
+    model:(u.model==null?'':u.model),            /* v62.12 */
     area:(u.area==null?'':u.area), view:u.view||'',
     ppm:(u.ppm==null?'':u.ppm), price:(u.price==null?'':u.price),
     finishing:u.finishing||''
@@ -7030,7 +7031,7 @@ function renderAvailEdit(){
   </div>
   <div class="card allow-break"><h3>🏢 جدول الوحدات</h3>
    <div class="tbl-wrap"><table class="tbl"><thead><tr>
-     <th>#</th><th>العمارة</th><th>الدور</th><th>رقم الوحدة</th><th>المساحة م²</th>
+     <th>#</th><th>العمارة</th><th>الدور</th><th>رقم الوحدة</th><th>النموذج</th><th>المساحة م²</th>
      <th>الإطلالة</th><th>سعر المتر</th><th>الإجمالي</th><th>التشطيب</th><th class="no-print"></th>
    </tr></thead><tbody>
    ${shown.map(({r,i},n)=>auRowHTML(r,i,n+1,blds)).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">لا توجد وحدات مطابقة</td></tr>'}
@@ -7047,7 +7048,7 @@ function renderAvailEdit(){
   }
 }
 function auRowHTML(r,i,n,blds){
-  const inp=(k,type,w)=>`<input type="${type||'text'}" value="${esc(r[k]==null?'':r[k])}" style="width:${w||90}px;padding:3px 6px" oninput="auEdit(${i},'${k}',this.value)">`;
+  const inp=(k,type,w)=>`<input type="${type||'text'}" data-k="${k}" value="${esc(r[k]==null?'':r[k])}" style="width:${w||90}px;padding:3px 6px" oninput="auEdit(${i},'${k}',this.value)">`;
   return `<tr${r.isNew?' style="background:#eefaf1"':''}>
    <td>${n}${r.isNew?' <span class="badge av">جديدة</span>':''}</td>
    <td><select style="padding:3px 6px" onchange="auEdit(${i},'building',this.value)">
@@ -7055,6 +7056,7 @@ function auRowHTML(r,i,n,blds){
    </select></td>
    <td>${inp('floor','number',70)}</td>
    <td>${inp('unitNo','text',90)}</td>
+   <td>${inp('model','number',70)}</td>
    <td>${inp('area','number',80)}</td>
    <td>${inp('view','text',110)}</td>
    <td>${inp('ppm','number',100)}</td>
@@ -7076,7 +7078,10 @@ function auEdit(i,key,val){
       r.price=Math.round(a*p);
       const tr=document.querySelectorAll('#scr-availEdit tbody tr');
       const vis=auVisible(); const pos=vis.findIndex(x=>x.i===i);
-      if(pos>-1&&tr[pos]){const c=tr[pos].children[7]; if(c){const inp=c.querySelector('input'); if(inp)inp.value=r.price;}}
+      if(pos>-1&&tr[pos]){
+        const inp=tr[pos].querySelector('input[data-k="price"]');
+        if(inp)inp.value=r.price;
+      }
     }
   }
   if(key==='building'||key==='finishing')renderAvailEdit();
@@ -7220,6 +7225,7 @@ function auApply(){
     }
     const data={
       building, unitNo, flat, floor:Number(r.floor),
+      model:(String(r.model).trim()===''?null:(Number(r.model)||null)),   /* v62.12 */
       area:Number(r.area)||null, ppm:Number(r.ppm)||null, price:Number(r.price)||0,
       view:String(r.view||'').trim(), finishing:r.finishing||autoFinishing(building)
     };
@@ -13575,6 +13581,7 @@ const AP_GUIDE={
   ['❓ سؤال واحد دلوقتى','الأسئلة الستة اتقفلوا مؤقتًا وفضل «🤔 إنت مين؟» بس، لأنه هو اللى اتصوّرله فيديو. كل سؤال هيرجع يظهر أول ما يوصل فيديو إجابته — سطر واحد فى الكود وخلاص، والباقى مكتوب ومستنى جنبه. كده محدش بيدوس على سؤال ويلاقى رد فاضى.'],
   ['📦 الفيديو مش جوّه ملف النظام','كل فيديو ملف لوحده فى مجلد media جنب التطبيق، مش مدمج فى index.html — عشان ملف النظام مايكبرش ويبقى تقيل على كل فتحة. وبيتخزّن على الجهاز فى مخزن مستقل عن رقم النسخة، يعنى بيتحمّل مرة واحدة بس: بعد كده بيشتغل من غير نت، ومابيتحملش تانى مع كل تحديث. والتطبيق بيبدأ يجيبه بهدوء أول ما تفتح الشات، فالدوسة بتشغّل على طول من غير استنى.'],
   ['🏢 بلانات الدور الأرضى لعمارة B04','الـPDF الجديد ضاف بلانات الدور الأرضى لعمارة B04 (نماذج ١ إلى ٥)، فاتضافت لجدول المطابقة ومعاها صورها. وعشان البلان يظهر لازم خانة «النموذج» فى الوحدة تكون متملية — الوحدة اللى خانتها فاضية النظام مش هيعرف يدوّرلها على مخطط. فى وحدات الأرضى الترقيم بيقول النموذج: 01 نموذج ١، 02 نموذج ٢، وهكذا. ملحوظة مهمة: الـPDF الجديد مش زيادة على القديم — فيه بلانات كانت موجودة واتشالت منه. فاللى اتعمل إن الجديد اتضاف والقديم مااتلمسش، عشان مفيش وحدة شغّالة تقف. اتفحصت كل وحدة فى القاعدة قبل وبعد: ١٨٩ وحدة كانت لاقية بلان بقت ١٩١، وولا وحدة واحدة باظت.'],
+  ['🔢 خانة «النموذج» بقت فى جدول الوحدات','النموذج هو اللى النظام بيدوّر بيه على مخطط الوحدة، ومع ذلك ماكانش له خانة فى أى شاشة — فالوحدة اللى نموذجها فاضى مكانش فيه طريقة تملّيه غير من نسخة احتياطية. من v62.12 اتضاف عمود «النموذج» فى «تعديل الوحدات المتاحة» بعد رقم الوحدة، بتكتب فيه رقم زى ما بتكتب المساحة والسعر وبتحفظ عادى. والرقم بيتحفظ رقم مش نص، لأن المطابقة بتقارن بالنوع — فلو اتحفظ نص مكانش هيطابق ولا مخطط. الوحدات اللى نموذجها فاضى فى نسخة ٩ نوفمبر: premium villa 1 و villa 2 و B08-205 و B11-310 و B02-05، وزيادة عليهم وحدات الأرضى الجديدة فى B04. وفى نفس التعديل اتصلّح إن خانة «الإجمالى» كانت بتتلقّى برقم ترتيب العمود، فأى عمود جديد كان بيكسر الحساب التلقائى — بقت بتتلقّى بمفتاحها، فمابتتكسرش تانى.'],
   ['📐 مخططات الـPDF بتتحدّث لوحدها','ملفى المخططات (تشطيب كامل / نص تشطيب) موجودين فى مجلد CRM جنب النظام على GitHub. لو عدّلت فى الوحدات وارفعت PDF جديد بنفس الاسم، كان التطبيق يفضل يفتح القديم لأنه مخزّن على الجهاز وبيتقدّم من غير ما يسأل الشبكة — لحد ما رقم النسخة يتغيّر. من v62.10 الـPDF بيروح للشبكة الأول دايمًا ويجيب الجديد، ولو مفيش نت بيرجع للمخزّن فيفضل شغّال عادى. ملحوظة: الاسم لازم يبقى مطابق بالحرف والمسافات — «semi finished .pdf» بمسافة واحدة قبل النقطة، و«FULLY FINISHED.pdf». أى مسافة زيادة GitHub بيعتبره ملف جديد ومابيستبدلش القديم.'],
   ['🔑 تغيير بريد مستخدم — خلّى بالك','البريد اللى فى جدول المستخدمين ده عندنا إحنا، وحساب الدخول على السحابة حاجة تانية خالص. لما تغيّر البريد من «تعديل المستخدم»، النظام بينقل مساحة العميل للمفتاح الجديد — لكن Firebase بيفضل عارفه بالبريد القديم وكلمة سره القديمة. فالنتيجة إنه يدخل ومايلاقيش ملفه. من v62.09 النظام بيوقفك ويقوللك ده بالظبط ويقوللك تعمل إيه: تمسح حسابه من Firebase ← Authentication، وتمسحه من هنا، وتعمله من جديد بالبريد الجديد وكلمة سر إنت تختارها.'],
   ['🚫 العميل مابيتحوّلش لموظف','لو السحابة ماردّتش بمساحة العميل وقت الدخول، النظام كان بياخده على إنه موظف. وصلاحية العميل الوحيدة ممنوعة على الموظفين، فكان بيدخل ويلاقى الرئيسية وبس — حساب يدخل ومايشوفش حاجة، ومحدش يعرف ليه. دلوقتى حساب مكتوب قدامه «عميل» أو «شريك» مايدخلش بحساب موظف أبدًا: بيقوله السبب الحقيقى — إن ملفه مش موجود على السحابة أو إن البريد اتغيّر — ويقوله يكلّم الإدارة تعمل «إعادة نشر العملاء والشركاء».'],
